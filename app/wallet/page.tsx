@@ -13,14 +13,15 @@ export default function WalletPage() {
 
   return (
     <main style={{ padding: "40px", maxWidth: "800px", margin: "0 auto" }}>
-      <h1>Connect Phantom</h1>
-      <p>Use Phantom to sign in to Shuka.</p>
+      <h1>Connect Phantom Wallet</h1>
+
+      <p>Sign in with Phantom to use the Shuka marketplace.</p>
 
       <button
         onClick={() => open()}
         style={{
           marginTop: "20px",
-          padding: "12px 18px",
+          padding: "12px 20px",
           background: "#111",
           color: "white",
           border: "none",
@@ -32,8 +33,8 @@ export default function WalletPage() {
         Connect Phantom
       </button>
 
-      <div style={{ marginTop: "24px" }}>
-        <strong>Wallet:</strong>{" "}
+      <div style={{ marginTop: "25px" }}>
+        <strong>Wallet Address:</strong>{" "}
         {solanaAccount ? solanaAccount.address : "Not connected"}
       </div>
     </main>
