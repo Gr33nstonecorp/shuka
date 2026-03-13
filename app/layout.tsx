@@ -33,3 +33,4 @@ import WalletContextProvider from "./providers/WalletProvider";
     {children}
   </WalletContextProvider>
 </body>
+import ShukaPhantomProvider from "./providers/PhantomProvider";
