@@ -5,3 +5,4 @@ export default function ChatPage() {
       <p>Talk to AI agents here.</p>
     </main>
   );
+}
