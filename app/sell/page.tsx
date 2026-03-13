@@ -115,3 +115,8 @@ export default function SellPage() {
           }}
         >
           Submit Listing
+        </button>
+      </form>
+    </main>
+  );
+}
