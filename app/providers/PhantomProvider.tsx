@@ -11,7 +11,7 @@ export default function ShukaPhantomProvider({
   return (
     <PhantomProvider
       config={{
-        appId: "YOUR_PHANTOM_APP_ID",
+        appId: "ba8bef06-7eef-4f29-bc09-e0d6313240df",
       }}
     >
       {children}
