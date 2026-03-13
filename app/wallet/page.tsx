@@ -14,7 +14,7 @@ export default function WalletPage() {
 
       {!address && (
         <button
-          onClick={() => connect()}
+          onClick={() => connect({ provider: "injected" })}
           style={{
             padding: "12px 20px",
             background: "#512da8",
