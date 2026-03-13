@@ -27,3 +27,9 @@ export default function RootLayout({
     </html>
   );
 }
+import WalletContextProvider from "./providers/WalletProvider";
+<body>
+  <WalletContextProvider>
+    {children}
+  </WalletContextProvider>
+</body>
