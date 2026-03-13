@@ -4,7 +4,7 @@ import { useConnect, useAccounts } from "@phantom/react-sdk";
 
 export default function WalletPage() {
   const { connect } = useConnect();
-  const { accounts } = useAccounts();
+  const accounts = useAccounts();
 
   const address = accounts?.[0]?.address;
 
