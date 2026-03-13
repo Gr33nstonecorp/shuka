@@ -16,7 +16,6 @@ export default function ShukaPhantomProvider({
         providers: ["injected"],
         addressTypes: [AddressType.solana],
       }}
-      appName="Shuka"
     >
       {children}
     </PhantomProvider>
