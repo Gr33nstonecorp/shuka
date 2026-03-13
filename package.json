@@ -9,8 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@phantom/browser-sdk": "^0.1.0",
-    "@phantom/react-sdk": "^0.1.0",
+    "@phantom/browser-sdk": "^1.0.5",
+    "@phantom/react-sdk": "^1.0.2",
+    "@solana/web3.js": "^1.98.4",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
