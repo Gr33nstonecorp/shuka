@@ -1,25 +1,15 @@
+export const dynamic = "force-dynamic";
 "use client";
 
-import { useState } from "react";
+export const dynamic = "force-dynamic";
+
 import { useConnect, useAccounts } from "@phantom/react-sdk";
 
 export default function WalletPage() {
   const { connect } = useConnect();
   const accounts = useAccounts();
-  const [status, setStatus] = useState("Not connected");
 
   const address = accounts?.[0]?.address;
-
-  async function handleConnect() {
-    try {
-      setStatus("Opening Phantom...");
-      await connect({ provider: "injected" });
-      setStatus("Connected");
-    } catch (error) {
-      console.error(error);
-      setStatus("Connection failed");
-    }
-  }
 
   return (
     <main style={{ padding: "40px" }}>
@@ -27,7 +17,7 @@ export default function WalletPage() {
 
       {!address && (
         <button
-          onClick={handleConnect}
+          onClick={() => connect({ provider: "injected" })}
           style={{
             padding: "12px 20px",
             background: "#512da8",
@@ -42,13 +32,9 @@ export default function WalletPage() {
         </button>
       )}
 
-      <p style={{ marginTop: "20px" }}>
-        <strong>Status:</strong> {status}
-      </p>
-
       {address && (
         <p style={{ marginTop: "20px" }}>
-          <strong>Connected wallet:</strong> {address}
+          Connected wallet: {address}
         </p>
       )}
     </main>
