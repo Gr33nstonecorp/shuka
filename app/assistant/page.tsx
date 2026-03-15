@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { inventoryItems, vendors, purchaseOrders, shipments } from "../data/mockData";
 
 type Message = {
   role: "user" | "ai";
@@ -14,34 +15,76 @@ const starterMessages: Message[] = [
   },
 ];
 
-function getAiResponse(input: string): string {
+function buildAiResponse(input: string): string {
   const text = input.toLowerCase();
 
+  const lowStock = inventoryItems.filter(
+    (item) => item.quantity <= item.reorderPoint
+  );
+
+  const criticalStock = inventoryItems.filter(
+    (item) => item.quantity <= item.reorderPoint / 2
+  );
+
+  const awaitingApproval = purchaseOrders.filter(
+    (order) => order.status === "Awaiting Approval"
+  );
+
+  const deliveredShipments = shipments.filter(
+    (shipment) => shipment.status === "Delivered"
+  );
+
   if (text.includes("low stock") || text.includes("what is low")) {
-    return "Low-stock items detected: Packing Tape (12 units, reorder point 25) and Barcode Labels (5 units, reorder point 50). I recommend prioritizing Barcode Labels first because they are below 10% of target.";
+    if (lowStock.length === 0) return "No low-stock items detected right now.";
+
+    return `Low-stock items: ${lowStock
+      .map((item) => `${item.name} (${item.quantity} on hand, reorder point ${item.reorderPoint})`)
+      .join("; ")}.`;
   }
 
-  if (text.includes("reorder") || text.includes("what should we reorder")) {
-    return "Recommended reorders: 50 units of Packing Tape from Uline and 100 units of Barcode Labels from Amazon Business. Both orders should go to approval before submission.";
+  if (text.includes("critical")) {
+    if (criticalStock.length === 0) return "No critical inventory items right now.";
+
+    return `Critical items: ${criticalStock
+      .map((item) => `${item.name} (${item.quantity} units)`)
+      .join("; ")}.`;
   }
 
-  if (text.includes("vendor") || text.includes("best supplier")) {
-    return "For general consumables, Amazon Business is the preferred procurement channel. For packaging materials, Uline is a strong approved vendor with reliable lead times.";
+  if (text.includes("reorder")) {
+    if (lowStock.length === 0) return "No reorder action needed right now.";
+
+    return `Recommended reorders: ${lowStock
+      .map((item) => {
+        const suggestedQty = Math.max(item.reorderPoint * 2 - item.quantity, item.reorderPoint);
+        return `${suggestedQty} units of ${item.name} from ${item.vendor}`;
+      })
+      .join("; ")}.`;
   }
 
-  if (text.includes("purchase order") || text.includes("po")) {
-    return "I can draft purchase orders based on low-stock thresholds. Current draft candidates: PO for Barcode Labels and PO for Packing Tape. Both are awaiting approval.";
+  if (text.includes("vendor") || text.includes("supplier")) {
+    const approvedVendors = vendors.filter((vendor) => vendor.approved === "Yes");
+    return `Approved vendors: ${approvedVendors
+      .map((vendor) => `${vendor.name} (${vendor.integration})`)
+      .join("; ")}.`;
   }
 
-  if (text.includes("receiving") || text.includes("shipment")) {
-    return "Two shipments are marked as delivered and ready for warehouse confirmation. Once confirmed, inventory should be updated automatically.";
+  if (text.includes("approval") || text.includes("approve") || text.includes("purchase order") || text.includes("po")) {
+    if (awaitingApproval.length === 0) return "There are no purchase orders awaiting approval.";
+
+    return `Purchase orders awaiting approval: ${awaitingApproval
+      .map((order) => `${order.po} with ${order.vendor} for $${order.total.toFixed(2)}`)
+      .join("; ")}.`;
   }
 
-  if (text.includes("approval") || text.includes("approve")) {
-    return "Approval policy is active. Orders above company thresholds or from non-primary vendors require human review before submission.";
+  if (text.includes("shipment") || text.includes("receiving") || text.includes("delivered")) {
+    if (deliveredShipments.length === 0) return "No delivered shipments are waiting for receiving.";
+
+    return `Delivered shipments ready for receiving: ${deliveredShipments
+      .map((shipment) => `${shipment.po} from ${shipment.vendor}`)
+      .join("; ")}.`;
   }
 
-  return "I can help with low stock analysis, reorder suggestions, vendor selection, purchase order drafts, receiving updates, and approval workflows. Try asking: 'What should we reorder?'";
+  return "I can answer questions about low stock, critical items, reorder suggestions, vendors, approvals, and receiving. Try asking: What should we reorder today?";
 }
 
 export default function AssistantPage() {
@@ -52,7 +95,7 @@ export default function AssistantPage() {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", text: input };
-    const aiMessage: Message = { role: "ai", text: getAiResponse(input) };
+    const aiMessage: Message = { role: "ai", text: buildAiResponse(input) };
 
     setMessages((prev) => [...prev, userMessage, aiMessage]);
     setInput("");
@@ -136,13 +179,7 @@ export default function AssistantPage() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div
             style={{
               background: "white",
@@ -156,8 +193,9 @@ export default function AssistantPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
                 "What items are low on stock?",
+                "What items are critical?",
                 "What should we reorder today?",
-                "Which vendor is best for labels?",
+                "Which vendors are approved?",
                 "What purchase orders need approval?",
                 "What shipments arrived today?",
               ].map((prompt) => (
@@ -188,14 +226,12 @@ export default function AssistantPage() {
               boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
             }}
           >
-            <h3 style={{ marginTop: 0 }}>AI Capabilities</h3>
+            <h3 style={{ marginTop: 0 }}>Live Data Sources</h3>
             <ul style={{ paddingLeft: "18px", marginBottom: 0 }}>
-              <li>Low-stock analysis</li>
-              <li>Reorder recommendations</li>
-              <li>Vendor guidance</li>
-              <li>PO drafting support</li>
-              <li>Shipment visibility</li>
-              <li>Approval rule reminders</li>
+              <li>Inventory items</li>
+              <li>Vendor list</li>
+              <li>Purchase orders</li>
+              <li>Receiving shipments</li>
             </ul>
           </div>
         </div>
