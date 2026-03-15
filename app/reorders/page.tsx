@@ -1,50 +1,31 @@
-export default function ReordersPage() {
-  const reorders = [
-    {
-      item: "Packing Tape",
-      sku: "PT-223",
-      currentQty: 12,
-      reorderPoint: 25,
-      suggestedQty: 50,
-      vendor: "Uline",
-      estimatedCost: "$210.00",
-      priority: "High",
-      status: "Awaiting Approval",
-    },
-    {
-      item: "Barcode Labels",
-      sku: "LB-992",
-      currentQty: 5,
-      reorderPoint: 50,
-      suggestedQty: 100,
-      vendor: "Amazon Business",
-      estimatedCost: "$810.00",
-      priority: "Critical",
-      status: "Awaiting Approval",
-    },
-    {
-      item: "Nitrile Gloves",
-      sku: "GL-884",
-      currentQty: 310,
-      reorderPoint: 200,
-      suggestedQty: 0,
-      vendor: "Grainger",
-      estimatedCost: "$0.00",
-      priority: "Normal",
-      status: "No Action Needed",
-    },
-  ];
+import { inventoryItems } from "../data/mockData";
 
-  function getPriorityColor(priority: string) {
-    if (priority === "Critical") return "#b91c1c";
-    if (priority === "High") return "#d97706";
-    return "#166534";
-  }
+function calculateReorders() {
+  return inventoryItems
+    .filter((item) => item.quantity <= item.reorderPoint)
+    .map((item) => {
+      const suggestedQty = item.reorderPoint * 2 - item.quantity;
+
+      return {
+        name: item.name,
+        vendor: item.vendor,
+        current: item.quantity,
+        reorderPoint: item.reorderPoint,
+        suggested: suggestedQty,
+      };
+    });
+}
+
+export default function ReordersPage() {
+  const reorders = calculateReorders();
 
   return (
     <main style={{ padding: "32px" }}>
-      <h1 style={{ marginTop: 0 }}>Reorders</h1>
-      <p>AI-generated reorder recommendations based on stock thresholds.</p>
+      <h1 style={{ marginTop: 0 }}>Reorder Suggestions</h1>
+      <p>
+        Shuka AI monitors inventory levels and recommends replenishment orders
+        when stock drops below thresholds.
+      </p>
 
       <div
         style={{
@@ -52,63 +33,55 @@ export default function ReordersPage() {
           background: "white",
           borderRadius: "12px",
           padding: "20px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
           border: "1px solid #ddd",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
           overflowX: "auto",
         }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>
+            <tr style={{ borderBottom: "1px solid #ddd", textAlign: "left" }}>
               <th style={{ padding: "12px" }}>Item</th>
-              <th style={{ padding: "12px" }}>SKU</th>
+              <th style={{ padding: "12px" }}>Vendor</th>
               <th style={{ padding: "12px" }}>Current Qty</th>
               <th style={{ padding: "12px" }}>Reorder Point</th>
-              <th style={{ padding: "12px" }}>Suggested Qty</th>
-              <th style={{ padding: "12px" }}>Vendor</th>
-              <th style={{ padding: "12px" }}>Estimated Cost</th>
-              <th style={{ padding: "12px" }}>Priority</th>
-              <th style={{ padding: "12px" }}>Status</th>
+              <th style={{ padding: "12px" }}>Suggested Order</th>
               <th style={{ padding: "12px" }}>Action</th>
             </tr>
           </thead>
+
           <tbody>
-            {reorders.map((order) => (
-              <tr key={order.sku} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "12px" }}>{order.item}</td>
-                <td style={{ padding: "12px" }}>{order.sku}</td>
-                <td style={{ padding: "12px" }}>{order.currentQty}</td>
-                <td style={{ padding: "12px" }}>{order.reorderPoint}</td>
-                <td style={{ padding: "12px" }}>{order.suggestedQty}</td>
-                <td style={{ padding: "12px" }}>{order.vendor}</td>
-                <td style={{ padding: "12px" }}>{order.estimatedCost}</td>
-                <td
-                  style={{
-                    padding: "12px",
-                    fontWeight: "bold",
-                    color: getPriorityColor(order.priority),
-                  }}
-                >
-                  {order.priority}
+            {reorders.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ padding: "16px" }}>
+                  No reorder suggestions at this time.
                 </td>
-                <td style={{ padding: "12px" }}>{order.status}</td>
+              </tr>
+            )}
+
+            {reorders.map((item) => (
+              <tr key={item.name} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: "12px", fontWeight: "bold" }}>
+                  {item.name}
+                </td>
+                <td style={{ padding: "12px" }}>{item.vendor}</td>
+                <td style={{ padding: "12px" }}>{item.current}</td>
+                <td style={{ padding: "12px" }}>{item.reorderPoint}</td>
+                <td style={{ padding: "12px" }}>{item.suggested}</td>
+
                 <td style={{ padding: "12px" }}>
-                  {order.suggestedQty > 0 ? (
-                    <button
-                      style={{
-                        padding: "8px 14px",
-                        background: "#111827",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Approve
-                    </button>
-                  ) : (
-                    <span style={{ color: "#666" }}>—</span>
-                  )}
+                  <button
+                    style={{
+                      padding: "8px 14px",
+                      background: "#111827",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Draft PO
+                  </button>
                 </td>
               </tr>
             ))}
@@ -122,14 +95,15 @@ export default function ReordersPage() {
           background: "white",
           borderRadius: "12px",
           padding: "20px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
           border: "1px solid #ddd",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>AI Recommendation Summary</h2>
+        <h2 style={{ marginTop: 0 }}>AI Procurement Insight</h2>
         <p style={{ marginBottom: 0 }}>
-          Approve immediate reorder for Barcode Labels and Packing Tape. No reorder
-          needed for Nitrile Gloves at this time.
+          Reorder quantities are calculated automatically based on reorder
+          points and current inventory levels. Purchase orders can be drafted
+          for approval before sending to vendors.
         </p>
       </div>
     </main>
