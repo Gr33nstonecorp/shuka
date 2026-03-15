@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { PhantomProvider } from "@phantom/react-sdk";
+import { PhantomProvider, darkTheme } from "@phantom/react-sdk";
 import { AddressType } from "@phantom/browser-sdk";
 
 export default function ShukaPhantomProvider({
@@ -16,6 +16,8 @@ export default function ShukaPhantomProvider({
         providers: ["injected"],
         addressTypes: [AddressType.solana],
       }}
+      theme={darkTheme}
+      appName="Shuka"
     >
       {children}
     </PhantomProvider>
