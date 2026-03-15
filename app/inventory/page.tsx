@@ -1,45 +1,12 @@
+import { inventoryItems } from "../data/mockData";
+
+function getStatus(quantity: number, reorderPoint: number) {
+  if (quantity <= reorderPoint / 2) return "Critical";
+  if (quantity <= reorderPoint) return "Low";
+  return "OK";
+}
+
 export default function InventoryPage() {
-  const items = [
-    {
-      name: "Packing Tape",
-      sku: "PT-223",
-      quantity: 12,
-      reorderPoint: 25,
-      vendor: "Uline",
-      cost: "$4.20",
-    },
-    {
-      name: "Nitrile Gloves",
-      sku: "GL-884",
-      quantity: 310,
-      reorderPoint: 200,
-      vendor: "Grainger",
-      cost: "$12.50",
-    },
-    {
-      name: "Barcode Labels",
-      sku: "LB-992",
-      quantity: 5,
-      reorderPoint: 50,
-      vendor: "Amazon Business",
-      cost: "$8.10",
-    },
-    {
-      name: "Stretch Wrap",
-      sku: "SW-441",
-      quantity: 40,
-      reorderPoint: 30,
-      vendor: "Staples Business",
-      cost: "$15.75",
-    },
-  ];
-
-  function getStatus(quantity: number, reorderPoint: number) {
-    if (quantity <= reorderPoint / 2) return "Critical";
-    if (quantity <= reorderPoint) return "Low";
-    return "OK";
-  }
-
   return (
     <main style={{ padding: "32px" }}>
       <h1 style={{ marginTop: 0 }}>Inventory</h1>
@@ -69,7 +36,7 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => {
+            {inventoryItems.map((item) => {
               const status = getStatus(item.quantity, item.reorderPoint);
 
               return (
@@ -79,7 +46,7 @@ export default function InventoryPage() {
                   <td style={{ padding: "12px" }}>{item.quantity}</td>
                   <td style={{ padding: "12px" }}>{item.reorderPoint}</td>
                   <td style={{ padding: "12px" }}>{item.vendor}</td>
-                  <td style={{ padding: "12px" }}>{item.cost}</td>
+                  <td style={{ padding: "12px" }}>${item.cost.toFixed(2)}</td>
                   <td style={{ padding: "12px", fontWeight: "bold" }}>
                     {status}
                   </td>
