@@ -15,7 +15,6 @@ export default function AssistantPage() {
   async function handleAsk() {
     setResponse("Thinking...");
 
-    // Get quotes from DB
     const { data: quotes, error } = await supabase
       .from("quote_options")
       .select("*")
@@ -31,18 +30,35 @@ export default function AssistantPage() {
       return;
     }
 
-    // Find cheapest total cost
-    const best = quotes.reduce((prev, curr) => {
-      const prevTotal = (prev.unit_price || 0) + (prev.shipping_cost || 0);
-      const currTotal = (curr.unit_price || 0) + (curr.shipping_cost || 0);
-      return currTotal < prevTotal ? curr : prev;
+    // Calculate scores
+    const evaluated = quotes.map((q) => {
+      const total =
+        Number(q.unit_price || 0) + Number(q.shipping_cost || 0);
+
+      const score =
+        (100 - total) +               // cheaper = better
+        (100 - q.lead_time_days * 5) + // faster = better
+        (q.ai_score || 0);             // existing AI score
+
+      return { ...q, total, score };
     });
 
-    const total =
-      Number(best.unit_price || 0) + Number(best.shipping_cost || 0);
+    // Sort best first
+    evaluated.sort((a, b) => b.score - a.score);
+
+    const best = evaluated[0];
 
     setResponse(
-      `Best option: ${best.vendor_name} - Total $${total} (Lead time: ${best.lead_time_days} days)`
+      `Recommended Vendor: ${best.vendor_name}
+
+Total Cost: $${best.total}
+Lead Time: ${best.lead_time_days} days
+AI Score: ${best.ai_score}
+
+Reason:
+- Optimized for price + delivery speed
+- Highest combined score among vendors
+`
     );
   }
 
@@ -53,10 +69,10 @@ export default function AssistantPage() {
       <div style={{ marginTop: "20px" }}>
         <input
           type="text"
-          placeholder="Ask Shuka (e.g. cheapest supplier for tape)"
+          placeholder="Ask Shuka (e.g. best supplier for tape)"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          style={{ padding: "10px", width: "300px" }}
+          style={{ padding: "10px", width: "320px" }}
         />
 
         <button
@@ -67,8 +83,8 @@ export default function AssistantPage() {
             background: "black",
             color: "white",
             borderRadius: "6px",
-            cursor: "pointer",
             border: "none",
+            cursor: "pointer",
           }}
         >
           Ask
@@ -82,6 +98,7 @@ export default function AssistantPage() {
             background: "#f5f5f5",
             padding: "16px",
             borderRadius: "8px",
+            whiteSpace: "pre-line",
           }}
         >
           {response}
