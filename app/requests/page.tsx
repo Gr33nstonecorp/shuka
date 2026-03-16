@@ -1,10 +1,69 @@
+"use client";
+
+import { useState } from "react";
+
+type FormState = {
+  product: string;
+  quantity: string;
+  category: string;
+  urgency: string;
+  budgetCap: string;
+  preferredVendor: string;
+  deadline: string;
+  notes: string;
+};
+
+const initialState: FormState = {
+  product: "",
+  quantity: "",
+  category: "Warehouse Supplies",
+  urgency: "Normal",
+  budgetCap: "",
+  preferredVendor: "",
+  deadline: "",
+  notes: "",
+};
+
 export default function RequestsPage() {
+  const [form, setForm] = useState<FormState>(initialState);
+  const [status, setStatus] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("Submitting...");
+
+    const res = await fetch("/api/requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product: form.product,
+        quantity: Number(form.quantity),
+        category: form.category,
+        urgency: form.urgency,
+        budget_cap: Number(form.budgetCap || 0),
+        preferred_vendor: form.preferredVendor || null,
+        deadline: form.deadline || null,
+        notes: form.notes || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setStatus(data?.error || "Failed to create request.");
+      return;
+    }
+
+    setForm(initialState);
+    setStatus("Request submitted.");
+  }
+
   return (
     <main style={{ padding: "32px", maxWidth: "900px", margin: "0 auto" }}>
       <h1 style={{ marginTop: 0 }}>Purchase Requests</h1>
-      <p>Submit a new company purchasing request for the AI to source across connected vendors.</p>
+      <p>Submit a company request and let Shuka generate vendor options.</p>
 
       <form
+        onSubmit={handleSubmit}
         style={{
           marginTop: "24px",
           display: "grid",
@@ -16,140 +75,79 @@ export default function RequestsPage() {
           boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
         }}
       >
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Product Needed
-          </label>
-          <input
-            type="text"
-            placeholder="Example: Nitrile gloves"
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <input
+          value={form.product}
+          onChange={(e) => setForm({ ...form, product: e.target.value })}
+          placeholder="Product Needed"
+          required
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Quantity
-          </label>
-          <input
-            type="number"
-            placeholder="Enter quantity"
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <input
+          type="number"
+          value={form.quantity}
+          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+          placeholder="Quantity"
+          required
+          min={1}
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Category
-          </label>
-          <select
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          >
-            <option>Warehouse Supplies</option>
-            <option>Packaging</option>
-            <option>Safety Equipment</option>
-            <option>Labels & Printing</option>
-            <option>Maintenance</option>
-            <option>Other</option>
-          </select>
-        </div>
+        <select
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        >
+          <option>Warehouse Supplies</option>
+          <option>Packaging</option>
+          <option>Safety Equipment</option>
+          <option>Labels & Printing</option>
+          <option>Maintenance</option>
+          <option>Other</option>
+        </select>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Urgency
-          </label>
-          <select
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          >
-            <option>Low</option>
-            <option>Normal</option>
-            <option>High</option>
-            <option>Critical</option>
-          </select>
-        </div>
+        <select
+          value={form.urgency}
+          onChange={(e) => setForm({ ...form, urgency: e.target.value })}
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        >
+          <option>Low</option>
+          <option>Normal</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Budget Cap
-          </label>
-          <input
-            type="text"
-            placeholder="Example: $500"
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <input
+          type="number"
+          value={form.budgetCap}
+          onChange={(e) => setForm({ ...form, budgetCap: e.target.value })}
+          placeholder="Budget Cap"
+          min={0}
+          step="0.01"
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Preferred Vendor
-          </label>
-          <input
-            type="text"
-            placeholder="Example: Amazon Business"
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <input
+          value={form.preferredVendor}
+          onChange={(e) => setForm({ ...form, preferredVendor: e.target.value })}
+          placeholder="Preferred Vendor"
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Delivery Deadline
-          </label>
-          <input
-            type="date"
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <input
+          type="date"
+          value={form.deadline}
+          onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold" }}>
-            Notes
-          </label>
-          <textarea
-            rows={5}
-            placeholder="Add specifications, approved brands, or purchasing rules..."
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          />
-        </div>
+        <textarea
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          rows={5}
+          placeholder="Notes"
+          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+        />
 
         <button
           type="submit"
@@ -165,6 +163,8 @@ export default function RequestsPage() {
         >
           Submit Request
         </button>
+
+        {status && <p style={{ margin: 0 }}>{status}</p>}
       </form>
     </main>
   );
