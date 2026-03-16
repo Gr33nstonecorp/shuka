@@ -39,7 +39,7 @@ export default async function OrdersPage() {
               }}
             >
               <strong>{order.vendor_name}</strong>
-              <p>Total: ${order.total_amount}</p>
+              <p>Total: ${Number(order.total_amount).toFixed(2)}</p>
               <p>Status: {order.status}</p>
               <p>Shipment Status: {order.shipment_status}</p>
               <p>Request ID: {order.request_id}</p>
