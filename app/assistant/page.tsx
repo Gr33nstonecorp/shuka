@@ -6,13 +6,17 @@ export default async function AssistantPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const [{ count: requestsCount }, { count: quotesCount }, { count: approvalsCount }, { count: ordersCount }] =
-    await Promise.all([
-      supabase.from("purchase_requests").select("*", { count: "exact", head: true }),
-      supabase.from("quote_options").select("*", { count: "exact", head: true }),
-      supabase.from("quote_options").select("*", { count: "exact", head: true }).eq("status", "generated"),
-      supabase.from("purchase_orders").select("*", { count: "exact", head: true }),
-    ]);
+  const [
+    { count: requestsCount },
+    { count: quotesCount },
+    { count: approvalsCount },
+    { count: ordersCount },
+  ] = await Promise.all([
+    supabase.from("purchase_requests").select("*", { count: "exact", head: true }),
+    supabase.from("quote_options").select("*", { count: "exact", head: true }),
+    supabase.from("quote_options").select("*", { count: "exact", head: true }).eq("status", "generated"),
+    supabase.from("purchase_orders").select("*", { count: "exact", head: true }),
+  ]);
 
   return (
     <main style={{ padding: "32px" }}>
