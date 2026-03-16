@@ -1,16 +1,21 @@
-export default function DashboardPage() {
-  const cards = [
-    { title: "Open Requests", value: "7", note: "Awaiting sourcing" },
-    { title: "Quotes Ready", value: "4", note: "AI compared vendor offers" },
-    { title: "Pending Approvals", value: "3", note: "Needs manager review" },
-    { title: "Orders In Progress", value: "5", note: "Submitted to vendors" },
-  ];
+import { getSupabaseServer } from "../lib/supabaseServer";
+
+export default async function DashboardPage() {
+  const supabase = getSupabaseServer();
+
+  const [{ count: requestsCount }, { count: quotesCount }, { count: approvalsCount }, { count: ordersCount }] =
+    await Promise.all([
+      supabase.from("purchase_requests").select("*", { count: "exact", head: true }),
+      supabase.from("quote_options").select("*", { count: "exact", head: true }),
+      supabase.from("quote_options").select("*", { count: "exact", head: true }).eq("status", "pending_approval"),
+      supabase.from("purchase_orders").select("*", { count: "exact", head: true }),
+    ]);
 
   return (
     <main style={{ padding: "32px" }}>
       <h1 style={{ marginTop: 0, fontSize: "36px" }}>Procurement Command Center</h1>
       <p style={{ fontSize: "18px", color: "#444" }}>
-        Shuka helps AI agents source products, compare vendors, and manage company purchasing approvals.
+        Shuka helps AI agents source products, compare vendors, route approvals, and create purchase orders.
       </p>
 
       <div
@@ -21,7 +26,12 @@ export default function DashboardPage() {
           marginTop: "30px",
         }}
       >
-        {cards.map((card) => (
+        {[
+          { title: "Requests", value: requestsCount ?? 0, note: "Open sourcing requests" },
+          { title: "Quotes", value: quotesCount ?? 0, note: "Vendor options generated" },
+          { title: "Pending Approvals", value: approvalsCount ?? 0, note: "Needs manager decision" },
+          { title: "Orders", value: ordersCount ?? 0, note: "Approved purchase orders" },
+        ].map((card) => (
           <div
             key={card.title}
             style={{
@@ -39,22 +49,6 @@ export default function DashboardPage() {
             <p style={{ marginBottom: 0, color: "#666" }}>{card.note}</p>
           </div>
         ))}
-      </div>
-
-      <div
-        style={{
-          marginTop: "30px",
-          background: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-          border: "1px solid #ddd",
-        }}
-      >
-        <h2 style={{ marginTop: 0 }}>AI Recommendation</h2>
-        <p style={{ marginBottom: 0 }}>
-          Three requests are ready for vendor comparison. Amazon Business is preferred for general consumables, while Uline remains competitive for packaging materials.
-        </p>
       </div>
     </main>
   );
