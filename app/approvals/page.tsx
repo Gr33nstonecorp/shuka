@@ -10,12 +10,19 @@ export default function ApprovalsPage() {
   );
 
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [message, setMessage] = useState("");
 
   async function loadData() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("quote_options")
       .select("*")
-      .eq("status", "generated");
+      .eq("status", "generated")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
 
     setQuotes(data || []);
   }
@@ -25,28 +32,43 @@ export default function ApprovalsPage() {
   }, []);
 
   async function approveQuote(quote: any) {
-    // 1. update quote status
-    await supabase
+    setMessage("");
+
+    const { error: updateError } = await supabase
       .from("quote_options")
       .update({ status: "approved" })
       .eq("id", quote.id);
 
-    // 2. create order
-    await supabase.from("purchase_orders").insert({
-      vendor_name: quote.vendor_name,
-      total_amount:
-        (quote.unit_price || 0) + (quote.shipping_cost || 0),
-      status: "created",
-      shipment_status: "pending",
-    });
+    if (updateError) {
+      setMessage(`Quote update failed: ${updateError.message}`);
+      return;
+    }
 
-    // reload
+    const { error: insertError } = await supabase
+      .from("purchase_orders")
+      .insert({
+        request_id: quote.request_id,
+        quote_id: quote.id,
+        vendor_name: quote.vendor_name,
+        total_amount: Number(quote.unit_price || 0) + Number(quote.shipping_cost || 0),
+        status: "approved",
+        shipment_status: "pending",
+      });
+
+    if (insertError) {
+      setMessage(`Order insert failed: ${insertError.message}`);
+      return;
+    }
+
+    setMessage("Quote approved and order created.");
     loadData();
   }
 
   return (
     <main style={{ padding: "32px" }}>
       <h1>Approvals</h1>
+
+      {message && <p>{message}</p>}
 
       {quotes.length === 0 ? (
         <p>No approvals pending.</p>
@@ -66,6 +88,7 @@ export default function ApprovalsPage() {
               <p>Unit price: ${quote.unit_price}</p>
               <p>Shipping: ${quote.shipping_cost}</p>
               <p>Lead time: {quote.lead_time_days} days</p>
+              <p>Request ID: {quote.request_id}</p>
 
               <button
                 onClick={() => approveQuote(quote)}
@@ -76,9 +99,10 @@ export default function ApprovalsPage() {
                   color: "white",
                   borderRadius: "6px",
                   cursor: "pointer",
+                  border: "none",
                 }}
               >
-                ✅ Approve
+                Approve
               </button>
             </div>
           ))}
