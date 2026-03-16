@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 
-export default function RequestPage() {
+export default function RequestsPage() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -13,16 +13,16 @@ export default function RequestPage() {
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
 
-    // ✅ INSERT REQUEST (matches your DB schema)
     const { data: newRequest, error } = await supabase
       .from("purchase_requests")
       .insert({
-        product: product,        // ✅ correct column
+        product: product,
         quantity: quantity,
+        category: "general",
         status: "submitted",
       })
       .select()
@@ -33,7 +33,6 @@ export default function RequestPage() {
       return;
     }
 
-    // ✅ TRIGGER AI QUOTES
     const res = await fetch("/api/generate-quotes", {
       method: "POST",
       headers: {
@@ -41,20 +40,19 @@ export default function RequestPage() {
       },
       body: JSON.stringify({
         request_id: newRequest.id,
-        product_name: product,   // this is fine for API
+        product_name: product,
         quantity: quantity,
       }),
     });
 
-    const result = await res.json();
+    const result = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setMessage("Quote generation failed: " + result.error);
+      setMessage("Quote generation failed: " + (result.error || "Unknown error"));
       return;
     }
 
-    setMessage("✅ Request submitted and quotes generated!");
-
+    setMessage("Request submitted and quotes generated.");
     setProduct("");
     setQuantity(1);
   }
@@ -82,6 +80,7 @@ export default function RequestPage() {
           value={quantity}
           onChange={(e) => setQuantity(Number(e.target.value))}
           required
+          min={1}
           style={{ padding: "10px" }}
         />
 
@@ -93,6 +92,7 @@ export default function RequestPage() {
             color: "white",
             borderRadius: "6px",
             cursor: "pointer",
+            border: "none",
           }}
         >
           Submit Request
