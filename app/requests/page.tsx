@@ -1,171 +1,99 @@
 "use client";
 
+import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 
-type FormState = {
-  product: string;
-  quantity: string;
-  category: string;
-  urgency: string;
-  budgetCap: string;
-  preferredVendor: string;
-  deadline: string;
-  notes: string;
-};
+export default function RequestPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-const initialState: FormState = {
-  product: "",
-  quantity: "",
-  category: "Warehouse Supplies",
-  urgency: "Normal",
-  budgetCap: "",
-  preferredVendor: "",
-  deadline: "",
-  notes: "",
-};
+  const [productName, setProductName] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [message, setMessage] = useState("");
 
-export default function RequestsPage() {
-  const [form, setForm] = useState<FormState>(initialState);
-  const [status, setStatus] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: any) {
     e.preventDefault();
-    setStatus("Submitting...");
+    setMessage("");
 
-    const res = await fetch("/api/requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product: form.product,
-        quantity: Number(form.quantity),
-        category: form.category,
-        urgency: form.urgency,
-        budget_cap: Number(form.budgetCap || 0),
-        preferred_vendor: form.preferredVendor || null,
-        deadline: form.deadline || null,
-        notes: form.notes || null,
-      }),
-    });
+    // 1. Create request
+    const { data: newRequest, error } = await supabase
+      .from("purchase_requests")
+      .insert({
+        product_name: productName,
+        quantity: quantity,
+        status: "submitted",
+      })
+      .select()
+      .single();
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setStatus(data?.error || "Failed to create request.");
+    if (error) {
+      setMessage("Error creating request: " + error.message);
       return;
     }
 
-    setForm(initialState);
-    setStatus("Request submitted.");
+    // 2. Trigger AI quote generation
+    await fetch("/api/generate-quotes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        request_id: newRequest.id,
+        product_name: productName,
+        quantity: quantity,
+      }),
+    });
+
+    setMessage("Request submitted and quotes generated!");
+
+    // reset form
+    setProductName("");
+    setQuantity(1);
   }
 
   return (
-    <main style={{ padding: "32px", maxWidth: "900px", margin: "0 auto" }}>
-      <h1 style={{ marginTop: 0 }}>Purchase Requests</h1>
-      <p>Submit a company request and let Shuka generate vendor options.</p>
+    <main style={{ padding: "32px" }}>
+      <h1>Create Purchase Request</h1>
 
       <form
         onSubmit={handleSubmit}
-        style={{
-          marginTop: "24px",
-          display: "grid",
-          gap: "18px",
-          background: "white",
-          padding: "24px",
-          borderRadius: "12px",
-          border: "1px solid #ddd",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-        }}
+        style={{ marginTop: "20px", display: "grid", gap: "12px" }}
       >
         <input
-          value={form.product}
-          onChange={(e) => setForm({ ...form, product: e.target.value })}
-          placeholder="Product Needed"
+          type="text"
+          placeholder="Product name"
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
           required
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+          style={{ padding: "10px" }}
         />
 
         <input
           type="number"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
           placeholder="Quantity"
+          value={quantity}
+          onChange={(e) => setQuantity(Number(e.target.value))}
           required
-          min={1}
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        />
-
-        <select
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        >
-          <option>Warehouse Supplies</option>
-          <option>Packaging</option>
-          <option>Safety Equipment</option>
-          <option>Labels & Printing</option>
-          <option>Maintenance</option>
-          <option>Other</option>
-        </select>
-
-        <select
-          value={form.urgency}
-          onChange={(e) => setForm({ ...form, urgency: e.target.value })}
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        >
-          <option>Low</option>
-          <option>Normal</option>
-          <option>High</option>
-          <option>Critical</option>
-        </select>
-
-        <input
-          type="number"
-          value={form.budgetCap}
-          onChange={(e) => setForm({ ...form, budgetCap: e.target.value })}
-          placeholder="Budget Cap"
-          min={0}
-          step="0.01"
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        />
-
-        <input
-          value={form.preferredVendor}
-          onChange={(e) => setForm({ ...form, preferredVendor: e.target.value })}
-          placeholder="Preferred Vendor"
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        />
-
-        <input
-          type="date"
-          value={form.deadline}
-          onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
-        />
-
-        <textarea
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          rows={5}
-          placeholder="Notes"
-          style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc" }}
+          style={{ padding: "10px" }}
         />
 
         <button
           type="submit"
           style={{
-            padding: "14px 20px",
-            background: "#111827",
+            padding: "12px",
+            background: "black",
             color: "white",
-            border: "none",
-            borderRadius: "8px",
+            borderRadius: "6px",
             cursor: "pointer",
-            fontWeight: "bold",
           }}
         >
           Submit Request
         </button>
-
-        {status && <p style={{ margin: 0 }}>{status}</p>}
       </form>
+
+      {message && <p style={{ marginTop: "20px" }}>{message}</p>}
     </main>
   );
 }
