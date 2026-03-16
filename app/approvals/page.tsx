@@ -1,27 +1,34 @@
-export default function ApprovalsPage() {
-  const approvals = [
-    {
-      request: "REQ-2001",
-      item: "Barcode Labels",
-      vendor: "Amazon Business",
-      amount: "$810.00",
-      reason: "Low stock and preferred supplier",
-      status: "Pending",
-    },
-    {
-      request: "REQ-2002",
-      item: "Packing Tape",
-      vendor: "Uline",
-      amount: "$210.00",
-      reason: "Packaging replenishment",
-      status: "Pending",
-    },
-  ];
+import { getSupabaseServer } from "../../lib/supabaseServer";
+
+export default async function ApprovalsPage() {
+  const supabase = getSupabaseServer();
+
+  const { data, error } = await supabase
+    .from("quote_options")
+    .select(`
+      id,
+      vendor_name,
+      unit_price,
+      shipping_cost,
+      recommendation,
+      status,
+      purchase_requests (
+        id,
+        product,
+        quantity
+      )
+    `)
+    .eq("status", "pending_approval")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <main style={{ padding: "32px" }}>
       <h1 style={{ marginTop: 0 }}>Approvals</h1>
-      <p>Human review step before AI-submitted purchases are sent to external vendors.</p>
+      <p>Approve AI-selected vendor options before creating a purchase order.</p>
 
       <div
         style={{
@@ -38,51 +45,69 @@ export default function ApprovalsPage() {
           <thead>
             <tr style={{ borderBottom: "1px solid #ddd", textAlign: "left" }}>
               <th style={{ padding: "12px" }}>Request</th>
-              <th style={{ padding: "12px" }}>Item</th>
+              <th style={{ padding: "12px" }}>Product</th>
               <th style={{ padding: "12px" }}>Vendor</th>
-              <th style={{ padding: "12px" }}>Amount</th>
-              <th style={{ padding: "12px" }}>Reason</th>
+              <th style={{ padding: "12px" }}>Total Est.</th>
+              <th style={{ padding: "12px" }}>Recommendation</th>
               <th style={{ padding: "12px" }}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {approvals.map((approval) => (
-              <tr key={approval.request} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "12px", fontWeight: "bold" }}>{approval.request}</td>
-                <td style={{ padding: "12px" }}>{approval.item}</td>
-                <td style={{ padding: "12px" }}>{approval.vendor}</td>
-                <td style={{ padding: "12px" }}>{approval.amount}</td>
-                <td style={{ padding: "12px" }}>{approval.reason}</td>
-                <td style={{ padding: "12px" }}>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      style={{
-                        padding: "8px 14px",
-                        background: "#166534",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      style={{
-                        padding: "8px 14px",
-                        background: "#b91c1c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {(data || []).map((quote) => {
+              const request = Array.isArray(quote.purchase_requests)
+                ? quote.purchase_requests[0]
+                : quote.purchase_requests;
+
+              if (!request) return null;
+
+              const total =
+                Number(quote.unit_price) * Number(request.quantity) +
+                Number(quote.shipping_cost);
+
+              return (
+                <tr key={quote.id} style={{ borderBottom: "1px solid #eee" }}>
+                  <td style={{ padding: "12px", fontWeight: "bold" }}>{request.id}</td>
+                  <td style={{ padding: "12px" }}>{request.product}</td>
+                  <td style={{ padding: "12px" }}>{quote.vendor_name}</td>
+                  <td style={{ padding: "12px" }}>${total.toFixed(2)}</td>
+                  <td style={{ padding: "12px" }}>{quote.recommendation}</td>
+                  <td style={{ padding: "12px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <form action={`/api/approvals/${quote.id}/approve`} method="post">
+                        <button
+                          type="submit"
+                          style={{
+                            padding: "8px 14px",
+                            background: "#166534",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Approve
+                        </button>
+                      </form>
+                      <form action={`/api/approvals/${quote.id}/reject`} method="post">
+                        <button
+                          type="submit"
+                          style={{
+                            padding: "8px 14px",
+                            background: "#b91c1c",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
