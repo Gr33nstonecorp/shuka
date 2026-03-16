@@ -13,7 +13,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "Arial, sans-serif", background: "#f5f5f5" }}>
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "Arial, sans-serif",
+          background: "#f5f5f5",
+        }}
+      >
         <nav
           style={{
             padding: "18px 24px",
@@ -25,35 +31,44 @@ export default function RootLayout({
             flexWrap: "wrap",
           }}
         >
-          <strong style={{ marginRight: "16px" }}>Shuka</strong>
+          <strong style={{ marginRight: "16px", fontSize: "18px" }}>
+            Shuka
+          </strong>
 
           <Link href="/" style={{ color: "white", textDecoration: "none" }}>
             Dashboard
           </Link>
+
           <Link href="/requests" style={{ color: "white", textDecoration: "none" }}>
             Requests
           </Link>
+
           <Link href="/vendors" style={{ color: "white", textDecoration: "none" }}>
             Vendor Sources
           </Link>
+
           <Link href="/quotes" style={{ color: "white", textDecoration: "none" }}>
             Quotes
           </Link>
+
           <Link href="/orders" style={{ color: "white", textDecoration: "none" }}>
             Orders
           </Link>
+
           <Link href="/shipments" style={{ color: "white", textDecoration: "none" }}>
             Shipments
           </Link>
+
           <Link href="/assistant" style={{ color: "white", textDecoration: "none" }}>
             AI Assistant
           </Link>
+
           <Link href="/approvals" style={{ color: "white", textDecoration: "none" }}>
             Approvals
           </Link>
         </nav>
 
-        {children}
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>{children}</div>
       </body>
     </html>
   );
