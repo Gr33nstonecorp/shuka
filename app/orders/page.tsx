@@ -42,6 +42,8 @@ export default async function OrdersPage() {
               <p>Total: ${order.total_amount}</p>
               <p>Status: {order.status}</p>
               <p>Shipment Status: {order.shipment_status}</p>
+              <p>Request ID: {order.request_id}</p>
+              <p>Quote ID: {order.quote_id}</p>
             </div>
           ))}
         </div>
