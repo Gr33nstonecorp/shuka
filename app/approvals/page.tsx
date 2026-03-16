@@ -20,7 +20,7 @@ export default function ApprovalsPage() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(`Load failed: ${error.message}`);
       return;
     }
 
@@ -50,7 +50,8 @@ export default function ApprovalsPage() {
         request_id: quote.request_id,
         quote_id: quote.id,
         vendor_name: quote.vendor_name,
-        total_amount: Number(quote.unit_price || 0) + Number(quote.shipping_cost || 0),
+        total_amount:
+          Number(quote.unit_price || 0) + Number(quote.shipping_cost || 0),
         status: "approved",
         shipment_status: "pending",
       });
@@ -67,7 +68,6 @@ export default function ApprovalsPage() {
   return (
     <main style={{ padding: "32px" }}>
       <h1>Approvals</h1>
-
       {message && <p>{message}</p>}
 
       {quotes.length === 0 ? (
