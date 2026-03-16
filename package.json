@@ -27,3 +27,4 @@
     "typescript": "^5"
   }
 }
+"@supabase/supabase-js": "^2.49.1"
