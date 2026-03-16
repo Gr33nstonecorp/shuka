@@ -1,35 +1,58 @@
-import { createClient } from "@supabase/supabase-js";
+"use client";
 
-export default async function ApprovalsPage() {
+import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
+
+export default function ApprovalsPage() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: approvals, error } = await supabase
-    .from("quote_options")
-    .select("*")
-    .eq("status", "generated")
-    .order("created_at", { ascending: false });
+  const [quotes, setQuotes] = useState<any[]>([]);
 
-  if (error) {
-    return (
-      <main style={{ padding: "32px" }}>
-        <h1>Approvals</h1>
-        <p>Error loading approvals: {error.message}</p>
-      </main>
-    );
+  async function loadData() {
+    const { data } = await supabase
+      .from("quote_options")
+      .select("*")
+      .eq("status", "generated");
+
+    setQuotes(data || []);
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function approveQuote(quote: any) {
+    // 1. update quote status
+    await supabase
+      .from("quote_options")
+      .update({ status: "approved" })
+      .eq("id", quote.id);
+
+    // 2. create order
+    await supabase.from("purchase_orders").insert({
+      vendor_name: quote.vendor_name,
+      total_amount:
+        (quote.unit_price || 0) + (quote.shipping_cost || 0),
+      status: "created",
+      shipment_status: "pending",
+    });
+
+    // reload
+    loadData();
   }
 
   return (
     <main style={{ padding: "32px" }}>
       <h1>Approvals</h1>
 
-      {!approvals || approvals.length === 0 ? (
+      {quotes.length === 0 ? (
         <p>No approvals pending.</p>
       ) : (
         <div style={{ display: "grid", gap: "16px", marginTop: "20px" }}>
-          {approvals.map((quote: any) => (
+          {quotes.map((quote) => (
             <div
               key={quote.id}
               style={{
@@ -42,8 +65,21 @@ export default async function ApprovalsPage() {
               <strong>{quote.vendor_name}</strong>
               <p>Unit price: ${quote.unit_price}</p>
               <p>Shipping: ${quote.shipping_cost}</p>
-              <p>Lead time: {quote.lead_time_days} day(s)</p>
-              <p>Status: {quote.status}</p>
+              <p>Lead time: {quote.lead_time_days} days</p>
+
+              <button
+                onClick={() => approveQuote(quote)}
+                style={{
+                  marginTop: "10px",
+                  padding: "8px 12px",
+                  background: "black",
+                  color: "white",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                ✅ Approve
+              </button>
             </div>
           ))}
         </div>
