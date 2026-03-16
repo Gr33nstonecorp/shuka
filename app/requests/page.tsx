@@ -9,7 +9,7 @@ export default function RequestPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [productName, setProductName] = useState("");
+  const [product, setProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
 
@@ -17,11 +17,11 @@ export default function RequestPage() {
     e.preventDefault();
     setMessage("");
 
-    // 1. Create request
+    // ✅ INSERT REQUEST (matches your DB schema)
     const { data: newRequest, error } = await supabase
       .from("purchase_requests")
       .insert({
-        product: productName,
+        product: product,        // ✅ correct column
         quantity: quantity,
         status: "submitted",
       })
@@ -33,22 +33,28 @@ export default function RequestPage() {
       return;
     }
 
-    // 2. Trigger AI quote generation
-    await fetch("/api/generate-quotes", {
+    // ✅ TRIGGER AI QUOTES
+    const res = await fetch("/api/generate-quotes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         request_id: newRequest.id,
-        product: productName,
+        product_name: product,   // this is fine for API
         quantity: quantity,
       }),
     });
 
-    setMessage("Request submitted and quotes generated!");
+    const result = await res.json();
 
-    // reset form
+    if (!res.ok) {
+      setMessage("Quote generation failed: " + result.error);
+      return;
+    }
+
+    setMessage("✅ Request submitted and quotes generated!");
+
     setProduct("");
     setQuantity(1);
   }
@@ -64,7 +70,7 @@ export default function RequestPage() {
         <input
           type="text"
           placeholder="Product name"
-          value={productName}
+          value={product}
           onChange={(e) => setProduct(e.target.value)}
           required
           style={{ padding: "10px" }}
