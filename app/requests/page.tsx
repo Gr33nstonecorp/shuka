@@ -21,7 +21,7 @@ export default function RequestPage() {
     const { data: newRequest, error } = await supabase
       .from("purchase_requests")
       .insert({
-        product_name: productName,
+        product: productName,
         quantity: quantity,
         status: "submitted",
       })
@@ -41,7 +41,7 @@ export default function RequestPage() {
       },
       body: JSON.stringify({
         request_id: newRequest.id,
-        product_name: productName,
+        product: productName,
         quantity: quantity,
       }),
     });
@@ -49,7 +49,7 @@ export default function RequestPage() {
     setMessage("Request submitted and quotes generated!");
 
     // reset form
-    setProductName("");
+    setProduct("");
     setQuantity(1);
   }
 
@@ -65,7 +65,7 @@ export default function RequestPage() {
           type="text"
           placeholder="Product name"
           value={productName}
-          onChange={(e) => setProductName(e.target.value)}
+          onChange={(e) => setProduct(e.target.value)}
           required
           style={{ padding: "10px" }}
         />
