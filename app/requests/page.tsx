@@ -11,6 +11,8 @@ export default function RequestsPage() {
 
   const [product, setProduct] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [category, setCategory] = useState("general");
+  const [urgency, setUrgency] = useState("normal");
   const [message, setMessage] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,7 +24,9 @@ export default function RequestsPage() {
       .insert({
         product: product,
         quantity: quantity,
-        category: "general",
+        category: category,
+        urgency: urgency,
+        budget_cap: 0,
         status: "submitted",
       })
       .select()
@@ -55,6 +59,8 @@ export default function RequestsPage() {
     setMessage("Request submitted and quotes generated.");
     setProduct("");
     setQuantity(1);
+    setCategory("general");
+    setUrgency("normal");
   }
 
   return (
@@ -63,7 +69,7 @@ export default function RequestsPage() {
 
       <form
         onSubmit={handleSubmit}
-        style={{ marginTop: "20px", display: "grid", gap: "12px" }}
+        style={{ marginTop: "20px", display: "grid", gap: "12px", maxWidth: "700px" }}
       >
         <input
           type="text"
@@ -83,6 +89,28 @@ export default function RequestsPage() {
           min={1}
           style={{ padding: "10px" }}
         />
+
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          style={{ padding: "10px" }}
+        >
+          <option value="general">General</option>
+          <option value="packaging">Packaging</option>
+          <option value="office">Office Supplies</option>
+          <option value="industrial">Industrial</option>
+        </select>
+
+        <select
+          value={urgency}
+          onChange={(e) => setUrgency(e.target.value)}
+          style={{ padding: "10px" }}
+        >
+          <option value="low">Low</option>
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
 
         <button
           type="submit"
