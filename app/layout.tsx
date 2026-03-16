@@ -38,33 +38,26 @@ export default function RootLayout({
           <Link href="/" style={{ color: "white", textDecoration: "none" }}>
             Dashboard
           </Link>
-
           <Link href="/requests" style={{ color: "white", textDecoration: "none" }}>
             Requests
           </Link>
-
-          <Link href="/vendors" style={{ color: "white", textDecoration: "none" }}>
-            Vendor Sources
-          </Link>
-
           <Link href="/quotes" style={{ color: "white", textDecoration: "none" }}>
             Quotes
           </Link>
-
+          <Link href="/approvals" style={{ color: "white", textDecoration: "none" }}>
+            Approvals
+          </Link>
           <Link href="/orders" style={{ color: "white", textDecoration: "none" }}>
             Orders
           </Link>
-
           <Link href="/shipments" style={{ color: "white", textDecoration: "none" }}>
             Shipments
           </Link>
-
+          <Link href="/vendors" style={{ color: "white", textDecoration: "none" }}>
+            Vendor Sources
+          </Link>
           <Link href="/assistant" style={{ color: "white", textDecoration: "none" }}>
             AI Assistant
-          </Link>
-
-          <Link href="/approvals" style={{ color: "white", textDecoration: "none" }}>
-            Approvals
           </Link>
         </nav>
 
