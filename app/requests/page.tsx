@@ -15,6 +15,7 @@ export default function RequestsPage() {
   const [urgency, setUrgency] = useState("normal");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showHelp, setShowHelp] = useState(true);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -232,7 +233,7 @@ export default function RequestsPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
             <button
               type="submit"
               disabled={loading}
@@ -262,23 +263,79 @@ export default function RequestsPage() {
             borderRadius: "16px",
             padding: "20px",
             boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+            position: "relative",
           }}
         >
-          <h2 style={{ marginTop: 0, fontSize: "18px" }}>How it works</h2>
-          <div style={{ display: "grid", gap: "14px", color: "#4b5563" }}>
-            <div>
-              <strong style={{ display: "block", color: "#111827" }}>1. Submit</strong>
-              Create a request for the product your team needs.
-            </div>
-            <div>
-              <strong style={{ display: "block", color: "#111827" }}>2. Source</strong>
-              Shuka generates supplier options and quote links automatically.
-            </div>
-            <div>
-              <strong style={{ display: "block", color: "#111827" }}>3. Decide</strong>
-              AI can recommend the best vendor or send it to approvals.
-            </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "12px",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: "18px" }}>How it works</h2>
+
+            {!showHelp && (
+              <button
+                onClick={() => setShowHelp(true)}
+                style={{
+                  background: "#f3f4f6",
+                  border: "1px solid #e5e7eb",
+                  padding: "6px 10px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                Show
+              </button>
+            )}
           </div>
+
+          {showHelp && (
+            <div
+              style={{
+                position: "relative",
+                background: "#f9fafb",
+                border: "1px solid #e5e7eb",
+                borderRadius: "14px",
+                padding: "16px",
+              }}
+            >
+              <button
+                onClick={() => setShowHelp(false)}
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                }}
+              >
+                ✕
+              </button>
+
+              <div style={{ display: "grid", gap: "14px", color: "#4b5563", paddingRight: "24px" }}>
+                <div>
+                  <strong style={{ display: "block", color: "#111827" }}>1. Submit</strong>
+                  Create a request for the product your team needs.
+                </div>
+                <div>
+                  <strong style={{ display: "block", color: "#111827" }}>2. Source</strong>
+                  Shuka generates supplier options and quote links automatically.
+                </div>
+                <div>
+                  <strong style={{ display: "block", color: "#111827" }}>3. Decide</strong>
+                  AI can recommend the best vendor or send it to approvals.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>
