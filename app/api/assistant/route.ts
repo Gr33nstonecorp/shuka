@@ -1,5 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
 
+function parseItems(input: string) {
+  return String(input || "")
+    .split(/[\n,]+/)
+    .map((line) => {
+      const cleaned = line.trim();
+
+      const match = cleaned.match(/(.+?)(?:\s*[-x]\s*|\s+)(\d+)$/i);
+
+      if (match) {
+        return {
+          product: match[1].trim(),
+          quantity: parseInt(match[2], 10),
+        };
+      }
+
+      return {
+        product: cleaned,
+        quantity: 1,
+      };
+    })
+    .filter((x) => x.product.length > 0);
+}
+
 function enhanceSearch(term: string) {
   const t = term.toLowerCase();
 
@@ -11,7 +34,6 @@ function enhanceSearch(term: string) {
   if (t.includes("clean")) return "industrial cleaning supplies bulk";
   if (t.includes("paper towel")) return "paper towels bulk commercial";
   if (t.includes("toilet paper")) return "toilet paper bulk commercial";
-  if (t.includes("trash bag")) return "heavy duty trash bags bulk";
 
   return term + " bulk wholesale";
 }
@@ -70,12 +92,9 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const rawItems = String(input || "")
-      .split(/[\n,]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const parsedItems = parseItems(input);
 
-    if (rawItems.length === 0) {
+    if (parsedItems.length === 0) {
       return new Response(JSON.stringify({ error: "No items provided." }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -84,8 +103,9 @@ export async function POST(req: Request) {
 
     const results: any[] = [];
 
-    for (const item of rawItems) {
-      const quantity = 1;
+    for (const entry of parsedItems) {
+      const item = entry.product;
+      const quantity = entry.quantity;
 
       const { data: newRequest, error: requestError } = await supabase
         .from("purchase_requests")
@@ -103,7 +123,7 @@ export async function POST(req: Request) {
       if (requestError) {
         results.push({
           item,
-          error: "Could not create request: " + requestError.message,
+          error: "Request error: " + requestError.message,
         });
         continue;
       }
@@ -113,11 +133,12 @@ export async function POST(req: Request) {
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, "")
         .trim();
+
       const searchTerm = encodeURIComponent(cleanTerm);
 
       const vendors = buildVendors(searchTerm);
 
-      const quotesToInsert = vendors.map((v) => {
+      const quotes = vendors.map((v) => {
         const total = v.unit_price * quantity + v.shipping_cost;
         const status = total < 500 && v.ai_score >= 85 ? "approved" : "generated";
 
@@ -136,24 +157,25 @@ export async function POST(req: Request) {
 
       const { data: insertedQuotes, error: quoteError } = await supabase
         .from("quote_options")
-        .insert(quotesToInsert)
+        .insert(quotes)
         .select();
 
       if (quoteError) {
         results.push({
           item,
-          error: "Could not generate quotes: " + quoteError.message,
+          error: "Quote error: " + quoteError.message,
         });
         continue;
       }
 
       const evaluated = (insertedQuotes || []).map((q: any) => {
         const total =
-          Number(q.unit_price || 0) * quantity + Number(q.shipping_cost || 0);
+          Number(q.unit_price) * quantity + Number(q.shipping_cost);
+
         const score =
           (100 - total) +
-          (100 - Number(q.lead_time_days || 0) * 5) +
-          Number(q.ai_score || 0);
+          (100 - q.lead_time_days * 5) +
+          q.ai_score;
 
         return { ...q, total, score };
       });
@@ -163,7 +185,7 @@ export async function POST(req: Request) {
 
       results.push({
         item,
-        request_id: newRequest.id,
+        quantity,
         best_quote: {
           vendor_name: best.vendor_name,
           total: best.total,
@@ -179,8 +201,9 @@ export async function POST(req: Request) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
+
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid request body" }), {
+    return new Response(JSON.stringify({ error: "Invalid request" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
