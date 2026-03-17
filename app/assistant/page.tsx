@@ -16,11 +16,14 @@ type AssistantResult = {
   };
 };
 
+type ChatMessage =
+  | { role: "user"; content: string }
+  | { role: "ai"; results: AssistantResult[] }
+  | { role: "ai"; content: string };
+
 export default function AssistantPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<
-    { role: "user" | "ai"; content: string }[]
-  >([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function handleSend() {
@@ -51,38 +54,7 @@ export default function AssistantPage() {
         return;
       }
 
-      const results: AssistantResult[] = data.results || [];
-
-      if (results.length === 0) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "ai", content: "No items were processed." },
-        ]);
-        setLoading(false);
-        return;
-      }
-
-      const response = results
-        .map((r) => {
-          if (r.error) {
-            return `• ${r.item}\n  Error: ${r.error}`;
-          }
-
-          if (!r.best_quote) {
-            return `• ${r.item}\n  No quote found.`;
-          }
-
-          return `• ${r.item}
-  Best Vendor: ${r.best_quote.vendor_name}
-  Total: $${r.best_quote.total}
-  Lead Time: ${r.best_quote.lead_time_days} day(s)
-  AI Score: ${r.best_quote.ai_score}
-  Status: ${r.best_quote.status}
-  Link: ${r.best_quote.product_url}`;
-        })
-        .join("\n\n");
-
-      setMessages((prev) => [...prev, { role: "ai", content: response }]);
+      setMessages((prev) => [...prev, { role: "ai", results: data.results || [] }]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -103,7 +75,7 @@ export default function AssistantPage() {
           AI Assistant
         </h1>
         <p style={{ color: "#6b7280", marginTop: "6px" }}>
-          Enter one item per line and Shuka will create requests and source suppliers automatically.
+          Type multiple items separated by commas or one item per line.
         </p>
       </div>
 
@@ -124,30 +96,111 @@ export default function AssistantPage() {
         {messages.length === 0 && (
           <div style={{ color: "#6b7280", whiteSpace: "pre-line" }}>
             Try:
+            {"\n"}packing tape, nitrile gloves, barcode labels
+            {"\n\n"}or
             {"\n"}packing tape
             {"\n"}nitrile gloves
             {"\n"}barcode labels
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              maxWidth: "85%",
-              background: msg.role === "user" ? "#111827" : "#f3f4f6",
-              color: msg.role === "user" ? "white" : "#111827",
-              padding: "12px 14px",
-              borderRadius: "12px",
-              whiteSpace: "pre-wrap",
-              fontSize: "14px",
-              lineHeight: 1.5,
-            }}
-          >
-            {msg.content}
-          </div>
-        ))}
+        {messages.map((msg, i) =>
+          msg.role === "user" ? (
+            <div
+              key={i}
+              style={{
+                alignSelf: "flex-end",
+                maxWidth: "85%",
+                background: "#111827",
+                color: "white",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                whiteSpace: "pre-wrap",
+                fontSize: "14px",
+                lineHeight: 1.5,
+              }}
+            >
+              {msg.content}
+            </div>
+          ) : "results" in msg ? (
+            <div
+              key={i}
+              style={{
+                alignSelf: "flex-start",
+                width: "100%",
+                display: "grid",
+                gap: "12px",
+              }}
+            >
+              {msg.results.map((r, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: "#f3f4f6",
+                    borderRadius: "14px",
+                    padding: "14px",
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: "18px", marginBottom: "8px" }}>
+                    {r.item}
+                  </div>
+
+                  {r.error ? (
+                    <div style={{ color: "#b91c1c" }}>{r.error}</div>
+                  ) : r.best_quote ? (
+                    <>
+                      <div style={{ color: "#374151", lineHeight: 1.7 }}>
+                        <div><strong>Best Vendor:</strong> {r.best_quote.vendor_name}</div>
+                        <div><strong>Total:</strong> ${r.best_quote.total}</div>
+                        <div><strong>Lead Time:</strong> {r.best_quote.lead_time_days} day(s)</div>
+                        <div><strong>AI Score:</strong> {r.best_quote.ai_score}</div>
+                        <div><strong>Status:</strong> {r.best_quote.status}</div>
+                      </div>
+
+                      <a
+                        href={r.best_quote.product_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: "inline-block",
+                          marginTop: "10px",
+                          padding: "10px 14px",
+                          background: "#2563eb",
+                          color: "white",
+                          borderRadius: "8px",
+                          textDecoration: "none",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Open Vendor
+                      </a>
+                    </>
+                  ) : (
+                    <div>No quote found.</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              key={i}
+              style={{
+                alignSelf: "flex-start",
+                maxWidth: "85%",
+                background: "#f3f4f6",
+                color: "#111827",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                whiteSpace: "pre-wrap",
+                fontSize: "14px",
+                lineHeight: 1.5,
+              }}
+            >
+              {msg.content}
+            </div>
+          )
+        )}
 
         {loading && (
           <div style={{ color: "#6b7280", fontSize: "14px" }}>
@@ -161,12 +214,13 @@ export default function AssistantPage() {
           marginTop: "12px",
           display: "flex",
           gap: "10px",
+          alignItems: "stretch",
         }}
       >
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={"Type one item per line...\npacking tape\nnitrile gloves\nbarcode labels"}
+          placeholder={"Type multiple items...\npacking tape, nitrile gloves, barcode scanner"}
           rows={5}
           style={{
             flex: 1,
@@ -175,6 +229,7 @@ export default function AssistantPage() {
             border: "1px solid #d1d5db",
             resize: "vertical",
             fontFamily: "inherit",
+            fontSize: "16px",
           }}
         />
 
@@ -189,7 +244,7 @@ export default function AssistantPage() {
             borderRadius: "10px",
             cursor: "pointer",
             fontWeight: 700,
-            height: "fit-content",
+            minWidth: "90px",
           }}
         >
           Send
