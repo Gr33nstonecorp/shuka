@@ -1,5 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
+function enhanceSearch(term: string) {
+  const t = term.toLowerCase();
+
+  if (t.includes("tape")) return "heavy duty packing tape bulk";
+  if (t.includes("gloves")) return "industrial nitrile gloves bulk powder free";
+  if (t.includes("box")) return "corrugated shipping boxes bulk";
+  if (t.includes("label")) return "thermal shipping labels roll";
+  if (t.includes("clean")) return "industrial cleaning supplies bulk";
+
+  return term + " bulk wholesale";
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -11,7 +23,9 @@ export async function POST(req: Request) {
 
     const { request_id, product_name, quantity } = body;
 
-    const cleanTerm = (product_name || "product")
+    const enhanced = enhanceSearch(product_name || "product");
+
+    const cleanTerm = enhanced
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, "")
       .trim();
@@ -66,7 +80,7 @@ export async function POST(req: Request) {
         shipping_cost: v.shipping_cost,
         lead_time_days: v.lead_time_days,
         ai_score: v.ai_score,
-        recommendation: `AI evaluated ${product_name}`,
+        recommendation: `AI searched: "${enhanced}"`,
         status,
         product_url: v.product_url,
       };
@@ -98,21 +112,13 @@ export async function POST(req: Request) {
         shipment_status: "pending",
       }));
 
-      const { error: orderError } = await supabase
-        .from("purchase_orders")
-        .insert(ordersToInsert);
-
-      if (orderError) {
-        return new Response(JSON.stringify({ error: orderError.message }), {
-          status: 500,
-        });
-      }
+      await supabase.from("purchase_orders").insert(ordersToInsert);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        autoApprovedCount: autoApprovedQuotes.length,
+        enhanced_search: enhanced,
       }),
       { status: 200 }
     );
