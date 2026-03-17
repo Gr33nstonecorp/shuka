@@ -1,5 +1,7 @@
 import Link from "next/link";
 import "./globals.css";
+import AuthGate from "./components/AuthGate";
+import LogoutButton from "./components/LogoutButton";
 
 export const metadata = {
   title: "Shuka",
@@ -62,9 +64,15 @@ export default function RootLayout({
           <Link href="/login" style={{ color: "white", textDecoration: "none" }}>
             Login
           </Link>
+
+          <div style={{ marginLeft: "auto" }}>
+            <LogoutButton />
+          </div>
         </nav>
 
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>{children}</div>
+        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+          <AuthGate>{children}</AuthGate>
+        </div>
       </body>
     </html>
   );
