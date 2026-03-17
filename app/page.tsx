@@ -1,115 +1,58 @@
-"use client";
-
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
-
-type Stats = {
-  requests: number;
-  quotes: number;
-  approvals: number;
-  orders: number;
-  savedItems: number;
-};
 
 type ActivityItem = {
   label: string;
   value: string;
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const [stats, setStats] = useState<Stats>({
-    requests: 0,
-    quotes: 0,
-    approvals: 0,
-    orders: 0,
-    savedItems: 0,
-  });
+  const [
+    { count: requests },
+    { count: quotes },
+    { count: approvals },
+    { count: orders },
+    { data: recentOrders },
+  ] = await Promise.all([
+    supabase.from("purchase_requests").select("*", { count: "exact", head: true }),
+    supabase.from("quote_options").select("*", { count: "exact", head: true }),
+    supabase
+      .from("quote_options")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "generated"),
+    supabase.from("purchase_orders").select("*", { count: "exact", head: true }),
+    supabase
+      .from("purchase_orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
 
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const stats = {
+    requests: requests || 0,
+    quotes: quotes || 0,
+    approvals: approvals || 0,
+    orders: orders || 0,
+  };
 
-  useEffect(() => {
-    async function loadDashboard() {
-      setLoading(true);
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const userEmail = session?.user?.email || "";
-
-      const [
-        { count: requests },
-        { count: quotes },
-        { count: approvals },
-        { count: orders },
-        { count: savedItems },
-        { data: ordersData },
-      ] = await Promise.all([
-        supabase
-          .from("purchase_requests")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("quote_options")
-          .select("*", { count: "exact", head: true }),
-        supabase
-          .from("quote_options")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "generated"),
-        supabase
-          .from("purchase_orders")
-          .select("*", { count: "exact", head: true }),
-        userEmail
-          ? supabase
-              .from("saved_items")
-              .select("*", { count: "exact", head: true })
-              .eq("user_email", userEmail)
-          : supabase
-              .from("saved_items")
-              .select("*", { count: "exact", head: true }),
-        supabase
-          .from("purchase_orders")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(5),
-      ]);
-
-      setStats({
-        requests: requests || 0,
-        quotes: quotes || 0,
-        approvals: approvals || 0,
-        orders: orders || 0,
-        savedItems: savedItems || 0,
-      });
-
-      setRecentOrders(ordersData || []);
-
-      setActivity([
-        {
-          label: "Open requests ready for sourcing",
-          value: String(requests || 0),
-        },
-        {
-          label: "Quotes waiting for a decision",
-          value: String(approvals || 0),
-        },
-        {
-          label: "Orders currently in your system",
-          value: String(orders || 0),
-        },
-      ]);
-
-      setLoading(false);
-    }
-
-    loadDashboard();
-  }, [supabase]);
+  const activity: ActivityItem[] = [
+    {
+      label: "Open requests ready for sourcing",
+      value: String(stats.requests),
+    },
+    {
+      label: "Quotes waiting for a decision",
+      value: String(stats.approvals),
+    },
+    {
+      label: "Orders currently in your system",
+      value: String(stats.orders),
+    },
+  ];
 
   return (
     <main>
@@ -276,11 +219,6 @@ export default function DashboardPage() {
           value={stats.orders}
           subtitle="Approved purchase orders"
         />
-        <StatCard
-          title="Saved Items"
-          value={stats.savedItems}
-          subtitle="Reusable reorder templates"
-        />
       </section>
 
       <section
@@ -359,9 +297,7 @@ export default function DashboardPage() {
             </a>
           </div>
 
-          {loading ? (
-            <div style={{ color: "#6b7280" }}>Loading recent orders...</div>
-          ) : recentOrders.length === 0 ? (
+          {!recentOrders || recentOrders.length === 0 ? (
             <div
               style={{
                 padding: "18px",
@@ -374,7 +310,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div style={{ display: "grid", gap: "12px" }}>
-              {recentOrders.map((order) => (
+              {recentOrders.map((order: any) => (
                 <div
                   key={order.id}
                   style={{
@@ -425,18 +361,9 @@ export default function DashboardPage() {
           </p>
 
           <div style={{ display: "grid", gap: "10px", marginTop: "14px" }}>
-            <MiniAction
-              title="Ask AI for suppliers"
-              href="/assistant"
-            />
-            <MiniAction
-              title="Review pending approvals"
-              href="/approvals"
-            />
-            <MiniAction
-              title="Reorder saved items"
-              href="/saved-items"
-            />
+            <MiniAction title="Ask AI for suppliers" href="/assistant" />
+            <MiniAction title="Review pending approvals" href="/approvals" />
+            <MiniAction title="Reorder saved items" href="/saved-items" />
           </div>
         </div>
       </section>
