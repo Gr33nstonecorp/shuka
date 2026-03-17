@@ -16,21 +16,126 @@ function enhanceSearch(term: string) {
   return term + " bulk wholesale";
 }
 
-function estimateVendorPricing(name: string) {
-  const key = name.toLowerCase();
+function estimateVendorPricing(
+  vendorType: string,
+  vendorCategory: string,
+  vendorName: string,
+  quantity: number
+) {
+  const type = (vendorType || "").toLowerCase();
+  const category = (vendorCategory || "").toLowerCase();
+  const name = (vendorName || "").toLowerCase();
+  const qty = Number(quantity) || 1;
 
-  if (key.includes("amazon")) return { unit_price: 18, shipping_cost: 5, lead_time_days: 2 };
-  if (key.includes("uline")) return { unit_price: 21, shipping_cost: 8, lead_time_days: 3 };
-  if (key.includes("grainger")) return { unit_price: 20, shipping_cost: 6, lead_time_days: 2 };
-  if (key.includes("alibaba")) return { unit_price: 12, shipping_cost: 15, lead_time_days: 10 };
-  if (key.includes("global")) return { unit_price: 19, shipping_cost: 7, lead_time_days: 4 };
-  if (key.includes("staples")) return { unit_price: 22, shipping_cost: 4, lead_time_days: 2 };
-  if (key.includes("office depot")) return { unit_price: 23, shipping_cost: 5, lead_time_days: 3 };
-  if (key.includes("fastenal")) return { unit_price: 24, shipping_cost: 6, lead_time_days: 2 };
-  if (key.includes("msc")) return { unit_price: 25, shipping_cost: 7, lead_time_days: 3 };
-  if (key.includes("walmart")) return { unit_price: 17, shipping_cost: 6, lead_time_days: 3 };
+  let unitPrice = 20;
+  let shippingCost = 6;
+  let leadTimeDays = 3;
 
-  return { unit_price: 20, shipping_cost: 6, lead_time_days: 3 };
+  if (type.includes("marketplace")) {
+    unitPrice = 17;
+    shippingCost = 7;
+    leadTimeDays = 4;
+  }
+
+  if (type.includes("supplier")) {
+    unitPrice = 21;
+    shippingCost = 6;
+    leadTimeDays = 3;
+  }
+
+  if (category.includes("industrial")) {
+    unitPrice += 3;
+    leadTimeDays = Math.max(2, leadTimeDays - 1);
+  }
+
+  if (category.includes("office")) {
+    unitPrice += 1;
+    shippingCost -= 1;
+  }
+
+  if (category.includes("packaging")) {
+    unitPrice -= 1;
+  }
+
+  if (category.includes("wholesale")) {
+    unitPrice -= 2;
+    leadTimeDays += 3;
+  }
+
+  if (name.includes("amazon")) {
+    unitPrice -= 1;
+    shippingCost -= 1;
+    leadTimeDays = 2;
+  }
+
+  if (name.includes("uline")) {
+    unitPrice += 1;
+    shippingCost += 1;
+    leadTimeDays = 3;
+  }
+
+  if (name.includes("grainger")) {
+    unitPrice += 2;
+    leadTimeDays = 2;
+  }
+
+  if (name.includes("alibaba")) {
+    unitPrice -= 4;
+    shippingCost += 8;
+    leadTimeDays = 10;
+  }
+
+  if (name.includes("global")) {
+    unitPrice += 1;
+    shippingCost += 1;
+    leadTimeDays = 4;
+  }
+
+  if (name.includes("staples")) {
+    unitPrice += 1;
+    shippingCost -= 1;
+    leadTimeDays = 2;
+  }
+
+  if (name.includes("office depot")) {
+    unitPrice += 2;
+    leadTimeDays = 3;
+  }
+
+  if (name.includes("fastenal")) {
+    unitPrice += 3;
+    shippingCost += 1;
+    leadTimeDays = 2;
+  }
+
+  if (name.includes("msc")) {
+    unitPrice += 4;
+    shippingCost += 1;
+    leadTimeDays = 3;
+  }
+
+  if (name.includes("walmart")) {
+    unitPrice -= 2;
+    leadTimeDays = 3;
+  }
+
+  let bulkDiscount = 0;
+  if (qty >= 500) bulkDiscount = 0.18;
+  else if (qty >= 200) bulkDiscount = 0.12;
+  else if (qty >= 100) bulkDiscount = 0.08;
+  else if (qty >= 50) bulkDiscount = 0.05;
+  else if (qty >= 20) bulkDiscount = 0.03;
+
+  unitPrice = unitPrice * (1 - bulkDiscount);
+
+  if (qty >= 100) shippingCost += 4;
+  else if (qty >= 50) shippingCost += 2;
+
+  return {
+    unit_price: Number(unitPrice.toFixed(2)),
+    shipping_cost: Number(Math.max(0, shippingCost).toFixed(2)),
+    lead_time_days: leadTimeDays,
+  };
 }
 
 export async function POST(req: Request) {
@@ -62,9 +167,18 @@ export async function POST(req: Request) {
     }
 
     const quotesToInsert = (vendors || []).map((vendor: any) => {
-      const pricing = estimateVendorPricing(vendor.name);
+      const pricing = estimateVendorPricing(
+        vendor.vendor_type,
+        vendor.category,
+        vendor.name,
+        qty
+      );
+
       const total = pricing.unit_price * qty + pricing.shipping_cost;
-      const status = total < 500 && vendor.default_ai_score >= 85 ? "approved" : "generated";
+      const status =
+        total < 500 && Number(vendor.default_ai_score || 0) >= 85
+          ? "approved"
+          : "generated";
 
       return {
         request_id,
