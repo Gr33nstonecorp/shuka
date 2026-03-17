@@ -268,6 +268,26 @@ export async function POST(req: Request) {
       }
 
       const evaluated = (insertedQuotes || []).map((q: any) => {
+  const total =
+    Number(q.unit_price || 0) * quantity +
+    Number(q.shipping_cost || 0);
+
+  const speedScore = 100 - Number(q.lead_time_days || 0) * 5;
+  const priceScore = 100 - total;
+
+  const score =
+    priceScore * 0.6 +
+    speedScore * 0.2 +
+    Number(q.ai_score || 0) * 0.2;
+
+  return {
+    ...q,
+    total,
+    score,
+    priceScore,
+    speedScore,
+  };
+});
         const total =
           Number(q.unit_price || 0) * quantity + Number(q.shipping_cost || 0);
 
