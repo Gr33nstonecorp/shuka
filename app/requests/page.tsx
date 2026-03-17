@@ -14,18 +14,20 @@ export default function RequestsPage() {
   const [category, setCategory] = useState("general");
   const [urgency, setUrgency] = useState("normal");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
+    setLoading(true);
 
     const { data: newRequest, error } = await supabase
       .from("purchase_requests")
       .insert({
-        product: product,
-        quantity: quantity,
-        category: category,
-        urgency: urgency,
+        product,
+        quantity,
+        category,
+        urgency,
         budget_cap: 0,
         status: "submitted",
       })
@@ -34,6 +36,7 @@ export default function RequestsPage() {
 
     if (error) {
       setMessage("Error creating request: " + error.message);
+      setLoading(false);
       return;
     }
 
@@ -45,7 +48,7 @@ export default function RequestsPage() {
       body: JSON.stringify({
         request_id: newRequest.id,
         product_name: product,
-        quantity: quantity,
+        quantity,
       }),
     });
 
@@ -53,6 +56,7 @@ export default function RequestsPage() {
 
     if (!res.ok) {
       setMessage("Quote generation failed: " + (result.error || "Unknown error"));
+      setLoading(false);
       return;
     }
 
@@ -61,73 +65,222 @@ export default function RequestsPage() {
     setQuantity(1);
     setCategory("general");
     setUrgency("normal");
+    setLoading(false);
   }
 
   return (
-    <main style={{ padding: "32px" }}>
-      <h1>Create Purchase Request</h1>
+    <main>
+      <div style={{ marginBottom: "24px" }}>
+        <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>
+          Create Purchase Request
+        </h1>
+        <p style={{ color: "#6b7280", marginTop: "8px" }}>
+          Submit a new item request and let Shuka generate vendor quotes automatically.
+        </p>
+      </div>
 
-      <form
-        onSubmit={handleSubmit}
-        style={{ marginTop: "20px", display: "grid", gap: "12px", maxWidth: "700px" }}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 760px) 320px",
+          gap: "20px",
+          alignItems: "start",
+        }}
       >
-        <input
-          type="text"
-          placeholder="Product name"
-          value={product}
-          onChange={(e) => setProduct(e.target.value)}
-          required
-          style={{ padding: "10px" }}
-        />
-
-        <input
-          type="number"
-          placeholder="Quantity"
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-          required
-          min={1}
-          style={{ padding: "10px" }}
-        />
-
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          style={{ padding: "10px" }}
-        >
-          <option value="general">General</option>
-          <option value="packaging">Packaging</option>
-          <option value="office">Office Supplies</option>
-          <option value="industrial">Industrial</option>
-        </select>
-
-        <select
-          value={urgency}
-          onChange={(e) => setUrgency(e.target.value)}
-          style={{ padding: "10px" }}
-        >
-          <option value="low">Low</option>
-          <option value="normal">Normal</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-
-        <button
-          type="submit"
+        <form
+          onSubmit={handleSubmit}
           style={{
-            padding: "12px",
-            background: "black",
-            color: "white",
-            borderRadius: "6px",
-            cursor: "pointer",
-            border: "none",
+            background: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: "16px",
+            padding: "24px",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+            display: "grid",
+            gap: "18px",
           }}
         >
-          Submit Request
-        </button>
-      </form>
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                fontWeight: 700,
+                marginBottom: "8px",
+              }}
+            >
+              Product
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. packing tape, nitrile gloves, shipping labels"
+              value={product}
+              onChange={(e) => setProduct(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #d1d5db",
+                fontSize: "14px",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
 
-      {message && <p style={{ marginTop: "20px" }}>{message}</p>}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "14px",
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                }}
+              >
+                Quantity
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                required
+                min={1}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "14px",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                }}
+              >
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "14px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <option value="general">General</option>
+                <option value="packaging">Packaging</option>
+                <option value="office">Office Supplies</option>
+                <option value="industrial">Industrial</option>
+                <option value="janitorial">Janitorial</option>
+                <option value="safety">Safety</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                fontWeight: 700,
+                marginBottom: "8px",
+              }}
+            >
+              Urgency
+            </label>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {["low", "normal", "high", "critical"].map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setUrgency(level)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "999px",
+                    border:
+                      urgency === level
+                        ? "1px solid #111827"
+                        : "1px solid #d1d5db",
+                    background: urgency === level ? "#111827" : "white",
+                    color: urgency === level ? "white" : "#111827",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: "12px 18px",
+                background: "#111827",
+                color: "white",
+                borderRadius: "10px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              {loading ? "Submitting..." : "Submit Request"}
+            </button>
+
+            {message && (
+              <span style={{ color: "#374151", fontSize: "14px" }}>{message}</span>
+            )}
+          </div>
+        </form>
+
+        <div
+          style={{
+            background: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: "16px",
+            padding: "20px",
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, fontSize: "18px" }}>How it works</h2>
+          <div style={{ display: "grid", gap: "14px", color: "#4b5563" }}>
+            <div>
+              <strong style={{ display: "block", color: "#111827" }}>1. Submit</strong>
+              Create a request for the product your team needs.
+            </div>
+            <div>
+              <strong style={{ display: "block", color: "#111827" }}>2. Source</strong>
+              Shuka generates supplier options and quote links automatically.
+            </div>
+            <div>
+              <strong style={{ display: "block", color: "#111827" }}>3. Decide</strong>
+              AI can recommend the best vendor or send it to approvals.
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
