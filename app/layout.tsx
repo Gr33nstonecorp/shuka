@@ -2,6 +2,7 @@ import Link from "next/link";
 import "./globals.css";
 import AuthGate from "./components/AuthGate";
 import LogoutButton from "./components/LogoutButton";
+import UserNav from "./components/UserNav";
 
 export const metadata = {
   title: "Shuka",
@@ -61,11 +62,16 @@ export default function RootLayout({
           <Link href="/assistant" style={{ color: "white", textDecoration: "none" }}>
             AI Assistant
           </Link>
-          <Link href="/login" style={{ color: "white", textDecoration: "none" }}>
-            Login
-          </Link>
 
-          <div style={{ marginLeft: "auto" }}>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <UserNav />
             <LogoutButton />
           </div>
         </nav>
