@@ -46,7 +46,7 @@ export default async function QuotesPage() {
               <p>Status: {quote.status}</p>
               {quote.recommendation && <p>Recommendation: {quote.recommendation}</p>}
 
-              {quote.product_url && (
+              {quote.product_url ? (
                 <a
                   href={quote.product_url}
                   target="_blank"
@@ -63,6 +63,10 @@ export default async function QuotesPage() {
                 >
                   Open Vendor
                 </a>
+              ) : (
+                <p style={{ color: "#666", marginTop: "8px" }}>
+                  No vendor link on this quote yet.
+                </p>
               )}
             </div>
           ))}
