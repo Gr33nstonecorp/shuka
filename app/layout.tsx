@@ -9,6 +9,13 @@ export const metadata = {
   description: "AI procurement control layer",
 };
 
+const navLinkStyle = {
+  color: "#e5e7eb",
+  textDecoration: "none",
+  fontSize: "14px",
+  fontWeight: 600,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -19,47 +26,59 @@ export default function RootLayout({
       <body
         style={{
           margin: 0,
-          fontFamily: "Arial, sans-serif",
-          background: "#f5f5f5",
+          fontFamily:
+            'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          background: "#f8fafc",
+          color: "#111827",
         }}
       >
         <nav
           style={{
-            padding: "18px 24px",
-            background: "#1f2937",
-            color: "white",
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            padding: "16px 24px",
+            background: "#111827",
+            borderBottom: "1px solid #1f2937",
             display: "flex",
-            gap: "20px",
+            gap: "18px",
             alignItems: "center",
             flexWrap: "wrap",
           }}
         >
-          <strong style={{ marginRight: "16px", fontSize: "18px" }}>
+          <div
+            style={{
+              marginRight: "18px",
+              fontSize: "20px",
+              fontWeight: 800,
+              color: "white",
+            }}
+          >
             Shuka
-          </strong>
+          </div>
 
-          <Link href="/" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/" style={navLinkStyle}>
             Dashboard
           </Link>
-          <Link href="/requests" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/requests" style={navLinkStyle}>
             Requests
           </Link>
-          <Link href="/quotes" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/quotes" style={navLinkStyle}>
             Quotes
           </Link>
-          <Link href="/approvals" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/approvals" style={navLinkStyle}>
             Approvals
           </Link>
-          <Link href="/orders" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/orders" style={navLinkStyle}>
             Orders
           </Link>
-          <Link href="/shipments" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/shipments" style={navLinkStyle}>
             Shipments
           </Link>
-          <Link href="/vendors" style={{ color: "white", textDecoration: "none" }}>
-            Vendor Sources
+          <Link href="/vendors" style={navLinkStyle}>
+            Vendors
           </Link>
-          <Link href="/assistant" style={{ color: "white", textDecoration: "none" }}>
+          <Link href="/assistant" style={navLinkStyle}>
             AI Assistant
           </Link>
 
@@ -76,7 +95,13 @@ export default function RootLayout({
           </div>
         </nav>
 
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <div
+          style={{
+            maxWidth: "1320px",
+            margin: "0 auto",
+            padding: "24px",
+          }}
+        >
           <AuthGate>{children}</AuthGate>
         </div>
       </body>
