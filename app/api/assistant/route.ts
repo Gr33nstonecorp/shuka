@@ -7,6 +7,7 @@ function enhanceSearch(term: string) {
   if (t.includes("gloves")) return "industrial nitrile gloves bulk powder free";
   if (t.includes("box")) return "corrugated shipping boxes bulk";
   if (t.includes("label")) return "thermal shipping labels roll";
+  if (t.includes("scanner")) return "barcode scanner handheld commercial";
   if (t.includes("clean")) return "industrial cleaning supplies bulk";
   if (t.includes("paper towel")) return "paper towels bulk commercial";
   if (t.includes("toilet paper")) return "toilet paper bulk commercial";
@@ -57,46 +58,6 @@ function buildVendors(searchTerm: string) {
       ai_score: 86,
       product_url: `https://www.globalindustrial.com/searchResult?text=${searchTerm}`,
     },
-    {
-      vendor_name: "Staples Business",
-      unit_price: 22,
-      shipping_cost: 4,
-      lead_time_days: 2,
-      ai_score: 84,
-      product_url: `https://www.staples.com/search?query=${searchTerm}`,
-    },
-    {
-      vendor_name: "Office Depot",
-      unit_price: 23,
-      shipping_cost: 5,
-      lead_time_days: 3,
-      ai_score: 82,
-      product_url: `https://www.officedepot.com/a/search/?q=${searchTerm}`,
-    },
-    {
-      vendor_name: "Fastenal",
-      unit_price: 24,
-      shipping_cost: 6,
-      lead_time_days: 2,
-      ai_score: 87,
-      product_url: `https://www.fastenal.com/search?query=${searchTerm}`,
-    },
-    {
-      vendor_name: "MSC Industrial",
-      unit_price: 25,
-      shipping_cost: 7,
-      lead_time_days: 3,
-      ai_score: 85,
-      product_url: `https://www.mscdirect.com/browse/tn?searchterm=${searchTerm}`,
-    },
-    {
-      vendor_name: "Walmart Business",
-      unit_price: 17,
-      shipping_cost: 6,
-      lead_time_days: 3,
-      ai_score: 80,
-      product_url: `https://www.walmart.com/search?q=${searchTerm}`,
-    },
   ];
 }
 
@@ -110,7 +71,7 @@ export async function POST(req: Request) {
     );
 
     const rawItems = String(input || "")
-      .split("\n")
+      .split(/[\n,]+/)
       .map((s) => s.trim())
       .filter(Boolean);
 
