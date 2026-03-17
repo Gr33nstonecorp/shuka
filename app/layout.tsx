@@ -59,6 +59,9 @@ export default function RootLayout({
           <Link href="/assistant" style={{ color: "white", textDecoration: "none" }}>
             AI Assistant
           </Link>
+          <Link href="/login" style={{ color: "white", textDecoration: "none" }}>
+            Login
+          </Link>
         </nav>
 
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>{children}</div>
