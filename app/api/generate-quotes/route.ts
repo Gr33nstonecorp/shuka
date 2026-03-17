@@ -11,8 +11,26 @@ function enhanceSearch(term: string) {
   if (t.includes("paper towel")) return "paper towels bulk commercial";
   if (t.includes("toilet paper")) return "toilet paper bulk commercial";
   if (t.includes("trash bag")) return "heavy duty trash bags bulk";
+  if (t.includes("scanner")) return "barcode scanner handheld commercial";
 
   return term + " bulk wholesale";
+}
+
+function estimateVendorPricing(name: string) {
+  const key = name.toLowerCase();
+
+  if (key.includes("amazon")) return { unit_price: 18, shipping_cost: 5, lead_time_days: 2 };
+  if (key.includes("uline")) return { unit_price: 21, shipping_cost: 8, lead_time_days: 3 };
+  if (key.includes("grainger")) return { unit_price: 20, shipping_cost: 6, lead_time_days: 2 };
+  if (key.includes("alibaba")) return { unit_price: 12, shipping_cost: 15, lead_time_days: 10 };
+  if (key.includes("global")) return { unit_price: 19, shipping_cost: 7, lead_time_days: 4 };
+  if (key.includes("staples")) return { unit_price: 22, shipping_cost: 4, lead_time_days: 2 };
+  if (key.includes("office depot")) return { unit_price: 23, shipping_cost: 5, lead_time_days: 3 };
+  if (key.includes("fastenal")) return { unit_price: 24, shipping_cost: 6, lead_time_days: 2 };
+  if (key.includes("msc")) return { unit_price: 25, shipping_cost: 7, lead_time_days: 3 };
+  if (key.includes("walmart")) return { unit_price: 17, shipping_cost: 6, lead_time_days: 3 };
+
+  return { unit_price: 20, shipping_cost: 6, lead_time_days: 3 };
 }
 
 export async function POST(req: Request) {
@@ -25,114 +43,39 @@ export async function POST(req: Request) {
     );
 
     const { request_id, product_name, quantity } = body;
-
-    const enhanced = enhanceSearch(product_name || "product");
-
-    const cleanTerm = enhanced
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim();
-
-    const searchTerm = encodeURIComponent(cleanTerm);
     const qty = Number(quantity) || 1;
 
-    const vendors = [
-      {
-        vendor_name: "Amazon Business",
-        unit_price: 18,
-        shipping_cost: 5,
-        lead_time_days: 2,
-        ai_score: 92,
-        product_url: `https://www.amazon.com/s?k=${searchTerm}`,
-      },
-      {
-        vendor_name: "Uline",
-        unit_price: 21,
-        shipping_cost: 8,
-        lead_time_days: 3,
-        ai_score: 88,
-        product_url: `https://www.uline.com/Search?keywords=${searchTerm}`,
-      },
-      {
-        vendor_name: "Grainger",
-        unit_price: 20,
-        shipping_cost: 6,
-        lead_time_days: 2,
-        ai_score: 90,
-        product_url: `https://www.grainger.com/search?searchQuery=${searchTerm}`,
-      },
-      {
-        vendor_name: "Alibaba",
-        unit_price: 12,
-        shipping_cost: 15,
-        lead_time_days: 10,
-        ai_score: 75,
-        product_url: `https://www.alibaba.com/trade/search?SearchText=${searchTerm}`,
-      },
-      {
-        vendor_name: "Global Industrial",
-        unit_price: 19,
-        shipping_cost: 7,
-        lead_time_days: 4,
-        ai_score: 86,
-        product_url: `https://www.globalindustrial.com/searchResult?text=${searchTerm}`,
-      },
-      {
-        vendor_name: "Staples Business",
-        unit_price: 22,
-        shipping_cost: 4,
-        lead_time_days: 2,
-        ai_score: 84,
-        product_url: `https://www.staples.com/search?query=${searchTerm}`,
-      },
-      {
-        vendor_name: "Office Depot",
-        unit_price: 23,
-        shipping_cost: 5,
-        lead_time_days: 3,
-        ai_score: 82,
-        product_url: `https://www.officedepot.com/a/search/?q=${searchTerm}`,
-      },
-      {
-        vendor_name: "Fastenal",
-        unit_price: 24,
-        shipping_cost: 6,
-        lead_time_days: 2,
-        ai_score: 87,
-        product_url: `https://www.fastenal.com/search?query=${searchTerm}`,
-      },
-      {
-        vendor_name: "MSC Industrial",
-        unit_price: 25,
-        shipping_cost: 7,
-        lead_time_days: 3,
-        ai_score: 85,
-        product_url: `https://www.mscdirect.com/browse/tn?searchterm=${searchTerm}`,
-      },
-      {
-        vendor_name: "Walmart Business",
-        unit_price: 17,
-        shipping_cost: 6,
-        lead_time_days: 3,
-        ai_score: 80,
-        product_url: `https://www.walmart.com/search?q=${searchTerm}`,
-      },
-    ];
+    const enhanced = enhanceSearch(product_name || "product");
+    const cleanTerm = enhanced.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+    const searchTerm = encodeURIComponent(cleanTerm);
 
-    const quotesToInsert = vendors.map((v) => {
-      const total = v.unit_price * qty + v.shipping_cost;
-      const status = total < 500 && v.ai_score >= 85 ? "approved" : "generated";
+    const { data: vendors, error: vendorError } = await supabase
+      .from("vendor_sources")
+      .select("*")
+      .eq("active", true);
+
+    if (vendorError) {
+      return new Response(JSON.stringify({ error: vendorError.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const quotesToInsert = (vendors || []).map((vendor: any) => {
+      const pricing = estimateVendorPricing(vendor.name);
+      const total = pricing.unit_price * qty + pricing.shipping_cost;
+      const status = total < 500 && vendor.default_ai_score >= 85 ? "approved" : "generated";
 
       return {
         request_id,
-        vendor_name: v.vendor_name,
-        unit_price: v.unit_price,
-        shipping_cost: v.shipping_cost,
-        lead_time_days: v.lead_time_days,
-        ai_score: v.ai_score,
+        vendor_name: vendor.name,
+        unit_price: pricing.unit_price,
+        shipping_cost: pricing.shipping_cost,
+        lead_time_days: pricing.lead_time_days,
+        ai_score: vendor.default_ai_score,
         recommendation: `AI searched: "${enhanced}"`,
         status,
-        product_url: v.product_url,
+        product_url: vendor.search_url_template.replace("{searchTerm}", searchTerm),
       };
     });
 
@@ -157,8 +100,7 @@ export async function POST(req: Request) {
         quote_id: quote.id,
         vendor_name: quote.vendor_name,
         total_amount:
-          Number(quote.unit_price || 0) * qty +
-          Number(quote.shipping_cost || 0),
+          Number(quote.unit_price || 0) * qty + Number(quote.shipping_cost || 0),
         status: "approved",
         shipment_status: "pending",
       }));
