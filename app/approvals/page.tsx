@@ -3,179 +3,238 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-type Quote = {
-  id: string;
-  request_id: string;
-  vendor_name: string;
-  unit_price: number;
-  shipping_cost: number;
-  lead_time_days: number;
-  ai_score: number;
-  recommendation: string | null;
-  status: string;
-};
-
 export default function ApprovalsPage() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [message, setMessage] = useState("");
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   async function loadQuotes() {
-    setMessage("");
-
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("quote_options")
       .select("*")
       .eq("status", "generated")
-      .order("created_at", { ascending: false });
+      .order("price", { ascending: true });
 
-    if (error) {
-      setMessage("Error loading approvals: " + error.message);
-      return;
-    }
-
-    setQuotes((data as Quote[]) || []);
+    setQuotes(data || []);
+    setLoading(false);
   }
 
   useEffect(() => {
     loadQuotes();
   }, []);
 
-  async function approveQuote(quote: Quote) {
-    setMessage("");
-
-    const totalAmount =
-      Number(quote.unit_price || 0) + Number(quote.shipping_cost || 0);
-
-    // Prevent duplicate order creation for same quote
-    const { data: existingOrder, error: existingOrderError } = await supabase
-      .from("purchase_orders")
-      .select("id")
-      .eq("quote_id", quote.id)
-      .maybeSingle();
-
-    if (existingOrderError) {
-      setMessage("Error checking existing order: " + existingOrderError.message);
-      return;
-    }
-
-    if (existingOrder) {
-      setMessage("Order already exists for this quote.");
-      return;
-    }
-
-    // Create order first
-    const { error: insertError } = await supabase.from("purchase_orders").insert({
-      request_id: quote.request_id,
-      quote_id: quote.id,
-      vendor_name: quote.vendor_name,
-      total_amount: totalAmount,
-      status: "approved",
-      shipment_status: "pending",
-    });
-
-    if (insertError) {
-      setMessage("Error creating order: " + insertError.message);
-      return;
-    }
-
-    // Mark quote approved
-    const { error: updateError } = await supabase
+  async function approveQuote(quote: any) {
+    await supabase
       .from("quote_options")
       .update({ status: "approved" })
       .eq("id", quote.id);
 
-    if (updateError) {
-      setMessage("Order created, but quote update failed: " + updateError.message);
-      return;
-    }
+    await supabase.from("purchase_orders").insert({
+      request_id: quote.request_id,
+      vendor_name: quote.vendor_name,
+      product_name: quote.product_name,
+      price: quote.price,
+      quantity: quote.quantity,
+      product_url: quote.product_url,
+      status: "ordered",
+    });
 
-    setMessage("Approved and order created.");
     loadQuotes();
   }
 
-  async function rejectQuote(quote: Quote) {
-    setMessage("");
-
-    const { error } = await supabase
+  async function rejectQuote(id: string) {
+    await supabase
       .from("quote_options")
       .update({ status: "rejected" })
-      .eq("id", quote.id);
+      .eq("id", id);
 
-    if (error) {
-      setMessage("Error rejecting quote: " + error.message);
-      return;
-    }
-
-    setMessage("Quote rejected.");
     loadQuotes();
   }
 
   return (
-    <main style={{ padding: "32px" }}>
-      <h1>Approvals</h1>
+    <main>
+      {/* HEADER */}
+      <div style={{ marginBottom: "24px" }}>
+        <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>
+          Approvals
+        </h1>
+        <p style={{ color: "#6b7280", marginTop: "8px" }}>
+          Review AI-generated supplier quotes and approve purchases.
+        </p>
+      </div>
 
-      {message && <p style={{ marginTop: "12px" }}>{message}</p>}
-
-      {quotes.length === 0 ? (
-        <p style={{ marginTop: "20px" }}>No approvals pending.</p>
+      {/* CONTENT */}
+      {loading ? (
+        <div>Loading quotes...</div>
+      ) : quotes.length === 0 ? (
+        <EmptyState />
       ) : (
-        <div style={{ display: "grid", gap: "16px", marginTop: "20px" }}>
-          {quotes.map((quote) => (
-            <div
-              key={quote.id}
-              style={{
-                background: "white",
-                padding: "16px",
-                borderRadius: "12px",
-                border: "1px solid #ddd",
-              }}
-            >
-              <strong>{quote.vendor_name}</strong>
-              <p>Unit price: ${quote.unit_price}</p>
-              <p>Shipping: ${quote.shipping_cost}</p>
-              <p>Lead time: {quote.lead_time_days} day(s)</p>
-              <p>AI score: {quote.ai_score}</p>
-              <p>Status: {quote.status}</p>
-              {quote.recommendation && <p>Recommendation: {quote.recommendation}</p>}
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button
-                  onClick={() => approveQuote(quote)}
-                  style={{
-                    padding: "10px 14px",
-                    background: "black",
-                    color: "white",
-                    borderRadius: "6px",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Approve
-                </button>
-
-                <button
-                  onClick={() => rejectQuote(quote)}
-                  style={{
-                    padding: "10px 14px",
-                    background: "#ddd",
-                    color: "black",
-                    borderRadius: "6px",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
+        <div
+          style={{
+            display: "grid",
+            gap: "16px",
+          }}
+        >
+          {quotes.map((q) => (
+            <QuoteCard
+              key={q.id}
+              quote={q}
+              onApprove={() => approveQuote(q)}
+              onReject={() => rejectQuote(q.id)}
+            />
           ))}
         </div>
       )}
     </main>
+  );
+}
+
+/* ===================== COMPONENTS ===================== */
+
+function QuoteCard({
+  quote,
+  onApprove,
+  onReject,
+}: {
+  quote: any;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: "16px",
+        padding: "20px",
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+      }}
+    >
+      {/* TOP */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "start",
+          gap: "12px",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 800, fontSize: "18px" }}>
+            {quote.product_name}
+          </div>
+          <div style={{ color: "#6b7280", fontSize: "14px" }}>
+            Vendor: {quote.vendor_name}
+          </div>
+        </div>
+
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 800,
+          }}
+        >
+          ${quote.price}
+        </div>
+      </div>
+
+      {/* DETAILS */}
+      <div
+        style={{
+          marginTop: "12px",
+          display: "flex",
+          gap: "16px",
+          flexWrap: "wrap",
+          fontSize: "14px",
+          color: "#4b5563",
+        }}
+      >
+        <span>Qty: {quote.quantity}</span>
+        <span>Total: ${quote.price * quote.quantity}</span>
+      </div>
+
+      {/* LINK */}
+      {quote.product_url && (
+        <a
+          href={quote.product_url}
+          target="_blank"
+          style={{
+            display: "inline-block",
+            marginTop: "12px",
+            color: "#2563eb",
+            fontSize: "14px",
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          View Supplier →
+        </a>
+      )}
+
+      {/* ACTIONS */}
+      <div
+        style={{
+          marginTop: "16px",
+          display: "flex",
+          gap: "10px",
+        }}
+      >
+        <button
+          onClick={onApprove}
+          style={{
+            padding: "10px 14px",
+            background: "#16a34a",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Approve
+        </button>
+
+        <button
+          onClick={onReject}
+          style={{
+            padding: "10px 14px",
+            background: "#ef4444",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div
+      style={{
+        background: "white",
+        padding: "40px",
+        borderRadius: "16px",
+        border: "1px solid #e5e7eb",
+        textAlign: "center",
+        color: "#6b7280",
+      }}
+    >
+      <div style={{ fontSize: "18px", fontWeight: 700 }}>
+        No quotes pending approval
+      </div>
+      <p style={{ marginTop: "6px" }}>
+        Submit a request and let AI generate supplier quotes.
+      </p>
+    </div>
   );
 }
