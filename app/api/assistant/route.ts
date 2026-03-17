@@ -5,7 +5,6 @@ function parseItems(input: string) {
     .split(/[\n,]+/)
     .map((line) => {
       const cleaned = line.trim();
-
       const match = cleaned.match(/(.+?)(?:\s*[-x]\s*|\s+)(\d+)$/i);
 
       if (match) {
@@ -34,53 +33,26 @@ function enhanceSearch(term: string) {
   if (t.includes("clean")) return "industrial cleaning supplies bulk";
   if (t.includes("paper towel")) return "paper towels bulk commercial";
   if (t.includes("toilet paper")) return "toilet paper bulk commercial";
+  if (t.includes("trash bag")) return "heavy duty trash bags bulk";
 
   return term + " bulk wholesale";
 }
 
-function buildVendors(searchTerm: string) {
-  return [
-    {
-      vendor_name: "Amazon Business",
-      unit_price: 18,
-      shipping_cost: 5,
-      lead_time_days: 2,
-      ai_score: 92,
-      product_url: `https://www.amazon.com/s?k=${searchTerm}`,
-    },
-    {
-      vendor_name: "Uline",
-      unit_price: 21,
-      shipping_cost: 8,
-      lead_time_days: 3,
-      ai_score: 88,
-      product_url: `https://www.uline.com/Search?keywords=${searchTerm}`,
-    },
-    {
-      vendor_name: "Grainger",
-      unit_price: 20,
-      shipping_cost: 6,
-      lead_time_days: 2,
-      ai_score: 90,
-      product_url: `https://www.grainger.com/search?searchQuery=${searchTerm}`,
-    },
-    {
-      vendor_name: "Alibaba",
-      unit_price: 12,
-      shipping_cost: 15,
-      lead_time_days: 10,
-      ai_score: 75,
-      product_url: `https://www.alibaba.com/trade/search?SearchText=${searchTerm}`,
-    },
-    {
-      vendor_name: "Global Industrial",
-      unit_price: 19,
-      shipping_cost: 7,
-      lead_time_days: 4,
-      ai_score: 86,
-      product_url: `https://www.globalindustrial.com/searchResult?text=${searchTerm}`,
-    },
-  ];
+function estimateVendorPricing(name: string) {
+  const key = name.toLowerCase();
+
+  if (key.includes("amazon")) return { unit_price: 18, shipping_cost: 5, lead_time_days: 2 };
+  if (key.includes("uline")) return { unit_price: 21, shipping_cost: 8, lead_time_days: 3 };
+  if (key.includes("grainger")) return { unit_price: 20, shipping_cost: 6, lead_time_days: 2 };
+  if (key.includes("alibaba")) return { unit_price: 12, shipping_cost: 15, lead_time_days: 10 };
+  if (key.includes("global")) return { unit_price: 19, shipping_cost: 7, lead_time_days: 4 };
+  if (key.includes("staples")) return { unit_price: 22, shipping_cost: 4, lead_time_days: 2 };
+  if (key.includes("office depot")) return { unit_price: 23, shipping_cost: 5, lead_time_days: 3 };
+  if (key.includes("fastenal")) return { unit_price: 24, shipping_cost: 6, lead_time_days: 2 };
+  if (key.includes("msc")) return { unit_price: 25, shipping_cost: 7, lead_time_days: 3 };
+  if (key.includes("walmart")) return { unit_price: 17, shipping_cost: 6, lead_time_days: 3 };
+
+  return { unit_price: 20, shipping_cost: 6, lead_time_days: 3 };
 }
 
 export async function POST(req: Request) {
@@ -97,6 +69,18 @@ export async function POST(req: Request) {
     if (parsedItems.length === 0) {
       return new Response(JSON.stringify({ error: "No items provided." }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: vendors, error: vendorError } = await supabase
+      .from("vendor_sources")
+      .select("*")
+      .eq("active", true);
+
+    if (vendorError) {
+      return new Response(JSON.stringify({ error: vendorError.message }), {
+        status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -123,6 +107,7 @@ export async function POST(req: Request) {
       if (requestError) {
         results.push({
           item,
+          quantity,
           error: "Request error: " + requestError.message,
         });
         continue;
@@ -136,33 +121,33 @@ export async function POST(req: Request) {
 
       const searchTerm = encodeURIComponent(cleanTerm);
 
-      const vendors = buildVendors(searchTerm);
-
-      const quotes = vendors.map((v) => {
-        const total = v.unit_price * quantity + v.shipping_cost;
-        const status = total < 500 && v.ai_score >= 85 ? "approved" : "generated";
+      const quotesToInsert = (vendors || []).map((vendor: any) => {
+        const pricing = estimateVendorPricing(vendor.name);
+        const total = pricing.unit_price * quantity + pricing.shipping_cost;
+        const status = total < 500 && vendor.default_ai_score >= 85 ? "approved" : "generated";
 
         return {
           request_id: newRequest.id,
-          vendor_name: v.vendor_name,
-          unit_price: v.unit_price,
-          shipping_cost: v.shipping_cost,
-          lead_time_days: v.lead_time_days,
-          ai_score: v.ai_score,
+          vendor_name: vendor.name,
+          unit_price: pricing.unit_price,
+          shipping_cost: pricing.shipping_cost,
+          lead_time_days: pricing.lead_time_days,
+          ai_score: vendor.default_ai_score,
           recommendation: `AI searched: "${enhanced}"`,
           status,
-          product_url: v.product_url,
+          product_url: vendor.search_url_template.replace("{searchTerm}", searchTerm),
         };
       });
 
       const { data: insertedQuotes, error: quoteError } = await supabase
         .from("quote_options")
-        .insert(quotes)
+        .insert(quotesToInsert)
         .select();
 
       if (quoteError) {
         results.push({
           item,
+          quantity,
           error: "Quote error: " + quoteError.message,
         });
         continue;
@@ -170,12 +155,12 @@ export async function POST(req: Request) {
 
       const evaluated = (insertedQuotes || []).map((q: any) => {
         const total =
-          Number(q.unit_price) * quantity + Number(q.shipping_cost);
+          Number(q.unit_price || 0) * quantity + Number(q.shipping_cost || 0);
 
         const score =
           (100 - total) +
-          (100 - q.lead_time_days * 5) +
-          q.ai_score;
+          (100 - Number(q.lead_time_days || 0) * 5) +
+          Number(q.ai_score || 0);
 
         return { ...q, total, score };
       });
@@ -186,6 +171,7 @@ export async function POST(req: Request) {
       results.push({
         item,
         quantity,
+        request_id: newRequest.id,
         best_quote: {
           vendor_name: best.vendor_name,
           total: best.total,
@@ -201,7 +187,6 @@ export async function POST(req: Request) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-
   } catch {
     return new Response(JSON.stringify({ error: "Invalid request" }), {
       status: 400,
