@@ -45,6 +45,25 @@ export default async function QuotesPage() {
               <p>AI score: {quote.ai_score}</p>
               <p>Status: {quote.status}</p>
               {quote.recommendation && <p>Recommendation: {quote.recommendation}</p>}
+
+              {quote.product_url && (
+                <a
+                  href={quote.product_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: "inline-block",
+                    marginTop: "8px",
+                    padding: "8px 12px",
+                    background: "#2563eb",
+                    color: "white",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                  }}
+                >
+                  Open Vendor
+                </a>
+              )}
             </div>
           ))}
         </div>
