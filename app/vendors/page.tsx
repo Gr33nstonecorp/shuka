@@ -1,76 +1,25 @@
-export default function VendorsPage() {
-  const vendors = [
-    {
-      name: "Amazon Business",
-      type: "Marketplace",
-      integration: "Search Redirect",
-      categories: "General supplies, PPE, labels, packaging",
-      status: "Preferred",
-    },
-    {
-      name: "Uline",
-      type: "Direct Supplier",
-      integration: "Search Redirect",
-      categories: "Packaging, shipping, warehouse supplies",
-      status: "Approved",
-    },
-    {
-      name: "Grainger",
-      type: "Industrial Supplier",
-      integration: "Search Redirect",
-      categories: "Safety, tools, maintenance",
-      status: "Approved",
-    },
-    {
-      name: "Alibaba",
-      type: "Wholesale Marketplace",
-      integration: "Search Redirect",
-      categories: "Bulk goods, industrial, packaging",
-      status: "Experimental",
-    },
-    {
-      name: "Global Industrial",
-      type: "Industrial Supplier",
-      integration: "Search Redirect",
-      categories: "Warehouse, storage, facility supplies",
-      status: "Approved",
-    },
-    {
-      name: "Staples Business",
-      type: "Office Supplier",
-      integration: "Search Redirect",
-      categories: "Office, labels, paper, supplies",
-      status: "Approved",
-    },
-    {
-      name: "Office Depot",
-      type: "Office Supplier",
-      integration: "Search Redirect",
-      categories: "Office supplies, cleaning, furniture",
-      status: "Approved",
-    },
-    {
-      name: "Fastenal",
-      type: "Industrial Supplier",
-      integration: "Search Redirect",
-      categories: "Fasteners, tools, safety, industrial",
-      status: "Approved",
-    },
-    {
-      name: "MSC Industrial",
-      type: "Industrial Distributor",
-      integration: "Search Redirect",
-      categories: "Industrial parts, tools, maintenance",
-      status: "Approved",
-    },
-    {
-      name: "Walmart Business",
-      type: "Retail / Marketplace",
-      integration: "Search Redirect",
-      categories: "General supplies, janitorial, bulk basics",
-      status: "Experimental",
-    },
-  ];
+import { createClient } from "@supabase/supabase-js";
+
+export default async function VendorsPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: vendors, error } = await supabase
+    .from("vendor_sources")
+    .select("*")
+    .eq("active", true)
+    .order("default_ai_score", { ascending: false });
+
+  if (error) {
+    return (
+      <main>
+        <h1>Vendor Sources</h1>
+        <p>Error loading vendors: {error.message}</p>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -79,14 +28,14 @@ export default function VendorsPage() {
           Vendor Sources
         </h1>
         <p style={{ color: "#6b7280" }}>
-          Supplier sources currently used by Shuka for quote generation and vendor handoff.
+          Supplier sources currently available to Shuka.
         </p>
       </div>
 
       <div style={{ display: "grid", gap: "16px" }}>
-        {vendors.map((vendor) => (
+        {(vendors || []).map((vendor: any) => (
           <div
-            key={vendor.name}
+            key={vendor.id}
             style={{
               background: "white",
               padding: "20px",
@@ -112,21 +61,11 @@ export default function VendorsPage() {
                   borderRadius: "999px",
                   fontSize: "12px",
                   fontWeight: 700,
-                  background:
-                    vendor.status === "Preferred"
-                      ? "#dcfce7"
-                      : vendor.status === "Approved"
-                      ? "#dbeafe"
-                      : "#fef3c7",
-                  color:
-                    vendor.status === "Preferred"
-                      ? "#166534"
-                      : vendor.status === "Approved"
-                      ? "#1d4ed8"
-                      : "#92400e",
+                  background: "#dbeafe",
+                  color: "#1d4ed8",
                 }}
               >
-                {vendor.status}
+                {vendor.vendor_type}
               </span>
             </div>
 
@@ -139,18 +78,13 @@ export default function VendorsPage() {
               }}
             >
               <div>
-                <div style={{ color: "#6b7280", fontSize: "13px" }}>Type</div>
-                <div style={{ fontWeight: 700 }}>{vendor.type}</div>
+                <div style={{ color: "#6b7280", fontSize: "13px" }}>Category</div>
+                <div style={{ fontWeight: 700 }}>{vendor.category}</div>
               </div>
               <div>
-                <div style={{ color: "#6b7280", fontSize: "13px" }}>Integration</div>
-                <div style={{ fontWeight: 700 }}>{vendor.integration}</div>
+                <div style={{ color: "#6b7280", fontSize: "13px" }}>Default AI Score</div>
+                <div style={{ fontWeight: 700 }}>{vendor.default_ai_score}</div>
               </div>
-            </div>
-
-            <div style={{ marginTop: "14px" }}>
-              <div style={{ color: "#6b7280", fontSize: "13px" }}>Categories</div>
-              <div style={{ fontWeight: 700 }}>{vendor.categories}</div>
             </div>
           </div>
         ))}
