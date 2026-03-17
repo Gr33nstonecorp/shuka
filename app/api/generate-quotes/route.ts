@@ -11,7 +11,12 @@ export async function POST(req: Request) {
 
     const { request_id, product_name, quantity } = body;
 
-    const searchTerm = encodeURIComponent(product_name || "product");
+    const cleanTerm = (product_name || "product")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .trim();
+
+    const searchTerm = encodeURIComponent(cleanTerm);
 
     const vendors = [
       {
@@ -28,7 +33,7 @@ export async function POST(req: Request) {
         shipping_cost: 8,
         lead_time_days: 3,
         ai_score: 88,
-        product_url: `https://www.uline.com/Cls_04/Boxes-Corrugated?keywords=${searchTerm}`,
+        product_url: `https://www.uline.com/Search?keywords=${searchTerm}`,
       },
       {
         vendor_name: "Alibaba",
@@ -37,6 +42,14 @@ export async function POST(req: Request) {
         lead_time_days: 10,
         ai_score: 75,
         product_url: `https://www.alibaba.com/trade/search?SearchText=${searchTerm}`,
+      },
+      {
+        vendor_name: "Grainger",
+        unit_price: 20,
+        shipping_cost: 6,
+        lead_time_days: 2,
+        ai_score: 90,
+        product_url: `https://www.grainger.com/search?searchQuery=${searchTerm}`,
       },
     ];
 
