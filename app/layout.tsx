@@ -34,9 +34,6 @@ export default function RootLayout({
       >
         <nav
           style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 50,
             padding: "16px 24px",
             background: "#111827",
             borderBottom: "1px solid #1f2937",
@@ -72,6 +69,9 @@ export default function RootLayout({
           <Link href="/orders" style={navLinkStyle}>
             Orders
           </Link>
+          <Link href="/saved-items" style={navLinkStyle}>
+            Saved Items
+          </Link>
           <Link href="/shipments" style={navLinkStyle}>
             Shipments
           </Link>
@@ -80,6 +80,9 @@ export default function RootLayout({
           </Link>
           <Link href="/assistant" style={navLinkStyle}>
             AI Assistant
+          </Link>
+          <Link href="/profile" style={navLinkStyle}>
+            Profile
           </Link>
 
           <div
