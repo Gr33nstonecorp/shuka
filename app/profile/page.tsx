@@ -115,12 +115,67 @@ export default function ProfilePage() {
           boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>Coming next</h2>
-        <p style={{ margin: 0, color: "#4b5563", lineHeight: 1.6 }}>
-          Preferred vendors, company settings, auto-approval thresholds, and saved
-          reorder templates will live here.
-        </p>
+        <RecentOrders />
       </div>
     </main>
+  );
+}
+function RecentOrders() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const [orders, setOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from("purchase_orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      setOrders(data || []);
+    }
+
+    load();
+  }, []);
+
+  return (
+    <div
+      style={{
+        marginTop: "24px",
+        background: "white",
+        border: "1px solid #e5e7eb",
+        borderRadius: "16px",
+        padding: "22px",
+        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+      }}
+    >
+      <h2 style={{ marginTop: 0 }}>Recent Orders</h2>
+
+      {orders.length === 0 ? (
+        <p style={{ color: "#6b7280" }}>No recent orders.</p>
+      ) : (
+        <div style={{ display: "grid", gap: "10px" }}>
+          {orders.map((o) => (
+            <div
+              key={o.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "10px 12px",
+                background: "#f9fafb",
+                borderRadius: "8px",
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>{o.vendor_name}</span>
+              <span>${Number(o.total_amount).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
