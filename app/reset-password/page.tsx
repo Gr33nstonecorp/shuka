@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -10,57 +11,148 @@ const supabase = createClient(
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("Checking reset link...");
+  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-  const hash = window.location.hash;
+    async function init() {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
 
-  if (hash) {
-    const params = new URLSearchParams(hash.substring(1));
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
+          if (error) {
+            setMessage("Reset link is invalid or expired: " + error.message);
+            setReady(false);
+            return;
+          }
+        }
 
-    if (access_token && refresh_token) {
-      supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      });
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          setMessage("Auth session missing. Open the reset link directly from your email again.");
+          setReady(false);
+          return;
+        }
+
+        setMessage("");
+        setReady(true);
+      } catch (err) {
+        setMessage("Could not process reset link.");
+        setReady(false);
+      }
     }
-  }
-}, []);
 
-  const handleReset = async () => {
+    init();
+  }, []);
+
+  async function handleUpdatePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
     const { error } = await supabase.auth.updateUser({
       password,
     });
 
     if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("✅ Password updated!");
+      setMessage("Password reset failed: " + error.message);
+      setLoading(false);
+      return;
     }
-  };
+
+    setMessage("✅ Password updated. You can now log in.");
+    setLoading(false);
+  }
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Reset Password</h1>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f3f4f6",
+        padding: "24px",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "460px",
+          background: "white",
+          borderRadius: "16px",
+          padding: "28px",
+          border: "1px solid #ddd",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Reset Password</h1>
+        <p style={{ color: "#555", marginTop: 0 }}>
+          Enter your new password below.
+        </p>
 
-      <input
-        type="password"
-        placeholder="New password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ padding: 10, marginTop: 10 }}
-      />
+        <form onSubmit={handleUpdatePassword} style={{ display: "grid", gap: "12px", marginTop: "18px" }}>
+          <input
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            disabled={!ready || loading}
+            style={{
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+            }}
+          />
 
-      <br /><br />
+          <button
+            type="submit"
+            disabled={!ready || loading}
+            style={{
+              padding: "12px",
+              background: "#111827",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: ready && !loading ? "pointer" : "not-allowed",
+              fontWeight: "bold",
+              opacity: ready && !loading ? 1 : 0.6,
+            }}
+          >
+            {loading ? "Updating..." : "Update Password"}
+          </button>
+        </form>
 
-      <button onClick={handleReset} style={{ padding: 10 }}>
-        Update Password
-      </button>
+        {message && (
+          <p style={{ marginTop: "16px", color: "#333", whiteSpace: "pre-wrap" }}>
+            {message}
+          </p>
+        )}
 
-      <p>{message}</p>
-    </div>
+        <div style={{ marginTop: "16px" }}>
+          <Link
+            href="/login"
+            style={{
+              fontSize: "13px",
+              color: "#2563eb",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            Back to login
+          </Link>
+        </div>
+      </div>
+    </main>
   );
 }
