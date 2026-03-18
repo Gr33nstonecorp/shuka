@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
@@ -36,17 +36,16 @@ function getPlanLabel(profile: ProfileRow | null) {
 
 export default function AppNavbar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<ProfileRow | null>(null);
 
   useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     let mounted = true;
 
     async function loadUserAndProfile() {
@@ -81,7 +80,6 @@ export default function AppNavbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const user = session?.user;
-
       setEmail(user?.email || "");
 
       if (!user) {
@@ -102,12 +100,16 @@ export default function AppNavbar() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   async function handleLogout() {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     await supabase.auth.signOut();
-    router.replace("/login");
-    router.refresh();
+    window.location.href = "/login";
   }
 
   const links = [
