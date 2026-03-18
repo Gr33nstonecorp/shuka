@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { usePathname, useRouter } from "next/navigation";
 
-export default function AuthGate({ children }: { children: React.ReactNode }) {
+export default function AuthGate({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
@@ -13,26 +21,62 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    let mounted = true;
+
     async function checkUser() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
+      if (!mounted) return;
+
       setUser(user);
       setLoading(false);
+
+      if (!user && pathname !== "/login") {
+        router.replace("/login");
+      }
+
+      if (user && pathname === "/login") {
+        router.replace("/");
+      }
     }
 
     checkUser();
-  }, []);
 
-  if (loading) return <div>Loading...</div>;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+
+      if (!nextUser && pathname !== "/login") {
+        router.replace("/login");
+      }
+
+      if (nextUser && pathname === "/login") {
+        router.replace("/");
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [pathname, router, supabase]);
+
+  if (loading) {
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>Loading...</div>
+    );
+  }
+
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
 
   if (!user) {
-    return (
-      <div style={{ padding: "40px", textAlign: "center" }}>
-        <h2>Please log in to continue</h2>
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;
