@@ -11,7 +11,7 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [mode, setMode] = useState<Mode>("magic");
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -63,7 +63,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -74,9 +74,14 @@ export default function LoginPage() {
       return;
     }
 
-    setMessage(
-      "Account created. Check your email if confirmation is required, then log in."
-    );
+    if (data.user) {
+      setMessage("Account created. You can now log in with your password.");
+      setMode("login");
+      setPassword("");
+    } else {
+      setMessage("Account created. Try logging in.");
+    }
+
     setLoading(false);
   }
 
@@ -104,7 +109,7 @@ export default function LoginPage() {
       >
         <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Login to Shuka</h1>
         <p style={{ color: "#555", marginTop: 0 }}>
-          Use a magic link or sign in with email and password.
+          Sign in with email and password, or use a magic link.
         </p>
 
         <div
@@ -117,11 +122,6 @@ export default function LoginPage() {
           }}
         >
           <TabButton
-            active={mode === "magic"}
-            onClick={() => setMode("magic")}
-            label="Magic Link"
-          />
-          <TabButton
             active={mode === "login"}
             onClick={() => setMode("login")}
             label="Password Login"
@@ -131,24 +131,12 @@ export default function LoginPage() {
             onClick={() => setMode("signup")}
             label="Sign Up"
           />
+          <TabButton
+            active={mode === "magic"}
+            onClick={() => setMode("magic")}
+            label="Magic Link"
+          />
         </div>
-
-        {mode === "magic" && (
-          <form onSubmit={handleMagicLink} style={{ display: "grid", gap: "12px" }}>
-            <input
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={inputStyle}
-            />
-
-            <button type="submit" disabled={loading} style={primaryButtonStyle}>
-              {loading ? "Sending..." : "Send Magic Link"}
-            </button>
-          </form>
-        )}
 
         {mode === "login" && (
           <form onSubmit={handlePasswordLogin} style={{ display: "grid", gap: "12px" }}>
@@ -171,7 +159,7 @@ export default function LoginPage() {
             />
 
             <button type="submit" disabled={loading} style={primaryButtonStyle}>
-              {loading ? "Logging in..." : "Login with Password"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
         )}
@@ -199,6 +187,23 @@ export default function LoginPage() {
 
             <button type="submit" disabled={loading} style={primaryButtonStyle}>
               {loading ? "Creating..." : "Create Account"}
+            </button>
+          </form>
+        )}
+
+        {mode === "magic" && (
+          <form onSubmit={handleMagicLink} style={{ display: "grid", gap: "12px" }}>
+            <input
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={inputStyle}
+            />
+
+            <button type="submit" disabled={loading} style={primaryButtonStyle}>
+              {loading ? "Sending..." : "Send Magic Link"}
             </button>
           </form>
         )}
