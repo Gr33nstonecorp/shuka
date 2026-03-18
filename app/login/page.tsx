@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 
@@ -157,6 +158,20 @@ export default function LoginPage() {
               required
               style={inputStyle}
             />
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Link
+                href="/forgot-password"
+                style={{
+                  fontSize: "13px",
+                  color: "#2563eb",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Forgot password?
+              </Link>
+            </div>
 
             <button type="submit" disabled={loading} style={primaryButtonStyle}>
               {loading ? "Logging in..." : "Login"}
