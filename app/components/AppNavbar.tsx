@@ -5,6 +5,35 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  plan: string | null;
+  trial_ends_at: string | null;
+};
+
+function getPlanLabel(profile: ProfileRow | null) {
+  if (!profile) return "";
+
+  const plan = (profile.plan || "trial").toLowerCase();
+
+  if (plan === "premium") return "Premium";
+  if (plan === "starter") return "Starter";
+
+  if (plan === "trial") {
+    if (!profile.trial_ends_at) return "Trial";
+
+    const now = new Date();
+    const end = new Date(profile.trial_ends_at);
+    const diffMs = end.getTime() - now.getTime();
+    const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+    return `Trial · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+  }
+
+  return plan;
+}
+
 export default function AppNavbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -15,25 +44,58 @@ export default function AppNavbar() {
   );
 
   const [email, setEmail] = useState("");
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadUser() {
+    async function loadUserAndProfile() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
+      const user = session?.user;
+
       if (!mounted) return;
-      setEmail(session?.user?.email || "");
+
+      setEmail(user?.email || "");
+
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, plan, trial_ends_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+      setProfile((data as ProfileRow | null) || null);
     }
 
-    loadUser();
+    loadUserAndProfile();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user?.email || "");
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user;
+
+      setEmail(user?.email || "");
+
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, plan, trial_ends_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      setProfile((data as ProfileRow | null) || null);
     });
 
     return () => {
@@ -60,6 +122,8 @@ export default function AppNavbar() {
     ["AI", "/assistant"],
     ["Profile", "/profile"],
   ] as const;
+
+  const planLabel = getPlanLabel(profile);
 
   return (
     <nav
@@ -137,18 +201,69 @@ export default function AppNavbar() {
         >
           {email ? (
             <>
-              <span
+              <div
                 style={{
-                  color: "#9ca3af",
-                  fontSize: "12px",
-                  maxWidth: "160px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  lineHeight: 1.2,
                 }}
-                title={email}
               >
-                {email}
-              </span>
+                <span
+                  style={{
+                    color: "#9ca3af",
+                    fontSize: "12px",
+                    maxWidth: "160px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                  title={email}
+                >
+                  {email}
+                </span>
+
+                {planLabel && (
+                  <span
+                    style={{
+                      marginTop: "4px",
+                      display: "inline-block",
+                      padding: "4px 8px",
+                      borderRadius: "999px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      background:
+                        profile?.plan === "premium"
+                          ? "#dcfce7"
+                          : profile?.plan === "starter"
+                          ? "#dbeafe"
+                          : "#fef3c7",
+                      color:
+                        profile?.plan === "premium"
+                          ? "#166534"
+                          : profile?.plan === "starter"
+                          ? "#1d4ed8"
+                          : "#92400e",
+                    }}
+                  >
+                    {planLabel}
+                  </span>
+                )}
+              </div>
+
+              <Link
+                href="/pricing"
+                style={{
+                  color: "white",
+                  textDecoration: "none",
+                  fontSize: "12px",
+                  background: "#2563eb",
+                  padding: "6px 10px",
+                  borderRadius: "8px",
+                  fontWeight: 700,
+                }}
+              >
+                Upgrade
+              </Link>
 
               <button
                 onClick={handleLogout}
