@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,40 +16,50 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function init() {
-      try {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
+    let mounted = true;
 
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-          if (error) {
-            setMessage("Reset link is invalid or expired: " + error.message);
-            setReady(false);
-            return;
-          }
-        }
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          setMessage("Auth session missing. Open the reset link directly from your email again.");
-          setReady(false);
-          return;
-        }
-
-        setMessage("");
+      if (event === "PASSWORD_RECOVERY") {
         setReady(true);
-      } catch (err) {
-        setMessage("Could not process reset link.");
-        setReady(false);
+        setMessage("");
+        return;
       }
+
+      if (session) {
+        setReady(true);
+        setMessage("");
+      }
+    });
+
+    async function checkExistingSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (session) {
+        setReady(true);
+        setMessage("");
+        return;
+      }
+
+      setReady(false);
+      setMessage(
+        "Open the newest reset link directly from your email, then set your new password here."
+      );
     }
 
-    init();
+    checkExistingSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function handleUpdatePassword(e: React.FormEvent) {
@@ -98,7 +108,10 @@ export default function ResetPasswordPage() {
           Enter your new password below.
         </p>
 
-        <form onSubmit={handleUpdatePassword} style={{ display: "grid", gap: "12px", marginTop: "18px" }}>
+        <form
+          onSubmit={handleUpdatePassword}
+          style={{ display: "grid", gap: "12px", marginTop: "18px" }}
+        >
           <input
             type="password"
             placeholder="New password"
