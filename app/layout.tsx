@@ -13,10 +13,7 @@ export default function RootLayout({
       <body>
         <AppNavbar />
 
-        <AuthGate>
-          <EnsureProfile />
-          {children}
-        </AuthGate>
+       <AuthGate>{children}</AuthGate> 
       </body>
     </html>
   );
