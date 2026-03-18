@@ -13,19 +13,22 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.replace("#", ""));
-      const access_token = params.get("access_token");
+  const hash = window.location.hash;
 
-      if (access_token) {
-        supabase.auth.setSession({
-          access_token,
-          refresh_token: access_token,
-        });
-      }
+  if (hash) {
+    const params = new URLSearchParams(hash.substring(1));
+
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+
+    if (access_token && refresh_token) {
+      supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
     }
-  }, []);
+  }
+}, []);
 
   const handleReset = async () => {
     const { error } = await supabase.auth.updateUser({
