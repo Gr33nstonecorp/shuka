@@ -1,76 +1,38 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 
-export default function AuthGate({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthGate({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const pathname = usePathname();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [signedIn, setSignedIn] = useState(false);
-
   useEffect(() => {
-    let mounted = true;
-
     async function checkUser() {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!mounted) return;
-
-      const isSignedIn = !!session;
-      setSignedIn(isSignedIn);
+      setUser(user);
       setLoading(false);
-
-      if (!isSignedIn && pathname !== "/login") {
-        router.replace("/login");
-      }
-
-      if (isSignedIn && pathname === "/login") {
-        router.replace("/");
-      }
     }
 
     checkUser();
+  }, []);
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const isSignedIn = !!session;
-      setSignedIn(isSignedIn);
+  if (loading) return <div>Loading...</div>;
 
-      if (!isSignedIn && pathname !== "/login") {
-        router.replace("/login");
-      }
-
-      if (isSignedIn && pathname === "/login") {
-        router.replace("/");
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [pathname, router, supabase]);
-
-  if (loading && pathname !== "/login") {
-    return <main style={{ padding: "32px" }}>Loading...</main>;
-  }
-
-  if (!signedIn && pathname !== "/login") {
-    return null;
+  if (!user) {
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <h2>Please log in to continue</h2>
+      </div>
+    );
   }
 
   return <>{children}</>;
