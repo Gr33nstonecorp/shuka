@@ -13,7 +13,7 @@ type ProfileRow = {
 };
 
 function getPlanLabel(profile: ProfileRow | null) {
-  if (!profile) return "";
+  if (!profile) return "Trial";
 
   const plan = (profile.plan || "trial").toLowerCase();
 
@@ -36,16 +36,15 @@ function getPlanLabel(profile: ProfileRow | null) {
 
 export default function AppNavbar() {
   const pathname = usePathname();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<ProfileRow | null>(null);
 
   useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
     let mounted = true;
 
     async function loadUserAndProfile() {
@@ -100,14 +99,9 @@ export default function AppNavbar() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   async function handleLogout() {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
@@ -224,32 +218,30 @@ export default function AppNavbar() {
                   {email}
                 </span>
 
-                {planLabel && (
-                  <span
-                    style={{
-                      marginTop: "4px",
-                      display: "inline-block",
-                      padding: "4px 8px",
-                      borderRadius: "999px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      background:
-                        profile?.plan === "premium"
-                          ? "#dcfce7"
-                          : profile?.plan === "starter"
-                          ? "#dbeafe"
-                          : "#fef3c7",
-                      color:
-                        profile?.plan === "premium"
-                          ? "#166534"
-                          : profile?.plan === "starter"
-                          ? "#1d4ed8"
-                          : "#92400e",
-                    }}
-                  >
-                    {planLabel}
-                  </span>
-                )}
+                <span
+                  style={{
+                    marginTop: "4px",
+                    display: "inline-block",
+                    padding: "4px 8px",
+                    borderRadius: "999px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    background:
+                      profile?.plan === "premium"
+                        ? "#dcfce7"
+                        : profile?.plan === "starter"
+                        ? "#dbeafe"
+                        : "#fef3c7",
+                    color:
+                      profile?.plan === "premium"
+                        ? "#166534"
+                        : profile?.plan === "starter"
+                        ? "#1d4ed8"
+                        : "#92400e",
+                  }}
+                >
+                  {planLabel}
+                </span>
               </div>
 
               <Link
