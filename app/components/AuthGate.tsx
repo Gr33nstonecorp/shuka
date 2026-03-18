@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 
+const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
+
 export default function AuthGate({
   children,
 }: {
@@ -11,59 +13,73 @@ export default function AuthGate({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   useEffect(() => {
-    let mounted = true;
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-    async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    let active = true;
 
-      if (!mounted) return;
+    async function checkAuth() {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      setUser(user);
-      setLoading(false);
+        if (!active) return;
 
-      if (!user && pathname !== "/login") {
-        router.replace("/login");
-      }
+        if (error) {
+          console.error("AuthGate session error:", error.message);
+        }
 
-      if (user && pathname === "/login") {
-        router.replace("/");
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+
+        const isPublic = PUBLIC_ROUTES.includes(pathname);
+
+        if (!nextUser && !isPublic) {
+          router.replace("/login");
+        } else if (nextUser && pathname === "/login") {
+          router.replace("/");
+        }
+      } catch (err) {
+        console.error("AuthGate unexpected error:", err);
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
-    checkUser();
+    checkAuth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUser = session?.user ?? null;
       setUser(nextUser);
 
-      if (!nextUser && pathname !== "/login") {
-        router.replace("/login");
-      }
+      const isPublic = PUBLIC_ROUTES.includes(pathname);
 
-      if (nextUser && pathname === "/login") {
+      if (!nextUser && !isPublic) {
+        router.replace("/login");
+      } else if (nextUser && pathname === "/login") {
         router.replace("/");
       }
+
+      setLoading(false);
     });
 
     return () => {
-      mounted = false;
+      active = false;
       subscription.unsubscribe();
     };
-  }, [pathname, router, supabase]);
+  }, [pathname, router]);
+
+  const isPublic = PUBLIC_ROUTES.includes(pathname);
 
   if (loading) {
     return (
@@ -71,7 +87,7 @@ export default function AuthGate({
     );
   }
 
-  if (pathname === "/login") {
+  if (isPublic) {
     return <>{children}</>;
   }
 
