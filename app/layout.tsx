@@ -1,6 +1,7 @@
 import "./globals.css";
 import AuthGate from "./components/AuthGate";
 import AppNavbar from "./components/AppNavbar";
+import EnsureProfile from "./components/EnsureProfile";
 
 export const metadata = {
   title: "Shuka",
@@ -32,7 +33,10 @@ export default function RootLayout({
             padding: "24px",
           }}
         >
-          <AuthGate>{children}</AuthGate>
+          <AuthGate>
+            <EnsureProfile />
+            {children}
+          </AuthGate>
         </div>
       </body>
     </html>
