@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    setMessage("Check your email for the password reset link.");
+    setMessage("Reset email sent. Check your inbox and spam folder.");
     setLoading(false);
   }
 
@@ -55,9 +55,9 @@ export default function ForgotPasswordPage() {
           boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
         }}
       >
-        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Reset password</h1>
+        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Forgot password</h1>
         <p style={{ color: "#555", marginTop: 0 }}>
-          Enter your email and we’ll send you a reset link.
+          Enter your email and we’ll send a password reset link.
         </p>
 
         <form onSubmit={handleReset} style={{ display: "grid", gap: "12px", marginTop: "18px" }}>
@@ -67,11 +67,28 @@ export default function ForgotPasswordPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={inputStyle}
+            style={{
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+            }}
           />
 
-          <button type="submit" disabled={loading} style={primaryButtonStyle}>
-            {loading ? "Sending..." : "Send Reset Link"}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: "12px",
+              background: "#111827",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            {loading ? "Sending..." : "Send Reset Email"}
           </button>
         </form>
 
@@ -98,20 +115,3 @@ export default function ForgotPasswordPage() {
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "12px",
-  borderRadius: "8px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-};
-
-const primaryButtonStyle: React.CSSProperties = {
-  padding: "12px",
-  background: "#111827",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
