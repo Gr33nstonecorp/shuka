@@ -1,12 +1,7 @@
 import "./globals.css";
 import AuthGate from "./components/AuthGate";
-import AppNavbar from "./components/AppNavbar";
 import EnsureProfile from "./components/EnsureProfile";
-
-export const metadata = {
-  title: "Shuka",
-  description: "AI procurement control layer",
-};
+import AppNavbar from "./components/AppNavbar";
 
 export default function RootLayout({
   children,
@@ -15,29 +10,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily:
-            'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-          background: "#f8fafc",
-          color: "#111827",
-        }}
-      >
+      <body>
         <AppNavbar />
 
-        <div
-          style={{
-            maxWidth: "1400px",
-            margin: "0 auto",
-            padding: "24px",
-          }}
-        >
-          <AuthGate>
-            <EnsureProfile />
-            {children}
-          </AuthGate>
-        </div>
+        <AuthGate>
+          <EnsureProfile />
+          {children}
+        </AuthGate>
       </body>
     </html>
   );
