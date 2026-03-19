@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 
-type Mode = "magic" | "login" | "signup";
+type Mode = "login" | "signup" | "magic";
 
 export default function LoginPage() {
   const supabase = createClient(
@@ -18,35 +18,13 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
-      setMessage("Magic link failed: " + error.message);
-      setLoading(false);
-      return;
-    }
-
-    setMessage("Check your email for the login link.");
-    setLoading(false);
-  }
-
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -65,8 +43,11 @@ export default function LoginPage() {
     setMessage("");
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
+      options: {
+        emailRedirectTo: "https://www.shukai.co/",
+      },
     });
 
     if (error) {
@@ -75,14 +56,38 @@ export default function LoginPage() {
       return;
     }
 
-    if (data.user) {
-      setMessage("Account created. You can now log in with your password.");
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setMessage("An account with this email already exists. Try Password Login instead.");
       setMode("login");
-      setPassword("");
-    } else {
-      setMessage("Account created. Try logging in.");
+      setLoading(false);
+      return;
     }
 
+    setMessage("Account created. You can now log in with your password.");
+    setMode("login");
+    setPassword("");
+    setLoading(false);
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: "https://www.shukai.co/",
+      },
+    });
+
+    if (error) {
+      setMessage("Magic link failed: " + error.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage("Check your email for the magic link.");
     setLoading(false);
   }
 
@@ -108,9 +113,9 @@ export default function LoginPage() {
           boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
         }}
       >
-        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Login to Shuka</h1>
+        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Login to Shukai</h1>
         <p style={{ color: "#555", marginTop: 0 }}>
-          Sign in with email and password, or use a magic link.
+          Sign in with your password, create an account, or use a magic link.
         </p>
 
         <div
@@ -147,6 +152,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               style={inputStyle}
             />
 
@@ -156,6 +162,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               style={inputStyle}
             />
 
@@ -187,6 +194,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               style={inputStyle}
             />
 
@@ -197,6 +205,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete="new-password"
               style={inputStyle}
             />
 
@@ -214,6 +223,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               style={inputStyle}
             />
 
