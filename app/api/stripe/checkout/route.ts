@@ -2,7 +2,7 @@ import Stripe from "stripe";
 
 export async function POST(req: Request) {
   try {
-    const { plan } = await req.json();
+    const { plan, email } = await req.json();
 
     const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -37,14 +37,18 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: email || undefined,
+      metadata: {
+        plan,
+        email: email || "",
+      },
       subscription_data: {
         trial_period_days: 7,
+        metadata: {
+          plan,
+          email: email || "",
+        },
       },
       success_url: `${siteUrl}/pricing?checkout=success`,
       cancel_url: `${siteUrl}/pricing?checkout=cancel`,
