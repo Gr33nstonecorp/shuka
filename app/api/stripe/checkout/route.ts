@@ -5,9 +5,10 @@ export async function POST(req: Request) {
     const { plan } = await req.json();
 
     const secretKey = process.env.STRIPE_SECRET_KEY;
+
     if (!secretKey) {
       return new Response(
-        JSON.stringify({ error: "Missing STRIPE_SECRET_KEY in environment variables." }),
+        JSON.stringify({ error: "Missing STRIPE_SECRET_KEY" }),
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
 
     if (!priceId) {
       return new Response(
-        JSON.stringify({ error: `Missing price ID for plan: ${plan}` }),
+        JSON.stringify({ error: `Missing price ID for ${plan}` }),
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     return new Response(
-      JSON.stringify({ error: error.message || "Stripe checkout creation failed." }),
+      JSON.stringify({ error: error.message || "Stripe checkout failed" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
