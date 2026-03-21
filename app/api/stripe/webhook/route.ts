@@ -1,14 +1,13 @@
 import Stripe from "stripe";
-import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const sig = headers().get("stripe-signature")!;
+  const sig = req.headers.get("stripe-signature")!;
 
-  let event;
+  let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -25,7 +24,6 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // ✅ HANDLE SUCCESSFUL CHECKOUT
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
 
@@ -37,7 +35,7 @@ export async function POST(req: Request) {
       await supabase
         .from("profiles")
         .update({
-          plan: "starter", // or "premium" later
+          plan: "starter",
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
         })
@@ -45,7 +43,6 @@ export async function POST(req: Request) {
     }
   }
 
-  // ✅ HANDLE SUBSCRIPTION CREATED
   if (event.type === "customer.subscription.created") {
     const subscription = event.data.object as any;
 
