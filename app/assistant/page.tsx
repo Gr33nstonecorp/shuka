@@ -1,254 +1,209 @@
 "use client";
 
-import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-type AssistantResult = {
-  item: string;
-  request_id?: string;
-  error?: string;
-  best_quote?: {
-    vendor_name: string;
-    total: number;
-    lead_time_days: number;
-    ai_score: number;
-    product_url: string;
-    status: string;
-  };
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  plan: string | null;
 };
 
-type ChatMessage =
-  | { role: "user"; content: string }
-  | { role: "ai"; results: AssistantResult[] }
-  | { role: "ai"; content: string };
-
 export default function AssistantPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [results, setResults] = useState<any[]>([]);
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSend() {
-    if (!input.trim()) return;
+  useEffect(() => {
+    async function loadProfile() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    const userText = input;
-    setMessages((prev) => [...prev, { role: "user", content: userText }]);
-    setInput("");
-    setLoading(true);
+      const user = session?.user;
+      if (!user) return;
 
-    try {
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ input: userText }),
-      });
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, plan")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "ai", content: data.error || "Something went wrong." },
-        ]);
-        setLoading(false);
-        return;
-      }
-
-      setMessages((prev) => [...prev, { role: "ai", results: data.results || [] }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          content: "Something went wrong while processing your request.",
-        },
-      ]);
+      setProfile((data as ProfileRow | null) || null);
     }
 
+    loadProfile();
+  }, [supabase]);
+
+  const isPremium = profile?.plan === "premium";
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setResults([]);
+
+    if (!isPremium) {
+      setMessage(
+        "Premium required for advanced AI sourcing. Upgrade to unlock multi-item smart sourcing."
+      );
+      setLoading(false);
+      return;
+    }
+
+    const res = await fetch("/api/assistant", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ input }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setMessage(data.error || "AI request failed.");
+      setLoading(false);
+      return;
+    }
+
+    setResults(data.results || []);
     setLoading(false);
   }
 
   return (
-    <main style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ marginBottom: "16px" }}>
-        <h1 style={{ margin: 0, fontSize: "30px", fontWeight: 800 }}>
+    <main style={{ maxWidth: "980px", margin: "0 auto", padding: "24px" }}>
+      <div style={{ marginBottom: "20px" }}>
+        <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>
           AI Assistant
         </h1>
-        <p style={{ color: "#6b7280", marginTop: "6px" }}>
-          Type multiple items separated by commas or one item per line.
+        <p style={{ color: "#6b7280", marginTop: "8px" }}>
+          Premium users can source multiple items with smarter vendor selection.
         </p>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: "16px",
-          padding: "16px",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          minHeight: "420px",
-        }}
-      >
-        {messages.length === 0 && (
-          <div style={{ color: "#6b7280", whiteSpace: "pre-line" }}>
-            Try:
-            {"\n"}packing tape, nitrile gloves, barcode labels
-            {"\n\n"}or
-            {"\n"}packing tape
-            {"\n"}nitrile gloves
-            {"\n"}barcode labels
+      {!isPremium && (
+        <div
+          style={{
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            color: "#1d4ed8",
+            borderRadius: "16px",
+            padding: "18px",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ fontWeight: 800 }}>Premium Feature</div>
+          <div style={{ marginTop: "6px" }}>
+            AI multi-item sourcing is available on Premium.
           </div>
-        )}
+          <Link
+            href="/pricing"
+            style={{
+              display: "inline-block",
+              marginTop: "12px",
+              background: "#2563eb",
+              color: "white",
+              textDecoration: "none",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              fontWeight: 700,
+            }}
+          >
+            Upgrade
+          </Link>
+        </div>
+      )}
 
-        {messages.map((msg, i) =>
-          msg.role === "user" ? (
-            <div
-              key={i}
-              style={{
-                alignSelf: "flex-end",
-                maxWidth: "85%",
-                background: "#111827",
-                color: "white",
-                padding: "12px 14px",
-                borderRadius: "12px",
-                whiteSpace: "pre-wrap",
-                fontSize: "14px",
-                lineHeight: 1.5,
-              }}
-            >
-              {msg.content}
-            </div>
-          ) : "results" in msg ? (
-            <div
-              key={i}
-              style={{
-                alignSelf: "flex-start",
-                width: "100%",
-                display: "grid",
-                gap: "12px",
-              }}
-            >
-              {msg.results.map((r, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: "#f3f4f6",
-                    borderRadius: "14px",
-                    padding: "14px",
-                    border: "1px solid #e5e7eb",
-                  }}
-                >
-                  <div style={{ fontWeight: 800, fontSize: "18px", marginBottom: "8px" }}>
-                    {r.item}
-                  </div>
-
-                  {r.error ? (
-                    <div style={{ color: "#b91c1c" }}>{r.error}</div>
-                  ) : r.best_quote ? (
-                    <>
-                      <div style={{ color: "#374151", lineHeight: 1.7 }}>
-                        <div><strong>Best Vendor:</strong> {r.best_quote.vendor_name}</div>
-                        <div><strong>Total:</strong> ${r.best_quote.total}</div>
-                        <div><strong>Lead Time:</strong> {r.best_quote.lead_time_days} day(s)</div>
-                        <div><strong>AI Score:</strong> {r.best_quote.ai_score}</div>
-                        <div><strong>Status:</strong> {r.best_quote.status}</div>
-                      </div>
-
-                      <a
-                        href={r.best_quote.product_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: "inline-block",
-                          marginTop: "10px",
-                          padding: "10px 14px",
-                          background: "#2563eb",
-                          color: "white",
-                          borderRadius: "8px",
-                          textDecoration: "none",
-                          fontWeight: 700,
-                        }}
-                      >
-                        Open Vendor
-                      </a>
-                    </>
-                  ) : (
-                    <div>No quote found.</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div
-              key={i}
-              style={{
-                alignSelf: "flex-start",
-                maxWidth: "85%",
-                background: "#f3f4f6",
-                color: "#111827",
-                padding: "12px 14px",
-                borderRadius: "12px",
-                whiteSpace: "pre-wrap",
-                fontSize: "14px",
-                lineHeight: 1.5,
-              }}
-            >
-              {msg.content}
-            </div>
-          )
-        )}
-
-        {loading && (
-          <div style={{ color: "#6b7280", fontSize: "14px" }}>
-            AI is creating requests and sourcing quotes...
-          </div>
-        )}
-      </div>
-
-      <div
-        style={{
-          marginTop: "12px",
-          display: "flex",
-          gap: "10px",
-          alignItems: "stretch",
-        }}
-      >
+      <form onSubmit={handleSubmit} style={{ display: "grid", gap: "12px" }}>
         <textarea
+          placeholder="Example: gloves - 50, tape - 20"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={"Type multiple items...\npacking tape, nitrile gloves, barcode scanner"}
-          rows={5}
+          rows={6}
           style={{
-            flex: 1,
-            padding: "12px",
-            borderRadius: "10px",
+            width: "100%",
+            padding: "14px",
+            borderRadius: "12px",
             border: "1px solid #d1d5db",
-            resize: "vertical",
-            fontFamily: "inherit",
-            fontSize: "16px",
+            fontSize: "14px",
           }}
         />
 
         <button
-          onClick={handleSend}
+          type="submit"
           disabled={loading}
           style={{
-            padding: "12px 16px",
-            background: "#111827",
+            background: isPremium ? "#111827" : "#9ca3af",
             color: "white",
             border: "none",
             borderRadius: "10px",
-            cursor: "pointer",
+            padding: "12px",
             fontWeight: 700,
-            minWidth: "90px",
+            cursor: isPremium ? "pointer" : "not-allowed",
           }}
         >
-          Send
+          {loading ? "Running..." : "Run AI Sourcing"}
         </button>
+      </form>
+
+      {message && (
+        <p style={{ marginTop: "16px", color: "#b91c1c" }}>{message}</p>
+      )}
+
+      <div style={{ display: "grid", gap: "14px", marginTop: "24px" }}>
+        {results.map((result, index) => (
+          <div
+            key={index}
+            style={{
+              background: "white",
+              border: "1px solid #e5e7eb",
+              borderRadius: "16px",
+              padding: "18px",
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>{result.item}</div>
+            <div style={{ marginTop: "6px", color: "#6b7280" }}>
+              Quantity: {result.quantity}
+            </div>
+
+            {result.best_quote && (
+              <>
+                <div style={{ marginTop: "10px" }}>
+                  Best Vendor: <strong>{result.best_quote.vendor_name}</strong>
+                </div>
+                <div style={{ marginTop: "6px" }}>
+                  Total: <strong>${Number(result.best_quote.total || 0).toFixed(2)}</strong>
+                </div>
+                <div style={{ marginTop: "6px", color: "#16a34a" }}>
+                  {result.best_quote.reason}
+                </div>
+                <a
+                  href={result.best_quote.product_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: "inline-block",
+                    marginTop: "12px",
+                    color: "#2563eb",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  Open supplier →
+                </a>
+              </>
+            )}
+          </div>
+        ))}
       </div>
     </main>
   );
