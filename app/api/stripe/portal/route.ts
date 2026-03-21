@@ -1,36 +1,60 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-export async function POST() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export async function POST(req: Request) {
+  try {
+    const { userId } = await req.json();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Missing userId" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Not authenticated" }), {
-      status: 401,
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (!profile?.stripe_customer_id) {
+      return new Response(JSON.stringify({ error: "No Stripe customer found" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: "https://www.shukai.co/profile",
     });
+
+    return new Response(JSON.stringify({ url: session.url }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    return new Response(
+      JSON.stringify({ error: error.message || "Could not open billing portal" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("stripe_customer_id")
-    .eq("id", user.id)
-    .single();
-
-  const session = await stripe.billingPortal.sessions.create({
-    customer: profile?.stripe_customer_id,
-    return_url: "https://www.shukai.co/profile",
-  });
-
-  return new Response(JSON.stringify({ url: session.url }), {
-    status: 200,
-  });
 }
