@@ -15,6 +15,26 @@ export default async function ProfilePage() {
   return (
     <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
       <h1 style={{ marginTop: 0 }}>Profile / Plans</h1>
+      <button
+  onClick={async () => {
+    const res = await fetch("/api/stripe/portal", {
+      method: "POST",
+    });
+    const data = await res.json();
+    window.location.href = data.url;
+  }}
+  style={{
+    marginTop: "20px",
+    padding: "12px 16px",
+    background: "#111827",
+    color: "white",
+    borderRadius: "10px",
+    border: "none",
+    fontWeight: "700",
+  }}
+>
+  Manage Subscription
+</button>
       <p style={{ color: "#6b7280" }}>
         Quick admin view of user plans while you finish billing automation.
       </p>
