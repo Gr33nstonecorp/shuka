@@ -2,7 +2,14 @@ import Stripe from "stripe";
 
 export async function POST(req: Request) {
   try {
-    const { plan, email } = await req.json();
+    const { plan, userId, email } = await req.json();
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Missing userId" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -41,13 +48,13 @@ export async function POST(req: Request) {
       customer_email: email || undefined,
       metadata: {
         plan,
-        email: email || "",
+        userId,
       },
       subscription_data: {
         trial_period_days: 7,
         metadata: {
           plan,
-          email: email || "",
+          userId,
         },
       },
       success_url: `${siteUrl}/pricing?checkout=success`,
