@@ -25,8 +25,10 @@ export default function PricingPage() {
       setLoadingProfile(true);
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  data: { session },
+} = await supabase.auth.getSession();
+
+const user = session?.user ?? null;
 
       if (!user) {
         setProfile(null);
