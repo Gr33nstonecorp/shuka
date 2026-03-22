@@ -1,77 +1,53 @@
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  try {
-    const { plan, userId, email } = await req.json();
+  const { plan } = await req.json();
 
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "Missing userId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!secretKey) {
-      return new Response(
-        JSON.stringify({ error: "Missing STRIPE_SECRET_KEY" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const stripe = new Stripe(secretKey);
-
-    const priceId =
-      plan === "premium"
-        ? process.env.STRIPE_PREMIUM_PRICE_ID
-        : process.env.STRIPE_STARTER_PRICE_ID;
-
-    if (!priceId) {
-      return new Response(
-        JSON.stringify({ error: `Missing price ID for ${plan}` }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.shukai.co";
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
-      customer_email: email || undefined,
-      metadata: {
-        plan,
-        userId,
-      },
-      subscription_data: {
-        trial_period_days: 7,
-        metadata: {
-          plan,
-          userId,
-        },
-      },
-      success_url: `${siteUrl}/pricing?checkout=success`,
-      cancel_url: `${siteUrl}/pricing?checkout=cancel`,
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Not authenticated" }), {
+      status: 401,
     });
-
-    return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    return new Response(
-      JSON.stringify({ error: error.message || "Stripe checkout failed" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
   }
+
+  // 🔑 map your Stripe price IDs here
+  const priceId =
+    plan === "premium"
+      ? "price_PREMIUM_ID_HERE"
+      : "price_STARTER_ID_HERE";
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+
+    success_url: "https://www.shukai.co/profile",
+    cancel_url: "https://www.shukai.co/profile",
+
+    // 🔥 THIS IS THE MAGIC
+    metadata: {
+      userId: user.id,
+      plan,
+    },
+  });
+
+  return new Response(JSON.stringify({ url: session.url }), {
+    status: 200,
+  });
 }
