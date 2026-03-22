@@ -13,14 +13,16 @@ export async function POST(req: Request) {
       });
     }
 
+    const selectedPlan = plan === "premium" ? "premium" : "starter";
+
     const priceId =
-      plan === "premium"
+      selectedPlan === "premium"
         ? process.env.STRIPE_PREMIUM_PRICE_ID
         : process.env.STRIPE_STARTER_PRICE_ID;
 
     if (!priceId) {
       return new Response(
-        JSON.stringify({ error: `Missing price ID for ${plan}` }),
+        JSON.stringify({ error: `Missing price ID for ${selectedPlan}` }),
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -44,13 +46,15 @@ export async function POST(req: Request) {
       cancel_url: `${siteUrl}/pricing?checkout=cancel`,
       metadata: {
         userId,
-        plan,
+        email: email || "",
+        plan: selectedPlan,
       },
       subscription_data: {
         trial_period_days: 7,
         metadata: {
           userId,
-          plan,
+          email: email || "",
+          plan: selectedPlan,
         },
       },
     });
