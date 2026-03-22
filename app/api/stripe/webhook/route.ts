@@ -5,7 +5,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const sig = req.headers.get("stripe-signature")!;
+  const sig = req.headers.get("stripe-signature");
+
+  if (!sig) {
+    return new Response("Missing stripe-signature header", { status: 400 });
+  }
 
   let event: Stripe.Event;
 
@@ -30,6 +34,8 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
 
       const userId = session.metadata?.userId || null;
+      const email =
+        session.customer_details?.email || session.metadata?.email || null;
       const plan = session.metadata?.plan || "starter";
 
       const customerId =
@@ -38,15 +44,26 @@ export async function POST(req: Request) {
       const subscriptionId =
         typeof session.subscription === "string" ? session.subscription : null;
 
-      if (userId) {
-        const { error } = await supabase
+      if (!userId && !email) {
+        console.error("checkout.session.completed: no userId/email found");
+      } else {
+        let query = supabase
           .from("profiles")
           .update({
             plan,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-          })
-          .eq("id", userId);
+          });
+
+        if (userId && email) {
+          query = query.or(`id.eq.${userId},email.eq.${email}`);
+        } else if (userId) {
+          query = query.eq("id", userId);
+        } else if (email) {
+          query = query.eq("email", email);
+        }
+
+        const { error } = await query;
 
         if (error) {
           console.error("checkout.session.completed update error:", error);
@@ -58,42 +75,65 @@ export async function POST(req: Request) {
       const subscription = event.data.object as Stripe.Subscription;
 
       const userId = subscription.metadata?.userId || null;
+      const email = subscription.metadata?.email || null;
       const plan = subscription.metadata?.plan || "starter";
       const customerId =
         typeof subscription.customer === "string" ? subscription.customer : null;
 
-      if (userId) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
-          })
-          .eq("id", userId);
+      let query = supabase
+        .from("profiles")
+        .update({
+          plan,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+        });
 
-        if (error) {
-          console.error("customer.subscription.created update error:", error);
-        }
+      if (userId && email) {
+        query = query.or(`id.eq.${userId},email.eq.${email}`);
+      } else if (userId) {
+        query = query.eq("id", userId);
+      } else if (email) {
+        query = query.eq("email", email);
+      } else if (customerId) {
+        query = query.eq("stripe_customer_id", customerId);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error("customer.subscription.created update error:", error);
       }
     }
 
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
+
       const userId = subscription.metadata?.userId || null;
+      const email = subscription.metadata?.email || null;
+      const customerId =
+        typeof subscription.customer === "string" ? subscription.customer : null;
 
-      if (userId) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan: "trial",
-            stripe_subscription_id: null,
-          })
-          .eq("id", userId);
+      let query = supabase
+        .from("profiles")
+        .update({
+          plan: "trial",
+          stripe_subscription_id: null,
+        });
 
-        if (error) {
-          console.error("customer.subscription.deleted update error:", error);
-        }
+      if (userId && email) {
+        query = query.or(`id.eq.${userId},email.eq.${email}`);
+      } else if (userId) {
+        query = query.eq("id", userId);
+      } else if (email) {
+        query = query.eq("email", email);
+      } else if (customerId) {
+        query = query.eq("stripe_customer_id", customerId);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error("customer.subscription.deleted update error:", error);
       }
     }
 
