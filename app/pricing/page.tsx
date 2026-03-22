@@ -16,31 +16,57 @@ export default function PricingPage() {
   );
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     async function loadProfile() {
+      setLoadingProfile(true);
+
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      const user = session?.user;
-      if (!user) return;
+      if (!user) {
+        setProfile(null);
+        setLoadingProfile(false);
+        return;
+      }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("id, email, plan")
         .eq("id", user.id)
         .maybeSingle();
 
+      if (error) {
+        setMessage(error.message);
+        setLoadingProfile(false);
+        return;
+      }
+
       setProfile((data as ProfileRow | null) || null);
+      setLoadingProfile(false);
     }
 
     loadProfile();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadProfile();
+    });
+
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
   async function startCheckout(plan: "starter" | "premium") {
+    if (loadingProfile) {
+      setMessage("Still loading your account. Try again in a second.");
+      return;
+    }
+
     if (!profile?.id) {
       setMessage("Please log in first.");
       return;
@@ -130,7 +156,7 @@ export default function PricingPage() {
 
           <button
             onClick={() => startCheckout("starter")}
-            disabled={loadingPlan !== null}
+            disabled={loadingPlan !== null || loadingProfile}
             style={{
               marginTop: "12px",
               width: "100%",
@@ -141,9 +167,14 @@ export default function PricingPage() {
               borderRadius: "10px",
               cursor: "pointer",
               fontWeight: 700,
+              opacity: loadingProfile ? 0.7 : 1,
             }}
           >
-            {loadingPlan === "starter" ? "Starting..." : "Start 7-Day Trial"}
+            {loadingProfile
+              ? "Loading account..."
+              : loadingPlan === "starter"
+              ? "Starting..."
+              : "Start 7-Day Trial"}
           </button>
         </div>
 
@@ -187,7 +218,7 @@ export default function PricingPage() {
 
           <button
             onClick={() => startCheckout("premium")}
-            disabled={loadingPlan !== null}
+            disabled={loadingPlan !== null || loadingProfile}
             style={{
               marginTop: "12px",
               width: "100%",
@@ -198,9 +229,14 @@ export default function PricingPage() {
               borderRadius: "10px",
               cursor: "pointer",
               fontWeight: 700,
+              opacity: loadingProfile ? 0.7 : 1,
             }}
           >
-            {loadingPlan === "premium" ? "Starting..." : "Start 7-Day Trial"}
+            {loadingProfile
+              ? "Loading account..."
+              : loadingPlan === "premium"
+              ? "Starting..."
+              : "Start 7-Day Trial"}
           </button>
         </div>
       </div>
