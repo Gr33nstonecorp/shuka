@@ -33,15 +33,21 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
       customer_email: email || undefined,
       success_url: `${siteUrl}/profile`,
-      cancel_url: `${siteUrl}/profile`,
+      cancel_url: `${siteUrl}/pricing?checkout=cancel`,
       metadata: {
         userId,
         plan,
       },
       subscription_data: {
+        trial_period_days: 7,
         metadata: {
           userId,
           plan,
@@ -55,7 +61,9 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     return new Response(
-      JSON.stringify({ error: error.message || "Could not start checkout." }),
+      JSON.stringify({
+        error: error.message || "Could not start checkout.",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
