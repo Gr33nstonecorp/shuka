@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type ProfileRow = {
   id: string;
@@ -10,9 +10,13 @@ type ProfileRow = {
 };
 
 export default function PricingPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
@@ -20,13 +24,12 @@ export default function PricingPage() {
     id: string;
     email: string | null;
   } | null>(null);
-
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
     async function loadProfile() {
       try {
@@ -34,59 +37,65 @@ export default function PricingPage() {
           data: { session },
         } = await supabase.auth.getSession();
 
+        if (cancelled) return;
+
         const user = session?.user ?? null;
 
         if (!user) {
-          if (isMounted) {
-            setAuthUser(null);
-            setProfile(null);
-            setLoadingProfile(false);
-          }
+          setAuthUser(null);
+          setProfile(null);
+          setLoadingProfile(false);
           return;
         }
 
-        if (isMounted) {
-          setAuthUser({
-            id: user.id,
-            email: user.email ?? null,
-          });
-        }
+        setAuthUser({
+          id: user.id,
+          email: user.email ?? null,
+        });
 
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("id, email, plan")
           .eq("id", user.id)
           .maybeSingle();
 
-        if (isMounted) {
-          setProfile(
-            data || {
-              id: user.id,
-              email: user.email ?? null,
-              plan: "trial",
-            }
-          );
+        if (cancelled) return;
+
+        if (error) {
+          console.error("Profile fetch error:", error.message);
+        }
+
+        setProfile(
+          data || {
+            id: user.id,
+            email: user.email ?? null,
+            plan: "trial",
+          }
+        );
+      } catch (err) {
+        console.error("Pricing load failed:", err);
+      } finally {
+        if (!cancelled) {
           setLoadingProfile(false);
         }
-      } catch (err) {
-        console.error(err);
-        if (isMounted) setLoadingProfile(false);
       }
     }
+
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setLoadingProfile(false);
+      }
+    }, 2500);
 
     loadProfile();
 
     return () => {
-      isMounted = false;
+      cancelled = true;
+      clearTimeout(timeout);
     };
   }, [supabase]);
 
   async function startCheckout(plan: "starter" | "premium") {
-    if (loadingProfile) {
-      setMessage("Loading your account...");
-      return;
-    }
-
     const userId = profile?.id || authUser?.id;
     const email = profile?.email || authUser?.email || null;
 
@@ -98,63 +107,76 @@ export default function PricingPage() {
     setLoadingPlan(plan);
     setMessage("");
 
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        plan,
-        userId,
-        email,
-      }),
-    });
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan,
+          userId,
+          email,
+        }),
+      });
 
-    const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      setMessage(data.error || "Checkout failed.");
+      if (!res.ok) {
+        setMessage(data.error || "Checkout failed.");
+        setLoadingPlan(null);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      console.error(err);
+      setMessage("Checkout failed.");
       setLoadingPlan(null);
-      return;
     }
-
-    window.location.href = data.url;
-  }
-
-  if (loadingProfile) {
-    return (
-      <main style={{ padding: "24px", textAlign: "center" }}>
-        <h1>Pricing</h1>
-        <p>Loading account...</p>
-      </main>
-    );
   }
 
   return (
     <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
       <h1>Pricing</h1>
 
-      <div style={{ display: "grid", gap: "20px", marginTop: "20px" }}>
-        <div style={{ border: "1px solid #ccc", padding: "20px", borderRadius: "12px" }}>
-          <h2>Starter — $9/mo</h2>
-          <button
-            onClick={() => startCheckout("starter")}
-            disabled={loadingPlan !== null}
+      {loadingProfile ? (
+        <p>Loading account...</p>
+      ) : (
+        <div style={{ display: "grid", gap: "20px", marginTop: "20px" }}>
+          <div
+            style={{
+              border: "1px solid #ccc",
+              padding: "20px",
+              borderRadius: "12px",
+            }}
           >
-            {loadingPlan === "starter" ? "Starting..." : "Start Trial"}
-          </button>
-        </div>
+            <h2>Starter — $9/mo</h2>
+            <button
+              onClick={() => startCheckout("starter")}
+              disabled={loadingPlan !== null}
+            >
+              {loadingPlan === "starter" ? "Starting..." : "Start Trial"}
+            </button>
+          </div>
 
-        <div style={{ border: "1px solid #ccc", padding: "20px", borderRadius: "12px" }}>
-          <h2>Premium — $25/mo</h2>
-          <button
-            onClick={() => startCheckout("premium")}
-            disabled={loadingPlan !== null}
+          <div
+            style={{
+              border: "1px solid #ccc",
+              padding: "20px",
+              borderRadius: "12px",
+            }}
           >
-            {loadingPlan === "premium" ? "Starting..." : "Start Trial"}
-          </button>
+            <h2>Premium — $25/mo</h2>
+            <button
+              onClick={() => startCheckout("premium")}
+              disabled={loadingPlan !== null}
+            >
+              {loadingPlan === "premium" ? "Starting..." : "Start Trial"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {message && (
         <p style={{ marginTop: "20px", color: "red" }}>{message}</p>
