@@ -52,7 +52,7 @@ export default function ProfilePage() {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, email, plan, stripe_customer_id, stripe_subscription_id")
-          .eq("id", user.id)
+          .eq("email", user.email ?? "")
           .maybeSingle();
 
         if (isMounted) {
@@ -104,8 +104,9 @@ export default function ProfilePage() {
 
   async function openPortal() {
     const userId = profile?.id || authUser?.id;
+    const email = profile?.email || authUser?.email || null;
 
-    if (!userId) {
+    if (!userId && !email) {
       alert("No user profile found.");
       return;
     }
@@ -115,7 +116,7 @@ export default function ProfilePage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, email }),
     });
 
     const data = await res.json().catch(() => ({}));
