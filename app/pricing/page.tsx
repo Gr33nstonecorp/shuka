@@ -16,6 +16,7 @@ export default function PricingPage() {
   );
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [authUser, setAuthUser] = useState<{ id: string; email: string | null } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -29,14 +30,22 @@ export default function PricingPage() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        const user = session?.user;
+        const user = session?.user ?? null;
 
         if (!user) {
           if (isMounted) {
+            setAuthUser(null);
             setProfile(null);
             setLoadingProfile(false);
           }
           return;
+        }
+
+        if (isMounted) {
+          setAuthUser({
+            id: user.id,
+            email: user.email ?? null,
+          });
         }
 
         const { data, error } = await supabase
@@ -45,16 +54,20 @@ export default function PricingPage() {
           .eq("id", user.id)
           .maybeSingle();
 
-        if (error) {
-          if (isMounted) {
-            setMessage(error.message);
-            setLoadingProfile(false);
-          }
-          return;
-        }
-
         if (isMounted) {
-          setProfile((data as ProfileRow | null) || null);
+          if (error) {
+            console.error("Profile fetch error:", error.message);
+          }
+
+          setProfile(
+            data
+              ? (data as ProfileRow)
+              : {
+                  id: user.id,
+                  email: user.email ?? null,
+                  plan: "trial",
+                }
+          );
           setLoadingProfile(false);
         }
       } catch (err) {
@@ -67,7 +80,6 @@ export default function PricingPage() {
 
     const timeout = setTimeout(() => {
       if (isMounted) {
-        console.warn("Profile load timeout fallback triggered");
         setLoadingProfile(false);
       }
     }, 3000);
@@ -93,7 +105,10 @@ export default function PricingPage() {
       return;
     }
 
-    if (!profile?.id) {
+    const userId = profile?.id || authUser?.id;
+    const email = profile?.email || authUser?.email || null;
+
+    if (!userId) {
       setMessage("Please log in first.");
       return;
     }
@@ -108,8 +123,8 @@ export default function PricingPage() {
       },
       body: JSON.stringify({
         plan,
-        userId: profile.id,
-        email: profile.email,
+        userId,
+        email,
       }),
     });
 
