@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json();
+    const { userId, email } = await req.json();
 
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "Missing userId" }), {
+    if (!userId && !email) {
+      return new Response(JSON.stringify({ error: "Missing userId/email" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -19,17 +19,30 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("id, email, stripe_customer_id")
-      .eq("id", userId)
-      .maybeSingle();
+    let profile: {
+      id: string;
+      email: string | null;
+      stripe_customer_id: string | null;
+    } | null = null;
 
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (userId) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, stripe_customer_id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      profile = data;
+    }
+
+    if (!profile && email) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, stripe_customer_id")
+        .eq("email", email)
+        .maybeSingle();
+
+      profile = data;
     }
 
     if (!profile) {
