@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
+  } catch {
     return new Response("Webhook error", { status: 400 });
   }
 
@@ -25,33 +25,69 @@ export async function POST(req: Request) {
   );
 
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
+    const session = event.data.object as Stripe.Checkout.Session;
 
-    const customerId = session.customer;
-    const subscriptionId = session.subscription;
-    const email = session.customer_details?.email;
+    const userId =
+      session.metadata?.userId ||
+      session.subscription_details?.metadata?.userId ||
+      null;
 
-    if (email) {
+    const plan =
+      session.metadata?.plan ||
+      session.subscription_details?.metadata?.plan ||
+      "starter";
+
+    const customerId =
+      typeof session.customer === "string" ? session.customer : null;
+
+    const subscriptionId =
+      typeof session.subscription === "string" ? session.subscription : null;
+
+    if (userId) {
       await supabase
         .from("profiles")
         .update({
-          plan: "starter",
+          plan,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
         })
-        .eq("email", email);
+        .eq("id", userId);
     }
   }
 
   if (event.type === "customer.subscription.created") {
-    const subscription = event.data.object as any;
+    const subscription = event.data.object as Stripe.Subscription;
 
-    await supabase
-      .from("profiles")
-      .update({
-        stripe_subscription_id: subscription.id,
-      })
-      .eq("stripe_customer_id", subscription.customer);
+    const userId = subscription.metadata?.userId || null;
+    const plan = subscription.metadata?.plan || "starter";
+    const customerId =
+      typeof subscription.customer === "string" ? subscription.customer : null;
+
+    if (userId) {
+      await supabase
+        .from("profiles")
+        .update({
+          plan,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+        })
+        .eq("id", userId);
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId = subscription.metadata?.userId || null;
+
+    if (userId) {
+      await supabase
+        .from("profiles")
+        .update({
+          plan: "trial",
+          stripe_subscription_id: null,
+        })
+        .eq("id", userId);
+    }
   }
 
   return new Response("ok", { status: 200 });
