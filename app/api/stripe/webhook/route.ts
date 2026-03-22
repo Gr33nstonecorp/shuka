@@ -24,20 +24,17 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // ✅ CHECKOUT COMPLETED
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    const userId = session.metadata?.userId;
+    const userId = session.metadata?.userId || null;
     const plan = session.metadata?.plan || "starter";
 
     const customerId =
       typeof session.customer === "string" ? session.customer : null;
 
     const subscriptionId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : null;
+      typeof session.subscription === "string" ? session.subscription : null;
 
     if (userId) {
       await supabase
@@ -51,29 +48,29 @@ export async function POST(req: Request) {
     }
   }
 
-  // ✅ SUB CREATED (backup safety)
   if (event.type === "customer.subscription.created") {
-    const sub = event.data.object as Stripe.Subscription;
+    const subscription = event.data.object as Stripe.Subscription;
 
-    const userId = sub.metadata?.userId;
-    const plan = sub.metadata?.plan || "starter";
+    const userId = subscription.metadata?.userId || null;
+    const plan = subscription.metadata?.plan || "starter";
+    const customerId =
+      typeof subscription.customer === "string" ? subscription.customer : null;
 
     if (userId) {
       await supabase
         .from("profiles")
         .update({
           plan,
-          stripe_customer_id: sub.customer as string,
-          stripe_subscription_id: sub.id,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
         })
         .eq("id", userId);
     }
   }
 
-  // ❌ CANCEL
   if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    const userId = sub.metadata?.userId;
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId = subscription.metadata?.userId || null;
 
     if (userId) {
       await supabase
