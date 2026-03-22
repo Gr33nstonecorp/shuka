@@ -1,12 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
+
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  plan: string | null;
+};
 
 export default function PricingPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    async function loadProfile() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const user = session?.user;
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, email, plan")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      setProfile((data as ProfileRow | null) || null);
+    }
+
+    loadProfile();
+  }, [supabase]);
+
   async function startCheckout(plan: "starter" | "premium") {
+    if (!profile?.id) {
+      setMessage("Please log in first.");
+      return;
+    }
+
     setLoadingPlan(plan);
     setMessage("");
 
@@ -15,7 +54,11 @@ export default function PricingPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({
+        plan,
+        userId: profile.id,
+        email: profile.email,
+      }),
     });
 
     const data = await res.json().catch(() => ({}));
