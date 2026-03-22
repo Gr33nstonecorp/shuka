@@ -27,15 +27,8 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    const userId =
-      session.metadata?.userId ||
-      session.subscription_details?.metadata?.userId ||
-      null;
-
-    const plan =
-      session.metadata?.plan ||
-      session.subscription_details?.metadata?.plan ||
-      "starter";
+    const userId = session.metadata?.userId || null;
+    const plan = session.metadata?.plan || "starter";
 
     const customerId =
       typeof session.customer === "string" ? session.customer : null;
