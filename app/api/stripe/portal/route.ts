@@ -21,9 +21,9 @@ export async function POST(req: Request) {
 
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("stripe_customer_id")
+      .select("id, email, stripe_customer_id")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
@@ -32,11 +32,21 @@ export async function POST(req: Request) {
       });
     }
 
-    if (!profile?.stripe_customer_id) {
-      return new Response(JSON.stringify({ error: "No Stripe customer found" }), {
-        status: 400,
+    if (!profile) {
+      return new Response(JSON.stringify({ error: "No profile found" }), {
+        status: 404,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    if (!profile.stripe_customer_id) {
+      return new Response(
+        JSON.stringify({ error: "No Stripe customer found for this user yet" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const session = await stripe.billingPortal.sessions.create({
@@ -50,7 +60,9 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     return new Response(
-      JSON.stringify({ error: error.message || "Could not open billing portal" }),
+      JSON.stringify({
+        error: error.message || "Could not open billing portal",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
