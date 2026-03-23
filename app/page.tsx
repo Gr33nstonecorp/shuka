@@ -70,7 +70,7 @@ export default function HomePage() {
               Log in
             </a>
             <a
-              href="/pricing"
+              href="/login?next=/pricing"
               style={{
                 textDecoration: "none",
                 color: "white",
@@ -147,7 +147,7 @@ export default function HomePage() {
                 }}
               >
                 Shuka helps teams move faster with AI-powered sourcing, vendor
-                comparison, approvals, saved items, and order workflows — without
+                comparison, approvals, saved items, and order workflows without
                 juggling spreadsheets, inbox threads, and disconnected tools.
               </p>
 
@@ -160,7 +160,7 @@ export default function HomePage() {
                 }}
               >
                 <a
-                  href="/pricing"
+                  href="/login?next=/pricing"
                   style={{
                     textDecoration: "none",
                     background: "#2563eb",
@@ -643,7 +643,7 @@ export default function HomePage() {
                 }}
               >
                 <a
-                  href="/pricing"
+                  href="/login?next=/pricing"
                   style={{
                     textDecoration: "none",
                     background: "#2563eb",
@@ -778,7 +778,7 @@ export default function HomePage() {
             </ul>
 
             <a
-              href="/pricing"
+              href="/login?next=/pricing"
               style={{
                 display: "block",
                 marginTop: "22px",
@@ -859,7 +859,7 @@ export default function HomePage() {
             </ul>
 
             <a
-              href="/pricing"
+              href="/login?next=/pricing"
               style={{
                 display: "block",
                 marginTop: "22px",
