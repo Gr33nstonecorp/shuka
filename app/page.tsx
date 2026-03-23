@@ -1,456 +1,163 @@
-import { createClient } from "@supabase/supabase-js";
+"use client";
 
-type ActivityItem = {
-  label: string;
-  value: string;
-};
+import { useRouter } from "next/navigation";
 
-export default async function DashboardPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const [
-    { count: requests },
-    { count: quotes },
-    { count: approvals },
-    { count: orders },
-    { data: recentOrders },
-  ] = await Promise.all([
-    supabase.from("purchase_requests").select("*", { count: "exact", head: true }),
-    supabase.from("quote_options").select("*", { count: "exact", head: true }),
-    supabase
-      .from("quote_options")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "generated"),
-    supabase.from("purchase_orders").select("*", { count: "exact", head: true }),
-    supabase
-      .from("purchase_orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5),
-  ]);
-
-  const stats = {
-    requests: requests || 0,
-    quotes: quotes || 0,
-    approvals: approvals || 0,
-    orders: orders || 0,
-  };
-
-  const activity: ActivityItem[] = [
-    {
-      label: "Open requests ready for sourcing",
-      value: String(stats.requests),
-    },
-    {
-      label: "Quotes waiting for a decision",
-      value: String(stats.approvals),
-    },
-    {
-      label: "Orders currently in your system",
-      value: String(stats.orders),
-    },
-  ];
+export default function Home() {
+  const router = useRouter();
 
   return (
-    <main>
-      <section
-        style={{
-          background:
-            "linear-gradient(135deg, #111827 0%, #1f2937 50%, #0f172a 100%)",
-          borderRadius: "24px",
-          padding: "28px",
-          color: "white",
-          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.18)",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.4fr 1fr",
-            gap: "24px",
-          }}
-        >
+    <div className="min-h-screen bg-white text-black">
+
+      {/* NAVBAR */}
+      <div className="flex justify-between items-center px-6 py-4 border-b">
+        <h1 className="text-xl font-bold">Shuka</h1>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push("/login")}
+            className="px-4 py-2 border rounded-lg"
+          >
+            Login
+          </button>
+
+          <button
+            onClick={() => router.push("/pricing")}
+            className="px-4 py-2 bg-black text-white rounded-lg"
+          >
+            Start Free Trial
+          </button>
+        </div>
+      </div>
+
+      {/* HERO */}
+      <section className="text-center px-6 py-20">
+        <h1 className="text-5xl font-bold mb-6">
+          AI-powered procurement for modern teams
+        </h1>
+
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+          Source vendors, compare quotes, manage approvals, and streamline purchasing —
+          all in one platform.
+        </p>
+
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => router.push("/pricing")}
+            className="px-6 py-3 bg-black text-white rounded-lg text-lg"
+          >
+            Start Free Trial
+          </button>
+
+          <button
+            onClick={() => router.push("/pricing")}
+            className="px-6 py-3 border rounded-lg text-lg"
+          >
+            View Pricing
+          </button>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="px-6 py-16 bg-gray-50">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+
+          <div className="p-6 bg-white rounded-xl border">
+            <h3 className="font-semibold text-lg mb-2">
+              AI sourcing
+            </h3>
+            <p className="text-gray-600">
+              Automatically find and compare vendors in seconds.
+            </p>
+          </div>
+
+          <div className="p-6 bg-white rounded-xl border">
+            <h3 className="font-semibold text-lg mb-2">
+              Compare vendors
+            </h3>
+            <p className="text-gray-600">
+              See pricing, reviews, and options side by side.
+            </p>
+          </div>
+
+          <div className="p-6 bg-white rounded-xl border">
+            <h3 className="font-semibold text-lg mb-2">
+              Smart approvals
+            </h3>
+            <p className="text-gray-600">
+              Streamline approvals and manage purchasing workflows.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="px-6 py-20 text-center">
+        <h2 className="text-3xl font-bold mb-12">How it works</h2>
+
+        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+
           <div>
-            <div
-              style={{
-                display: "inline-block",
-                padding: "6px 10px",
-                borderRadius: "999px",
-                background: "rgba(255,255,255,0.12)",
-                fontSize: "12px",
-                fontWeight: 700,
-                marginBottom: "14px",
-              }}
-            >
-              AI Procurement Workspace
-            </div>
+            <h3 className="font-semibold text-lg mb-2">1. Submit request</h3>
+            <p className="text-gray-600">
+              Tell Shuka what you need.
+            </p>
+          </div>
 
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "40px",
-                lineHeight: 1.05,
-                fontWeight: 800,
-              }}
-            >
-              Procurement
-              <br />
-              Command Center
-            </h1>
+          <div>
+            <h3 className="font-semibold text-lg mb-2">2. AI finds vendors</h3>
+            <p className="text-gray-600">
+              Get multiple options instantly.
+            </p>
+          </div>
 
-            <p
-              style={{
-                marginTop: "14px",
-                marginBottom: 0,
-                color: "#d1d5db",
-                fontSize: "16px",
-                lineHeight: 1.6,
-                maxWidth: "700px",
-              }}
-            >
-              Create requests, compare suppliers, approve purchases, save repeat
-              buys, and let Shuka guide your sourcing workflow.
+          <div>
+            <h3 className="font-semibold text-lg mb-2">3. Approve & manage</h3>
+            <p className="text-gray-600">
+              Track orders and streamline procurement.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* PRICING PREVIEW */}
+      <section className="px-6 py-20 bg-gray-50 text-center">
+        <h2 className="text-3xl font-bold mb-10">Simple pricing</h2>
+
+        <div className="flex justify-center">
+          <div className="p-8 bg-white border rounded-xl w-full max-w-sm">
+            <h3 className="text-xl font-semibold mb-2">Starter</h3>
+            <p className="text-3xl font-bold mb-4">$9/mo</p>
+
+            <p className="text-gray-600 mb-6">
+              AI sourcing, vendor comparison, and basic automation.
             </p>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                flexWrap: "wrap",
-                marginTop: "20px",
-              }}
+            <button
+              onClick={() => router.push("/pricing")}
+              className="w-full py-3 bg-black text-white rounded-lg"
             >
-              <a
-                href="/requests"
-                style={{
-                  display: "inline-block",
-                  padding: "12px 16px",
-                  background: "white",
-                  color: "#111827",
-                  borderRadius: "10px",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                }}
-              >
-                New Request
-              </a>
-              <a
-                href="/assistant"
-                style={{
-                  display: "inline-block",
-                  padding: "12px 16px",
-                  background: "rgba(255,255,255,0.12)",
-                  color: "white",
-                  borderRadius: "10px",
-                  textDecoration: "none",
-                  fontWeight: 700,
-                  border: "1px solid rgba(255,255,255,0.18)",
-                }}
-              >
-                Open AI Assistant
-              </a>
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "18px",
-              padding: "18px",
-              alignSelf: "start",
-            }}
-          >
-            <div style={{ fontWeight: 800, marginBottom: "12px" }}>
-              Workspace Snapshot
-            </div>
-
-            <div style={{ display: "grid", gap: "10px" }}>
-              {activity.map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "12px",
-                    padding: "10px 12px",
-                    background: "rgba(255,255,255,0.06)",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                  }}
-                >
-                  <span style={{ color: "#d1d5db" }}>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
+              Start 7-Day Trial
+            </button>
           </div>
         </div>
       </section>
 
-      <section
-        style={{
-          marginTop: "24px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "18px",
-        }}
-      >
-        <StatCard
-          title="Requests"
-          value={stats.requests}
-          subtitle="Items submitted for sourcing"
-        />
-        <StatCard
-          title="Quotes"
-          value={stats.quotes}
-          subtitle="Supplier options created"
-        />
-        <StatCard
-          title="Pending Approvals"
-          value={stats.approvals}
-          subtitle="Quotes needing review"
-        />
-        <StatCard
-          title="Orders"
-          value={stats.orders}
-          subtitle="Approved purchase orders"
-        />
-      </section>
+      {/* FINAL CTA */}
+      <section className="px-6 py-20 text-center">
+        <h2 className="text-3xl font-bold mb-6">
+          Start your free trial today
+        </h2>
 
-      <section
-        style={{
-          marginTop: "24px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "18px",
-        }}
-      >
-        <QuickLinkCard
-          title="Create Request"
-          description="Start a new purchasing request and let Shuka source quotes."
-          href="/requests"
-        />
-        <QuickLinkCard
-          title="Review Quotes"
-          description="Compare supplier options and open vendor links."
-          href="/quotes"
-        />
-        <QuickLinkCard
-          title="Approvals"
-          description="Approve, reject, and move quotes into orders."
-          href="/approvals"
-        />
-        <QuickLinkCard
-          title="Saved Items"
-          description="Reorder repeat purchases in one click."
-          href="/saved-items"
-        />
-      </section>
-
-      <section
-        style={{
-          marginTop: "24px",
-          display: "grid",
-          gridTemplateColumns: "1.2fr 0.8fr",
-          gap: "18px",
-        }}
-      >
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
-            borderRadius: "18px",
-            padding: "22px",
-            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
-          }}
+        <button
+          onClick={() => router.push("/pricing")}
+          className="px-8 py-4 bg-black text-white rounded-lg text-lg"
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "12px",
-              alignItems: "center",
-              marginBottom: "14px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <h2 style={{ margin: 0, fontSize: "20px" }}>Recent Orders</h2>
-              <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "14px" }}>
-                Latest purchase orders flowing through Shuka.
-              </p>
-            </div>
-            <a
-              href="/orders"
-              style={{
-                color: "#2563eb",
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: "14px",
-              }}
-            >
-              View all →
-            </a>
-          </div>
-
-          {!recentOrders || recentOrders.length === 0 ? (
-            <div
-              style={{
-                padding: "18px",
-                background: "#f9fafb",
-                borderRadius: "12px",
-                color: "#6b7280",
-              }}
-            >
-              No orders yet.
-            </div>
-          ) : (
-            <div style={{ display: "grid", gap: "12px" }}>
-              {recentOrders.map((order: any) => (
-                <div
-                  key={order.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "14px",
-                    padding: "14px",
-                    background: "#f9fafb",
-                    borderRadius: "12px",
-                    border: "1px solid #eef2f7",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 800 }}>{order.vendor_name}</div>
-                    <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
-                      Status: {order.status} · Shipment: {order.shipment_status}
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontWeight: 800 }}>
-                      ${Number(order.total_amount || 0).toFixed(2)}
-                    </div>
-                    <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "4px" }}>
-                      Order
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
-            borderRadius: "18px",
-            padding: "22px",
-            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
-          }}
-        >
-          <h2 style={{ marginTop: 0, fontSize: "20px" }}>AI Actions</h2>
-          <p style={{ color: "#6b7280", fontSize: "14px", lineHeight: 1.6 }}>
-            Let Shuka create requests, source suppliers, and recommend the best
-            option for one or multiple items.
-          </p>
-
-          <div style={{ display: "grid", gap: "10px", marginTop: "14px" }}>
-            <MiniAction title="Ask AI for suppliers" href="/assistant" />
-            <MiniAction title="Review pending approvals" href="/approvals" />
-            <MiniAction title="Reorder saved items" href="/saved-items" />
-          </div>
-        </div>
+          Get Started
+        </button>
       </section>
-    </main>
-  );
-}
 
-function StatCard({
-  title,
-  value,
-  subtitle,
-}: {
-  title: string;
-  value: number;
-  subtitle: string;
-}) {
-  return (
-    <div
-      style={{
-        background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: "18px",
-        padding: "20px",
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
-      }}
-    >
-      <div style={{ color: "#6b7280", fontSize: "13px", fontWeight: 700 }}>
-        {title}
-      </div>
-      <div style={{ fontSize: "34px", fontWeight: 800, marginTop: "8px" }}>
-        {value}
-      </div>
-      <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "8px" }}>
-        {subtitle}
-      </div>
     </div>
-  );
-}
-
-function QuickLinkCard({
-  title,
-  description,
-  href,
-}: {
-  title: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <a
-      href={href}
-      style={{
-        display: "block",
-        background: "white",
-        border: "1px solid #e5e7eb",
-        borderRadius: "18px",
-        padding: "20px",
-        textDecoration: "none",
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
-      }}
-    >
-      <div style={{ color: "#111827", fontWeight: 800, fontSize: "18px" }}>
-        {title}
-      </div>
-      <div style={{ color: "#6b7280", marginTop: "8px", lineHeight: 1.6 }}>
-        {description}
-      </div>
-    </a>
-  );
-}
-
-function MiniAction({ title, href }: { title: string; href: string }) {
-  return (
-    <a
-      href={href}
-      style={{
-        display: "block",
-        padding: "12px 14px",
-        background: "#f9fafb",
-        border: "1px solid #e5e7eb",
-        borderRadius: "12px",
-        textDecoration: "none",
-        color: "#111827",
-        fontWeight: 700,
-      }}
-    >
-      {title}
-    </a>
   );
 }
