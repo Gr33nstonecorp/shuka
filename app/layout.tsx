@@ -1,7 +1,4 @@
 import "./globals.css";
-import AuthGate from "./components/AuthGate";
-import EnsureProfile from "./components/EnsureProfile";
-import AppNavbar from "./components/AppNavbar";
 
 export default function RootLayout({
   children,
@@ -11,9 +8,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppNavbar />
-
-       <AuthGate>{children}</AuthGate> 
+        {children}
       </body>
     </html>
   );
