@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
 
   function getNextUrl() {
     if (typeof window === "undefined") return "/";
@@ -52,6 +53,14 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
 
+    if (!acceptedLegal) {
+      setMessage(
+        "You must agree to the Terms, Privacy Policy, and Master Subscription Agreement."
+      );
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -67,7 +76,9 @@ export default function LoginPage() {
     }
 
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      setMessage("An account with this email already exists. Try Password Login instead.");
+      setMessage(
+        "An account with this email already exists. Try Password Login instead."
+      );
       setMode("login");
       setLoading(false);
       return;
@@ -120,7 +131,7 @@ export default function LoginPage() {
           boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
         }}
       >
-        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Login to Shukai</h1>
+        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Login to ShukAI</h1>
         <p style={{ color: "#555", marginTop: 0 }}>
           Sign in with your password, create an account, or use a magic link.
         </p>
@@ -134,9 +145,21 @@ export default function LoginPage() {
             flexWrap: "wrap",
           }}
         >
-          <TabButton active={mode === "login"} onClick={() => setMode("login")} label="Password Login" />
-          <TabButton active={mode === "signup"} onClick={() => setMode("signup")} label="Sign Up" />
-          <TabButton active={mode === "magic"} onClick={() => setMode("magic")} label="Magic Link" />
+          <TabButton
+            active={mode === "login"}
+            onClick={() => setMode("login")}
+            label="Password Login"
+          />
+          <TabButton
+            active={mode === "signup"}
+            onClick={() => setMode("signup")}
+            label="Sign Up"
+          />
+          <TabButton
+            active={mode === "magic"}
+            onClick={() => setMode("magic")}
+            label="Magic Link"
+          />
         </div>
 
         {mode === "login" && (
@@ -203,6 +226,48 @@ export default function LoginPage() {
               autoComplete="new-password"
               style={inputStyle}
             />
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "10px",
+                fontSize: "14px",
+                color: "#374151",
+                lineHeight: 1.5,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={acceptedLegal}
+                onChange={(e) => setAcceptedLegal(e.target.checked)}
+                style={{ marginTop: "3px" }}
+              />
+              <span>
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  style={{ color: "#2563eb", textDecoration: "none" }}
+                >
+                  Terms
+                </Link>
+                ,{" "}
+                <Link
+                  href="/privacy"
+                  style={{ color: "#2563eb", textDecoration: "none" }}
+                >
+                  Privacy Policy
+                </Link>
+                , and{" "}
+                <Link
+                  href="/msa"
+                  style={{ color: "#2563eb", textDecoration: "none" }}
+                >
+                  Master Subscription Agreement
+                </Link>
+                .
+              </span>
+            </label>
 
             <button type="submit" disabled={loading} style={primaryButtonStyle}>
               {loading ? "Creating..." : "Create Account"}
