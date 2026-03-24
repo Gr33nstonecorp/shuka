@@ -292,7 +292,7 @@ const card = {
   border: "1px solid #e5e7eb",
 };
 
-const rowBetween = {
+const rowBetween: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   gap: "12px",
