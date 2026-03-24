@@ -2,6 +2,7 @@ export default function MSAPage() {
   return (
     <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
       <h1>Master Subscription Agreement</h1>
+      <p>MSA page live</p>
 
       <p><strong>Effective Date:</strong> March 25, 2026</p>
 
