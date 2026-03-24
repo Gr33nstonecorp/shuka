@@ -299,6 +299,27 @@ export default function LoginPage() {
           </p>
         )}
       </div>
+      </div>
+
+<footer style={footerStyle}>
+  <div style={footerInner}>
+    <div style={footerBrand}>ShukAI</div>
+
+    <div style={footerLinks}>
+      <Link href="/terms" style={footerLink}>
+        Terms
+      </Link>
+      <Link href="/privacy" style={footerLink}>
+        Privacy
+      </Link>
+      <Link href="/msa" style={footerLink}>
+        Agreement
+      </Link>
+    </div>
+  </div>
+</footer>
+
+</main>
     </main>
   );
 }
