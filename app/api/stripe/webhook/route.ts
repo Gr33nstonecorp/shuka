@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
+  apiVersion: "2023-10-16",
 });
 
 function getSupabaseAdmin() {
@@ -40,22 +40,6 @@ async function updateProfileByCustomerId(
     .from("profiles")
     .update(updates)
     .eq("stripe_customer_id", stripeCustomerId);
-
-  if (error) {
-    throw new Error(`Supabase update failed: ${error.message}`);
-  }
-}
-
-async function updateProfileByUserId(
-  userId: string,
-  updates: Record<string, unknown>
-) {
-  const supabase = getSupabaseAdmin();
-
-  const { error } = await supabase
-    .from("profiles")
-    .update(updates)
-    .eq("id", userId);
 
   if (error) {
     throw new Error(`Supabase update failed: ${error.message}`);
