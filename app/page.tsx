@@ -531,8 +531,8 @@ const statGrid: React.CSSProperties = {
 const statCard: React.CSSProperties = {
   background: "#f9fafb",
   border: "1px solid #e5e7eb",
-  borderRadius: "18px",
-  padding: "18px",
+  borderRadius: "14px",
+  padding: "12px",
 };
 
 const statTitle: React.CSSProperties = {
@@ -542,9 +542,9 @@ const statTitle: React.CSSProperties = {
 };
 
 const statValue: React.CSSProperties = {
-  marginTop: "8px",
-  fontWeight: 900,
-  fontSize: "28px",
+  marginTop: "4px",
+  fontWeight: 800,
+  fontSize: "20px",
 };
 
 const sectionStyle: React.CSSProperties = {
