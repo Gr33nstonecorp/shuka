@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
@@ -7,11 +8,11 @@ type Order = {
   id: string;
   request_id: string;
   quote_id: string;
-  vendor_name: string;
-  total_amount: number;
+  vendor_name: string | null;
+  total_amount: number | null;
   status: string;
   shipment_status: string;
-  created_at?: string;
+  created_at?: string | null;
 };
 
 type RequestRow = {
@@ -27,9 +28,19 @@ type EnrichedOrder = Order & {
   notes?: string | null;
 };
 
-type SessionUser = {
-  email?: string;
-};
+function formatMoney(value: number | null | undefined) {
+  const amount = Number(value ?? 0);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+}
 
 export default function OrdersPage() {
   const supabase = createClient(
@@ -64,21 +75,19 @@ export default function OrdersPage() {
       return;
     }
 
-    const requestIds = [...new Set(typedOrders.map((o) => o.request_id).filter(Boolean))];
+    const requestIds = [
+      ...new Set(typedOrders.map((o) => o.request_id).filter(Boolean)),
+    ];
 
-    const { data: requestRows, error: requestsError } = await supabase
+    const { data: requestRows } = await supabase
       .from("purchase_requests")
       .select("id, product, quantity, notes")
       .in("id", requestIds);
 
-    if (requestsError) {
-      setMessage("Orders loaded, but request details failed: " + requestsError.message);
-    }
-
     const requestMap = new Map<string, RequestRow>();
-    ((requestRows as RequestRow[]) || []).forEach((r) => requestMap.set(r.id, r));
+    (requestRows || []).forEach((r: any) => requestMap.set(r.id, r));
 
-    const enriched: EnrichedOrder[] = typedOrders.map((order) => {
+    const enriched = typedOrders.map((order) => {
       const request = requestMap.get(order.request_id);
       return {
         ...order,
@@ -96,238 +105,232 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  async function saveItemFromOrder(order: EnrichedOrder) {
+  async function saveItem(order: EnrichedOrder) {
     setMessage("");
 
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    const user = session?.user as SessionUser | undefined;
-    const userEmail = user?.email || "";
+    const email = session?.user?.email;
 
-    if (!userEmail) {
-      setMessage("You must be signed in to save items.");
+    if (!email) {
+      setMessage("Login required to save items.");
       return;
     }
 
-    const quantity = Number(order.quantity || 1);
+    const qty = Number(order.quantity || 1);
     const total = Number(order.total_amount || 0);
-    const unitPrice = quantity > 0 ? total / quantity : total;
+    const unit = qty > 0 ? total / qty : total;
 
-    const { error: saveError } = await supabase.from("saved_items").insert({
-      user_email: userEmail,
+    const { error } = await supabase.from("saved_items").insert({
+      user_email: email,
       product: order.product || "Unnamed product",
-      preferred_vendor: order.vendor_name || null,
-      last_unit_price: unitPrice,
-      last_quantity: quantity,
+      preferred_vendor: order.vendor_name,
+      last_unit_price: unit,
+      last_quantity: qty,
       notes: order.notes || null,
     });
 
-    if (saveError) {
-      setMessage("Could not save item: " + saveError.message);
+    if (error) {
+      setMessage("Save failed: " + error.message);
       return;
     }
 
-    setMessage(`Saved "${order.product || "item"}" for quick reorder.`);
+    setMessage("Item saved for quick reorder.");
   }
 
   return (
-    <main>
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>Orders</h1>
-        <p style={{ color: "#6b7280", marginTop: "8px" }}>
-          Track approved purchase orders and save repeat buys for faster reordering.
+    <main style={pageWrap}>
+      {/* HEADER */}
+      <header style={headerStyle}>
+        <div style={headerInner}>
+          <Link href="/" style={brand}>
+            ShukAI
+          </Link>
+
+          <nav style={nav}>
+            <Link href="/requests">Requests</Link>
+            <Link href="/quotes">Quotes</Link>
+            <Link href="/orders" style={{ fontWeight: 800 }}>
+              Orders
+            </Link>
+            <Link href="/vendors">Vendors</Link>
+            <Link href="/assistant">AI Assistant</Link>
+            <Link href="/profile">Profile</Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* CONTENT */}
+      <div style={container}>
+        <h1 style={title}>Orders</h1>
+        <p style={subtitle}>
+          Track purchase orders and save repeat buys.
         </p>
+
+        {message && <div style={infoBox}>{message}</div>}
+
+        {loading ? (
+          <div style={card}>Loading orders...</div>
+        ) : orders.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div style={{ display: "grid", gap: "16px" }}>
+            {orders.map((order) => (
+              <div key={order.id} style={card}>
+                <div style={rowBetween}>
+                  <div>
+                    <div style={product}>
+                      {order.product || "Order Item"}
+                    </div>
+                    <div style={meta}>
+                      Vendor: {order.vendor_name || "Unknown"}
+                    </div>
+                    <div style={meta}>
+                      Created: {formatDate(order.created_at)}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <Badge label={order.status} kind="success" />
+                    <Badge label={order.shipment_status} kind="info" />
+                  </div>
+                </div>
+
+                <div style={grid}>
+                  <Metric label="Total" value={formatMoney(order.total_amount)} />
+                  <Metric label="Qty" value={String(order.quantity || 1)} />
+                  <Metric label="Request" value={order.request_id} />
+                </div>
+
+                {order.notes && (
+                  <p style={notes}>{order.notes}</p>
+                )}
+
+                <div style={{ marginTop: "12px" }}>
+                  <button style={button} onClick={() => saveItem(order)}>
+                    Save Item
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {message && (
-        <div
-          style={{
-            marginBottom: "16px",
-            background: "#eff6ff",
-            color: "#1d4ed8",
-            padding: "12px 14px",
-            borderRadius: "10px",
-            border: "1px solid #bfdbfe",
-          }}
-        >
-          {message}
-        </div>
-      )}
-
-      {loading ? (
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #e5e7eb",
-            borderRadius: "16px",
-            padding: "20px",
-          }}
-        >
-          Loading orders...
-        </div>
-      ) : orders.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div style={{ display: "grid", gap: "16px" }}>
-          {orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onSave={() => saveItemFromOrder(order)}
-            />
-          ))}
-        </div>
-      )}
     </main>
   );
 }
 
-function OrderCard({
-  order,
-  onSave,
-}: {
-  order: EnrichedOrder;
-  onSave: () => void;
-}) {
-  return (
-    <div
-      style={{
-        background: "white",
-        padding: "20px",
-        borderRadius: "16px",
-        border: "1px solid #e5e7eb",
-        boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "12px",
-          alignItems: "start",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <div style={{ fontWeight: 800, fontSize: "18px" }}>
-            {order.product || "Order Item"}
-          </div>
-          <div style={{ color: "#6b7280", fontSize: "14px", marginTop: "4px" }}>
-            Vendor: {order.vendor_name}
-          </div>
-        </div>
+/* ---------- UI ---------- */
 
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <Badge label={order.status} kind="success" />
-          <Badge label={order.shipment_status} kind="info" />
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: "16px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: "12px",
-        }}
-      >
-        <Metric label="Total" value={`$${Number(order.total_amount || 0).toFixed(2)}`} />
-        <Metric label="Quantity" value={String(order.quantity || 1)} />
-        <Metric label="Request ID" value={order.request_id} />
-        <Metric label="Quote ID" value={order.quote_id} />
-      </div>
-
-      {order.notes && (
-        <p style={{ marginTop: "14px", color: "#4b5563" }}>{order.notes}</p>
-      )}
-
-      <div style={{ marginTop: "16px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        <button
-          onClick={onSave}
-          style={{
-            padding: "10px 14px",
-            background: "#111827",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: 700,
-          }}
-        >
-          Save Item
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: any) {
   return (
     <div>
-      <div style={{ color: "#6b7280", fontSize: "13px" }}>{label}</div>
-      <div
-        style={{
-          fontWeight: 700,
-          marginTop: "4px",
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
-      </div>
+      <div style={{ color: "#6b7280", fontSize: "12px" }}>{label}</div>
+      <div style={{ fontWeight: 700 }}>{value}</div>
     </div>
   );
 }
 
-function Badge({
-  label,
-  kind,
-}: {
-  label: string;
-  kind: "success" | "info" | "warning";
-}) {
+function Badge({ label, kind }: any) {
   const styles =
     kind === "success"
       ? { background: "#dcfce7", color: "#166534" }
-      : kind === "info"
-      ? { background: "#dbeafe", color: "#1d4ed8" }
-      : { background: "#fef3c7", color: "#92400e" };
+      : { background: "#dbeafe", color: "#1d4ed8" };
 
   return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "6px 10px",
-        borderRadius: "999px",
-        fontSize: "12px",
-        fontWeight: 700,
-        ...styles,
-      }}
-    >
-      {label}
-    </span>
+    <span style={{ ...badge, ...styles }}>{label}</span>
   );
 }
 
 function EmptyState() {
   return (
-    <div
-      style={{
-        background: "white",
-        padding: "40px",
-        borderRadius: "16px",
-        border: "1px solid #e5e7eb",
-        textAlign: "center",
-        color: "#6b7280",
-      }}
-    >
-      <div style={{ fontSize: "18px", fontWeight: 700 }}>
-        No orders created yet
-      </div>
-      <p style={{ marginTop: "6px" }}>
-        Approve a quote or let Shuka auto-approve one to create your first order.
-      </p>
+    <div style={card}>
+      <h3>No orders yet</h3>
+      <p>Create requests → generate quotes → approve → orders appear here.</p>
+      <Link href="/requests">Create Request</Link>
     </div>
   );
 }
+
+/* ---------- STYLES ---------- */
+
+const pageWrap = { minHeight: "100vh", background: "#f3f4f6" };
+
+const headerStyle = {
+  background: "#0b1220",
+  color: "white",
+  padding: "16px",
+};
+
+const headerInner = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+  display: "flex",
+  justifyContent: "space-between",
+};
+
+const brand = { fontWeight: 900, fontSize: "22px", color: "white" };
+
+const nav = { display: "flex", gap: "12px", alignItems: "center" };
+
+const container = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+  padding: "24px",
+};
+
+const title = { fontSize: "28px", fontWeight: 800 };
+
+const subtitle = { color: "#6b7280", marginBottom: "16px" };
+
+const card = {
+  background: "white",
+  padding: "18px",
+  borderRadius: "12px",
+  border: "1px solid #e5e7eb",
+};
+
+const rowBetween = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  flexWrap: "wrap",
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3,1fr)",
+  gap: "12px",
+  marginTop: "12px",
+};
+
+const product = { fontWeight: 800, fontSize: "16px" };
+
+const meta = { color: "#6b7280", fontSize: "13px" };
+
+const notes = { marginTop: "10px", color: "#4b5563" };
+
+const button = {
+  padding: "10px 14px",
+  background: "#111827",
+  color: "white",
+  borderRadius: "8px",
+  border: "none",
+  cursor: "pointer",
+};
+
+const badge = {
+  padding: "6px 10px",
+  borderRadius: "999px",
+  fontSize: "12px",
+  fontWeight: 700,
+};
+
+const infoBox = {
+  marginBottom: "12px",
+  background: "#eff6ff",
+  padding: "10px",
+  borderRadius: "8px",
+};
