@@ -1,6 +1,6 @@
 export default function MSAPage() {
   return (
-    <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
+    <main style={pageStyle}>
       <h1>Master Subscription Agreement</h1>
 
       <p><strong>Effective Date:</strong> March 25, 2026</p>
@@ -103,3 +103,10 @@ export default function MSAPage() {
     </main>
   );
 }
+
+const pageStyle: React.CSSProperties = {
+  maxWidth: "900px",
+  margin: "0 auto",
+  padding: "24px",
+  lineHeight: 1.7,
+};
