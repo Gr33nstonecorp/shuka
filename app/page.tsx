@@ -143,9 +143,6 @@ export default function HomePage() {
             <a href="#workspace" style={navLink}>
               Workspace
             </a>
-            <a href="#features" style={navLink}>
-              Features
-            </a>
             <a href="/pricing" style={navLink}>
               Pricing
             </a>
@@ -238,9 +235,10 @@ export default function HomePage() {
         <div style={container}>
           <div style={sectionHeader}>
             <h2 style={sectionTitle}>Workspace</h2>
-<p style={sectionText}>
-  Manage requests, compare quotes, track orders, and work with suppliers in one place.
-</p>
+            <p style={sectionText}>
+              Manage requests, compare quotes, track orders, and work with
+              suppliers in one place.
+            </p>
           </div>
 
           <div style={tabGrid}>
@@ -254,7 +252,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      
+
       <section style={ctaSection}>
         <div style={container}>
           <div style={ctaCard}>
@@ -291,7 +289,9 @@ export default function HomePage() {
         </div>
       </section>
     </main>
-    
+  );
+}
+
 function StatCard({
   title,
   value,
@@ -303,21 +303,6 @@ function StatCard({
     <div style={statCard}>
       <div style={statTitle}>{title}</div>
       <div style={statValue}>{value}</div>
-    </div>
-  );
-}
-
-function FeatureCard({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div style={featureCard}>
-      <div style={featureTitle}>{title}</div>
-      <div style={featureText}>{text}</div>
     </div>
   );
 }
@@ -549,10 +534,6 @@ const sectionStyle: React.CSSProperties = {
   padding: "28px 0 12px",
 };
 
-const sectionStyleAlt: React.CSSProperties = {
-  padding: "20px 0 12px",
-};
-
 const sectionHeader: React.CSSProperties = {
   maxWidth: "760px",
 };
@@ -604,32 +585,6 @@ const tabAction: React.CSSProperties = {
   marginTop: "14px",
   color: "#2563eb",
   fontWeight: 800,
-};
-
-const featureGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: "18px",
-  marginTop: "24px",
-};
-
-const featureCard: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "20px",
-  padding: "20px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const featureTitle: React.CSSProperties = {
-  fontSize: "18px",
-  fontWeight: 800,
-};
-
-const featureText: React.CSSProperties = {
-  marginTop: "10px",
-  color: "#6b7280",
-  lineHeight: 1.7,
 };
 
 const ctaSection: React.CSSProperties = {
