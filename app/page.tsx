@@ -688,3 +688,36 @@ const ctaButtons: React.CSSProperties = {
   flexWrap: "wrap",
   alignItems: "center",
 };
+const footerStyle: React.CSSProperties = {
+  borderTop: "1px solid #e5e7eb",
+  marginTop: "48px",
+  background: "#ffffff",
+};
+
+const footerInner: React.CSSProperties = {
+  maxWidth: "1180px",
+  margin: "0 auto",
+  padding: "20px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "16px",
+  flexWrap: "wrap",
+};
+
+const footerBrand: React.CSSProperties = {
+  fontWeight: 800,
+  color: "#111827",
+};
+
+const footerLinks: React.CSSProperties = {
+  display: "flex",
+  gap: "16px",
+  flexWrap: "wrap",
+};
+
+const footerLink: React.CSSProperties = {
+  textDecoration: "none",
+  color: "#4b5563",
+  fontWeight: 600,
+};
