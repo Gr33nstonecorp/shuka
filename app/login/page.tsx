@@ -23,9 +23,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   function getNextUrl() {
-    if (typeof window === "undefined") return "/";
+    if (typeof window === "undefined") return "/pricing";
     const params = new URLSearchParams(window.location.search);
-    return params.get("next") || "/";
+    return params.get("next") || "/pricing";
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -56,7 +56,7 @@ export default function LoginPage() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: "https://www.shukai.co/",
+        emailRedirectTo: "https://www.shukai.co/pricing",
       },
     });
 
@@ -73,10 +73,7 @@ export default function LoginPage() {
       return;
     }
 
-    setMessage("Account created. You can now log in with your password.");
-    setMode("login");
-    setPassword("");
-    setLoading(false);
+    window.location.href = getNextUrl();
   }
 
   async function handleMagicLink(e: React.FormEvent) {
@@ -87,7 +84,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: "https://www.shukai.co/",
+        emailRedirectTo: "https://www.shukai.co/pricing",
       },
     });
 
@@ -137,21 +134,9 @@ export default function LoginPage() {
             flexWrap: "wrap",
           }}
         >
-          <TabButton
-            active={mode === "login"}
-            onClick={() => setMode("login")}
-            label="Password Login"
-          />
-          <TabButton
-            active={mode === "signup"}
-            onClick={() => setMode("signup")}
-            label="Sign Up"
-          />
-          <TabButton
-            active={mode === "magic"}
-            onClick={() => setMode("magic")}
-            label="Magic Link"
-          />
+          <TabButton active={mode === "login"} onClick={() => setMode("login")} label="Password Login" />
+          <TabButton active={mode === "signup"} onClick={() => setMode("signup")} label="Sign Up" />
+          <TabButton active={mode === "magic"} onClick={() => setMode("magic")} label="Magic Link" />
         </div>
 
         {mode === "login" && (
