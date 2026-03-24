@@ -1,5 +1,34 @@
 import { createClient } from "@supabase/supabase-js";
 
+type VendorSource = {
+  id: string;
+  name: string | null;
+  vendor_type: string | null;
+  category: string | null;
+  default_ai_score: number | null;
+  active: boolean | null;
+  search_url_template: string | null;
+};
+
+type QuoteOptionInsert = {
+  request_id: string;
+  vendor_name: string | null;
+  unit_price: number;
+  shipping_cost: number;
+  lead_time_days: number;
+  ai_score: number | null;
+  recommendation: string;
+  status: string;
+  product_url: string | null;
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 function enhanceSearch(term: string) {
   const t = term.toLowerCase();
 
@@ -13,7 +42,7 @@ function enhanceSearch(term: string) {
   if (t.includes("trash bag")) return "heavy duty trash bags bulk";
   if (t.includes("scanner")) return "barcode scanner handheld commercial";
 
-  return term + " bulk wholesale";
+  return `${term} bulk wholesale`;
 }
 
 function estimateVendorPricing(
@@ -138,50 +167,114 @@ function estimateVendorPricing(
   };
 }
 
+function buildProductUrl(template: string | null, encodedSearchTerm: string) {
+  if (!template) return null;
+  if (!template.includes("{searchTerm}")) return template;
+  return template.replace("{searchTerm}", encodedSearchTerm);
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+
+    if (!body || typeof body !== "object") {
+      return jsonResponse({ error: "Invalid request body" }, 400);
+    }
+
+    const requestId =
+      typeof body.request_id === "string" ? body.request_id.trim() : "";
+    const productName =
+      typeof body.product_name === "string" ? body.product_name.trim() : "";
+    const qty = Number(body.quantity);
+
+    if (!requestId) {
+      return jsonResponse({ error: "Missing request_id" }, 400);
+    }
+
+    if (!productName) {
+      return jsonResponse({ error: "Missing product_name" }, 400);
+    }
+
+    if (!Number.isFinite(qty) || qty < 1) {
+      return jsonResponse({ error: "Quantity must be at least 1" }, 400);
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { request_id, product_name, quantity } = body;
-    const qty = Number(quantity) || 1;
+    const { data: requestRow, error: requestError } = await supabase
+      .from("purchase_requests")
+      .select("id")
+      .eq("id", requestId)
+      .maybeSingle();
 
-    const enhanced = enhanceSearch(product_name || "product");
-    const cleanTerm = enhanced.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-    const searchTerm = encodeURIComponent(cleanTerm);
+    if (requestError) {
+      return jsonResponse({ error: requestError.message }, 500);
+    }
 
-    const { data: vendors, error: vendorError } = await supabase
-      .from("vendor_sources")
-      .select("*")
-      .eq("active", true);
+    if (!requestRow) {
+      return jsonResponse({ error: "Purchase request not found" }, 404);
+    }
 
-    if (vendorError) {
-      return new Response(JSON.stringify({ error: vendorError.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+    const { data: existingQuotes, error: existingQuotesError } = await supabase
+      .from("quote_options")
+      .select("id")
+      .eq("request_id", requestId)
+      .limit(1);
+
+    if (existingQuotesError) {
+      return jsonResponse({ error: existingQuotesError.message }, 500);
+    }
+
+    if (existingQuotes && existingQuotes.length > 0) {
+      return jsonResponse({
+        success: true,
+        message: "Quotes already exist for this request",
+        skipped: true,
+        autoApprovedCount: 0,
       });
     }
 
-    const quotesToInsert = (vendors || []).map((vendor: any) => {
+    const enhanced = enhanceSearch(productName);
+    const cleanTerm = enhanced.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+    const searchTerm = encodeURIComponent(cleanTerm);
+
+    const { data: vendorRows, error: vendorError } = await supabase
+      .from("vendor_sources")
+      .select("*")
+      .eq("active", true)
+      .order("default_ai_score", { ascending: false });
+
+    if (vendorError) {
+      return jsonResponse({ error: vendorError.message }, 500);
+    }
+
+    const vendors = ((vendorRows || []) as VendorSource[]).filter(
+      (vendor) => vendor.active
+    );
+
+    if (vendors.length === 0) {
+      return jsonResponse({ error: "No active vendor sources available" }, 400);
+    }
+
+    const quotesToInsert: QuoteOptionInsert[] = vendors.map((vendor) => {
       const pricing = estimateVendorPricing(
-        vendor.vendor_type,
-        vendor.category,
-        vendor.name,
+        vendor.vendor_type || "",
+        vendor.category || "",
+        vendor.name || "",
         qty
       );
 
       const total = pricing.unit_price * qty + pricing.shipping_cost;
+      const aiScore = vendor.default_ai_score ?? 0;
+
       const status =
-        total < 500 && Number(vendor.default_ai_score || 0) >= 85
-          ? "approved"
-          : "generated";
+        total < 500 && aiScore >= 85 ? "approved" : "generated";
 
       return {
-        request_id,
+        request_id: requestId,
         vendor_name: vendor.name,
         unit_price: pricing.unit_price,
         shipping_cost: pricing.shipping_cost,
@@ -189,7 +282,7 @@ export async function POST(req: Request) {
         ai_score: vendor.default_ai_score,
         recommendation: `AI searched: "${enhanced}"`,
         status,
-        product_url: vendor.search_url_template.replace("{searchTerm}", searchTerm),
+        product_url: buildProductUrl(vendor.search_url_template, searchTerm),
       };
     });
 
@@ -199,53 +292,62 @@ export async function POST(req: Request) {
       .select();
 
     if (quoteError) {
-      return new Response(JSON.stringify({ error: quoteError.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: quoteError.message }, 500);
     }
 
     const autoApprovedQuotes =
-      insertedQuotes?.filter((q) => q.status === "approved") || [];
+      insertedQuotes?.filter((quote: any) => quote.status === "approved") || [];
 
     if (autoApprovedQuotes.length > 0) {
-      const ordersToInsert = autoApprovedQuotes.map((quote) => ({
-        request_id: quote.request_id,
-        quote_id: quote.id,
-        vendor_name: quote.vendor_name,
-        total_amount:
-          Number(quote.unit_price || 0) * qty + Number(quote.shipping_cost || 0),
-        status: "approved",
-        shipment_status: "pending",
-      }));
-
-      const { error: orderError } = await supabase
+      const existingOrderCheck = await supabase
         .from("purchase_orders")
-        .insert(ordersToInsert);
+        .select("id, quote_id")
+        .in(
+          "quote_id",
+          autoApprovedQuotes.map((quote: any) => quote.id)
+        );
 
-      if (orderError) {
-        return new Response(JSON.stringify({ error: orderError.message }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
+      if (existingOrderCheck.error) {
+        return jsonResponse({ error: existingOrderCheck.error.message }, 500);
+      }
+
+      const existingQuoteIds = new Set(
+        (existingOrderCheck.data || []).map((row: any) => row.quote_id)
+      );
+
+      const ordersToInsert = autoApprovedQuotes
+        .filter((quote: any) => !existingQuoteIds.has(quote.id))
+        .map((quote: any) => ({
+          request_id: quote.request_id,
+          quote_id: quote.id,
+          vendor_name: quote.vendor_name,
+          total_amount:
+            Number(quote.unit_price || 0) * qty +
+            Number(quote.shipping_cost || 0),
+          status: "approved",
+          shipment_status: "pending",
+        }));
+
+      if (ordersToInsert.length > 0) {
+        const { error: orderError } = await supabase
+          .from("purchase_orders")
+          .insert(ordersToInsert);
+
+        if (orderError) {
+          return jsonResponse({ error: orderError.message }, 500);
+        }
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        enhanced_search: enhanced,
-        autoApprovedCount: autoApprovedQuotes.length,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid request body" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
+    return jsonResponse({
+      success: true,
+      message: "Quotes generated successfully",
+      enhanced_search: enhanced,
+      insertedQuoteCount: insertedQuotes?.length || 0,
+      autoApprovedCount: autoApprovedQuotes.length,
     });
+  } catch (error) {
+    console.error("generate-quotes route error:", error);
+    return jsonResponse({ error: "Unexpected server error" }, 500);
   }
 }
