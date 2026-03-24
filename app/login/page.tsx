@@ -23,9 +23,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   function getNextUrl() {
-    if (typeof window === "undefined") return "/pricing";
+    if (typeof window === "undefined") return "/";
     const params = new URLSearchParams(window.location.search);
-    return params.get("next") || "/pricing";
+    return params.get("next") || "/";
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -56,7 +56,7 @@ export default function LoginPage() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: "https://www.shukai.co/pricing",
+        emailRedirectTo: "https://www.shukai.co/",
       },
     });
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: "https://www.shukai.co/pricing",
+        emailRedirectTo: "https://www.shukai.co/",
       },
     });
 
