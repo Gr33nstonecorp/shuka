@@ -1,160 +1,202 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export const runtime = "nodejs";
 
-export async function POST(req: Request) {
-  const body = await req.text();
-  const sig = req.headers.get("stripe-signature");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-02-24.acacia",
+});
 
-  if (!sig) {
-    return new Response("Missing stripe-signature header", { status: 400 });
-  }
-
-  let event: Stripe.Event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err) {
-    console.error("Webhook signature failed:", err);
-    return new Response("Webhook Error", { status: 400 });
-  }
-
-  const supabase = createClient(
+function getSupabaseAdmin() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
+}
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function getPlanFromPriceId(priceId: string | null | undefined) {
+  if (!priceId) return "free";
+
+  if (priceId === process.env.STRIPE_PRICE_STARTER_MONTHLY) return "starter";
+  if (priceId === process.env.STRIPE_PRICE_PREMIUM_MONTHLY) return "premium";
+
+  return "free";
+}
+
+async function updateProfileByCustomerId(
+  stripeCustomerId: string,
+  updates: Record<string, unknown>
+) {
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("stripe_customer_id", stripeCustomerId);
+
+  if (error) {
+    throw new Error(`Supabase update failed: ${error.message}`);
+  }
+}
+
+async function updateProfileByUserId(
+  userId: string,
+  updates: Record<string, unknown>
+) {
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(`Supabase update failed: ${error.message}`);
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const supabase = getSupabaseAdmin();
+
+  const userId = session.metadata?.userId;
+  const customerId =
+    typeof session.customer === "string" ? session.customer : null;
+  const subscriptionId =
+    typeof session.subscription === "string" ? session.subscription : null;
+  const email = session.customer_details?.email || session.customer_email || null;
+  const requestedPlan = session.metadata?.plan || "starter";
+
+  if (!userId) {
+    throw new Error("Missing userId in checkout session metadata");
+  }
+
+  let currentPeriodEnd: string | null = null;
+  let subscriptionStatus = "active";
+  let plan = requestedPlan;
+
+  if (subscriptionId) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    subscriptionStatus = subscription.status;
+
+    const firstItem = subscription.items.data[0];
+    const priceId = firstItem?.price?.id || null;
+    plan = getPlanFromPriceId(priceId) || requestedPlan;
+
+    currentPeriodEnd = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : null;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      email,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      subscription_status: subscriptionStatus,
+      plan,
+      current_period_end: currentPeriodEnd,
+    })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(`Supabase profile update failed: ${error.message}`);
+  }
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const customerId =
+    typeof subscription.customer === "string" ? subscription.customer : null;
+
+  if (!customerId) {
+    throw new Error("Missing customer id on subscription");
+  }
+
+  const firstItem = subscription.items.data[0];
+  const priceId = firstItem?.price?.id || null;
+
+  const plan = getPlanFromPriceId(priceId);
+  const currentPeriodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000).toISOString()
+    : null;
+
+  await updateProfileByCustomerId(customerId, {
+    stripe_subscription_id: subscription.id,
+    subscription_status: subscription.status,
+    plan,
+    current_period_end: currentPeriodEnd,
+  });
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const customerId =
+    typeof subscription.customer === "string" ? subscription.customer : null;
+
+  if (!customerId) {
+    throw new Error("Missing customer id on subscription");
+  }
+
+  await updateProfileByCustomerId(customerId, {
+    subscription_status: "canceled",
+    plan: "free",
+    current_period_end: null,
+    stripe_subscription_id: subscription.id,
+  });
+}
+
+export async function POST(req: Request) {
   try {
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
+    const signature = req.headers.get("stripe-signature");
 
-      const email =
-        session.customer_details?.email || session.metadata?.email || null;
-      const plan = session.metadata?.plan || "starter";
-
-      const customerId =
-        typeof session.customer === "string" ? session.customer : null;
-
-      const subscriptionId =
-        typeof session.subscription === "string" ? session.subscription : null;
-
-      console.log("checkout.session.completed", {
-        email,
-        plan,
-        customerId,
-        subscriptionId,
-      });
-
-      if (email) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-          })
-          .eq("email", email);
-
-        if (error) {
-          console.error("checkout.session.completed update error:", error);
-        }
-      } else {
-        console.error("checkout.session.completed: missing email");
-      }
+    if (!signature) {
+      return jsonResponse({ error: "Missing Stripe signature" }, 400);
     }
 
-    if (event.type === "customer.subscription.created") {
-      const subscription = event.data.object as Stripe.Subscription;
+    const body = await req.text();
 
-      const email = subscription.metadata?.email || null;
-      const plan = subscription.metadata?.plan || "starter";
-      const customerId =
-        typeof subscription.customer === "string" ? subscription.customer : null;
+    const event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
 
-      console.log("customer.subscription.created", {
-        email,
-        plan,
-        customerId,
-        subscriptionId: subscription.id,
-      });
-
-      if (email) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
-          })
-          .eq("email", email);
-
-        if (error) {
-          console.error("customer.subscription.created update error:", error);
-        }
-      } else if (customerId) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
-          })
-          .eq("stripe_customer_id", customerId);
-
-        if (error) {
-          console.error("customer.subscription.created fallback update error:", error);
-        }
+    switch (event.type) {
+      case "checkout.session.completed": {
+        await handleCheckoutCompleted(
+          event.data.object as Stripe.Checkout.Session
+        );
+        break;
       }
+
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription
+        );
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        await handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription
+        );
+        break;
+      }
+
+      default:
+        break;
     }
 
-    if (event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object as Stripe.Subscription;
-
-      const email = subscription.metadata?.email || null;
-      const customerId =
-        typeof subscription.customer === "string" ? subscription.customer : null;
-
-      console.log("customer.subscription.deleted", {
-        email,
-        customerId,
-        subscriptionId: subscription.id,
-      });
-
-      if (email) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan: "trial",
-            stripe_subscription_id: null,
-          })
-          .eq("email", email);
-
-        if (error) {
-          console.error("customer.subscription.deleted update error:", error);
-        }
-      } else if (customerId) {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            plan: "trial",
-            stripe_subscription_id: null,
-          })
-          .eq("stripe_customer_id", customerId);
-
-        if (error) {
-          console.error("customer.subscription.deleted fallback update error:", error);
-        }
-      }
-    }
-
-    return new Response("Success", { status: 200 });
-  } catch (err) {
-    console.error("Webhook handler error:", err);
-    return new Response("Webhook handler failed", { status: 500 });
+    return jsonResponse({ received: true });
+  } catch (error) {
+    console.error("Stripe webhook error:", error);
+    return jsonResponse({ error: "Webhook handler failed" }, 400);
   }
 }
