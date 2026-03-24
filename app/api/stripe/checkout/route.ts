@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         },
       ],
       customer_email: email || undefined,
-      success_url: `${siteUrl}/profile`,
+      success_url: `${siteUrl}/?checkout=success`,
       cancel_url: `${siteUrl}/pricing?checkout=cancel`,
       metadata: {
         userId,
