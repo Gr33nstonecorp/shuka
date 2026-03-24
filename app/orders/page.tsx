@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Order = {
   id: string;
@@ -39,13 +39,17 @@ function formatMoney(value: number | null | undefined) {
 function formatDate(value?: string | null) {
   if (!value) return "—";
   const d = new Date(value);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
 }
 
 export default function OrdersPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
   const [orders, setOrders] = useState<EnrichedOrder[]>([]);
@@ -142,7 +146,6 @@ export default function OrdersPage() {
 
   return (
     <main style={pageWrap}>
-      {/* HEADER */}
       <header style={headerStyle}>
         <div style={headerInner}>
           <Link href="/" style={brand}>
@@ -150,19 +153,28 @@ export default function OrdersPage() {
           </Link>
 
           <nav style={nav}>
-            <Link href="/requests">Requests</Link>
-            <Link href="/quotes">Quotes</Link>
-            <Link href="/orders" style={{ fontWeight: 800 }}>
+            <Link href="/requests" style={navLink}>
+              Requests
+            </Link>
+            <Link href="/quotes" style={navLink}>
+              Quotes
+            </Link>
+            <Link href="/orders" style={navLinkActive}>
               Orders
             </Link>
-            <Link href="/vendors">Vendors</Link>
-            <Link href="/assistant">AI Assistant</Link>
-            <Link href="/profile">Profile</Link>
+            <Link href="/vendors" style={navLink}>
+              Vendors
+            </Link>
+            <Link href="/assistant" style={navLink}>
+              AI Assistant
+            </Link>
+            <Link href="/profile" style={ghostButtonLink}>
+              Profile
+            </Link>
           </nav>
         </div>
       </header>
 
-      {/* CONTENT */}
       <div style={container}>
         <h1 style={title}>Orders</h1>
         <p style={subtitle}>
@@ -176,7 +188,7 @@ export default function OrdersPage() {
         ) : orders.length === 0 ? (
           <EmptyState />
         ) : (
-          <div style={{ display: "grid", gap: "16px" }}>
+          <div style={ordersGrid}>
             {orders.map((order) => (
               <div key={order.id} style={card}>
                 <div style={rowBetween}>
@@ -192,7 +204,7 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={badgeRow}>
                     <Badge label={order.status} kind="success" />
                     <Badge label={order.shipment_status} kind="info" />
                   </div>
@@ -204,11 +216,9 @@ export default function OrdersPage() {
                   <Metric label="Request" value={order.request_id} />
                 </div>
 
-                {order.notes && (
-                  <p style={notes}>{order.notes}</p>
-                )}
+                {order.notes && <p style={notes}>{order.notes}</p>}
 
-                <div style={{ marginTop: "12px" }}>
+                <div style={actionRow}>
                   <button style={button} onClick={() => saveItem(order)}>
                     Save Item
                   </button>
@@ -222,70 +232,128 @@ export default function OrdersPage() {
   );
 }
 
-/* ---------- UI ---------- */
-
-function Metric({ label, value }: any) {
+function Metric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <div>
-      <div style={{ color: "#6b7280", fontSize: "12px" }}>{label}</div>
-      <div style={{ fontWeight: 700 }}>{value}</div>
+      <div style={metricLabel}>{label}</div>
+      <div style={metricValue}>{value}</div>
     </div>
   );
 }
 
-function Badge({ label, kind }: any) {
-  const styles =
+function Badge({
+  label,
+  kind,
+}: {
+  label: string;
+  kind: "success" | "info";
+}) {
+  const styles: React.CSSProperties =
     kind === "success"
       ? { background: "#dcfce7", color: "#166534" }
       : { background: "#dbeafe", color: "#1d4ed8" };
 
-  return (
-    <span style={{ ...badge, ...styles }}>{label}</span>
-  );
+  return <span style={{ ...badge, ...styles }}>{label}</span>;
 }
 
 function EmptyState() {
   return (
     <div style={card}>
-      <h3>No orders yet</h3>
-      <p>Create requests → generate quotes → approve → orders appear here.</p>
-      <Link href="/requests">Create Request</Link>
+      <h3 style={emptyTitle}>No orders yet</h3>
+      <p style={emptyText}>
+        Create requests, generate quotes, and approve one to see orders here.
+      </p>
+      <Link href="/requests" style={primaryLink}>
+        Create Request
+      </Link>
     </div>
   );
 }
 
-/* ---------- STYLES ---------- */
+const pageWrap: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "#f3f4f6",
+};
 
-const pageWrap = { minHeight: "100vh", background: "#f3f4f6" };
-
-const headerStyle = {
+const headerStyle: React.CSSProperties = {
   background: "#0b1220",
   color: "white",
   padding: "16px",
 };
 
-const headerInner = {
+const headerInner: React.CSSProperties = {
   maxWidth: "1100px",
   margin: "0 auto",
   display: "flex",
   justifyContent: "space-between",
+  alignItems: "center",
+  gap: "16px",
+  flexWrap: "wrap",
 };
 
-const brand = { fontWeight: 900, fontSize: "22px", color: "white" };
+const brand: React.CSSProperties = {
+  fontWeight: 900,
+  fontSize: "22px",
+  color: "white",
+  textDecoration: "none",
+};
 
-const nav = { display: "flex", gap: "12px", alignItems: "center" };
+const nav: React.CSSProperties = {
+  display: "flex",
+  gap: "12px",
+  alignItems: "center",
+  flexWrap: "wrap",
+};
 
-const container = {
+const navLink: React.CSSProperties = {
+  color: "#cbd5e1",
+  textDecoration: "none",
+  fontWeight: 600,
+};
+
+const navLinkActive: React.CSSProperties = {
+  color: "white",
+  textDecoration: "none",
+  fontWeight: 800,
+};
+
+const ghostButtonLink: React.CSSProperties = {
+  textDecoration: "none",
+  color: "white",
+  padding: "10px 16px",
+  borderRadius: "12px",
+  background: "rgba(255,255,255,0.08)",
+  fontWeight: 700,
+};
+
+const container: React.CSSProperties = {
   maxWidth: "1100px",
   margin: "0 auto",
   padding: "24px",
 };
 
-const title = { fontSize: "28px", fontWeight: 800 };
+const title: React.CSSProperties = {
+  fontSize: "28px",
+  fontWeight: 800,
+};
 
-const subtitle = { color: "#6b7280", marginBottom: "16px" };
+const subtitle: React.CSSProperties = {
+  color: "#6b7280",
+  marginBottom: "16px",
+};
 
-const card = {
+const ordersGrid: React.CSSProperties = {
+  display: "grid",
+  gap: "16px",
+};
+
+const card: React.CSSProperties = {
   background: "white",
   padding: "18px",
   borderRadius: "12px",
@@ -299,20 +367,39 @@ const rowBetween: React.CSSProperties = {
   flexWrap: "wrap",
 };
 
-const grid = {
+const badgeRow: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const grid: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(3,1fr)",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "12px",
   marginTop: "12px",
 };
 
-const product = { fontWeight: 800, fontSize: "16px" };
+const product: React.CSSProperties = {
+  fontWeight: 800,
+  fontSize: "16px",
+};
 
-const meta = { color: "#6b7280", fontSize: "13px" };
+const meta: React.CSSProperties = {
+  color: "#6b7280",
+  fontSize: "13px",
+};
 
-const notes = { marginTop: "10px", color: "#4b5563" };
+const notes: React.CSSProperties = {
+  marginTop: "10px",
+  color: "#4b5563",
+};
 
-const button = {
+const actionRow: React.CSSProperties = {
+  marginTop: "12px",
+};
+
+const button: React.CSSProperties = {
   padding: "10px 14px",
   background: "#111827",
   color: "white",
@@ -321,16 +408,44 @@ const button = {
   cursor: "pointer",
 };
 
-const badge = {
+const badge: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: "999px",
   fontSize: "12px",
   fontWeight: 700,
 };
 
-const infoBox = {
+const metricLabel: React.CSSProperties = {
+  color: "#6b7280",
+  fontSize: "12px",
+};
+
+const metricValue: React.CSSProperties = {
+  fontWeight: 700,
+};
+
+const infoBox: React.CSSProperties = {
   marginBottom: "12px",
   background: "#eff6ff",
   padding: "10px",
   borderRadius: "8px",
+};
+
+const emptyTitle: React.CSSProperties = {
+  marginTop: 0,
+};
+
+const emptyText: React.CSSProperties = {
+  color: "#6b7280",
+};
+
+const primaryLink: React.CSSProperties = {
+  display: "inline-block",
+  marginTop: "12px",
+  padding: "10px 14px",
+  background: "#111827",
+  color: "white",
+  borderRadius: "8px",
+  textDecoration: "none",
+  fontWeight: 700,
 };
