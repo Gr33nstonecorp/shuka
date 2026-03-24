@@ -254,37 +254,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <section id="features" style={sectionStyleAlt}>
-        <div style={container}>
-          <div style={sectionHeader}>
-            <h2 style={sectionTitle}>What this app should do</h2>
-            <p style={sectionText}>
-              Clean routing, real workflows, and less friction.
-            </p>
-          </div>
-
-          <div style={featureGrid}>
-            <FeatureCard
-              title="Requests"
-              text="Start procurement with a structured request instead of a messy message."
-            />
-            <FeatureCard
-              title="Quotes"
-              text="Compare suppliers without flipping between tabs and screenshots."
-            />
-            <FeatureCard
-              title="Orders"
-              text="Track what has been quoted, approved, and purchased."
-            />
-            <FeatureCard
-              title="AI Assistant"
-              text="Use AI where it improves sourcing and decision support."
-            />
-          </div>
-        </div>
-      </section>
-
+      
       <section style={ctaSection}>
         <div style={container}>
           <div style={ctaCard}>
