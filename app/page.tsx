@@ -238,9 +238,9 @@ export default function HomePage() {
         <div style={container}>
           <div style={sectionHeader}>
             <h2 style={sectionTitle}>Workspace</h2>
-            <p style={sectionText}>
-              These are real links to your app routes. No fake tab content.
-            </p>
+<p style={sectionText}>
+  Manage requests, compare quotes, track orders, and work with suppliers in one place.
+</p>
           </div>
 
           <div style={tabGrid}>
