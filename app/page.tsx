@@ -1,10 +1,15 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type DemoTab = "sourcing" | "quotes" | "orders";
+type Tab =
+  | "requests"
+  | "quotes"
+  | "orders"
+  | "vendors"
+  | "ai"
+  | "saved";
 
 export default function HomePage() {
   const supabase = useMemo(
@@ -17,7 +22,7 @@ export default function HomePage() {
   );
 
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<DemoTab>("sourcing");
+  const [activeTab, setActiveTab] = useState<Tab>("requests");
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
@@ -48,83 +53,121 @@ export default function HomePage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#f8fafc",
-        color: "#0f172a",
+        background: "#f3f4f6",
+        color: "#111827",
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
       <header
         style={{
-          background: "#06122b",
+          background: "#0b1220",
           color: "white",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
         }}
       >
         <div
           style={{
             maxWidth: "1180px",
             margin: "0 auto",
-            padding: "18px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "16px",
-            flexWrap: "wrap",
+            padding: "20px",
           }}
         >
-          <div style={{ fontSize: "28px", fontWeight: 800 }}>Shuka</div>
-
-          <nav
+          <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              justifyContent: "space-between",
+              gap: "16px",
               flexWrap: "wrap",
             }}
           >
-            <a href="#demo" style={navLink}>
-              Demo
-            </a>
-            <a href="#features" style={navLink}>
-              Features
-            </a>
-            <a href="/pricing" style={navLink}>
-              Pricing
-            </a>
+            <div style={{ fontSize: "28px", fontWeight: 900 }}>Shuka</div>
 
-            {userEmail ? (
-              <>
-                <span
-                  style={{
-                    color: "#cbd5e1",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                  }}
-                >
-                  {userEmail}
-                </span>
-                <a href="/profile" style={ghostButton}>
-                  Profile
-                </a>
-                <button onClick={handleLogout} style={ghostButtonButton}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <a href="/login" style={ghostButton}>
-                  Log in
-                </a>
-                <a href="/login?next=/pricing" style={primaryButton}>
-                  Start free trial
-                </a>
-              </>
-            )}
-          </nav>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              {userEmail ? (
+                <>
+                  <span
+                    style={{
+                      color: "#cbd5e1",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {userEmail}
+                  </span>
+                  <a href="/pricing" style={topButton}>
+                    Pricing
+                  </a>
+                  <a href="/profile" style={topButton}>
+                    Profile
+                  </a>
+                  <button onClick={handleLogout} style={topButtonButton}>
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a href="/pricing" style={topButton}>
+                    Pricing
+                  </a>
+                  <a href="/login" style={topButton}>
+                    Log in
+                  </a>
+                  <a href="/login?next=/pricing" style={topPrimaryButton}>
+                    Start free trial
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              overflowX: "auto",
+              paddingTop: "18px",
+            }}
+          >
+            <TabButton
+              label="Requests"
+              active={activeTab === "requests"}
+              onClick={() => setActiveTab("requests")}
+            />
+            <TabButton
+              label="Quotes"
+              active={activeTab === "quotes"}
+              onClick={() => setActiveTab("quotes")}
+            />
+            <TabButton
+              label="Orders"
+              active={activeTab === "orders"}
+              onClick={() => setActiveTab("orders")}
+            />
+            <TabButton
+              label="Vendors"
+              active={activeTab === "vendors"}
+              onClick={() => setActiveTab("vendors")}
+            />
+            <TabButton
+              label="AI Assistant"
+              active={activeTab === "ai"}
+              onClick={() => setActiveTab("ai")}
+            />
+            <TabButton
+              label="Saved Items"
+              active={activeTab === "saved"}
+              onClick={() => setActiveTab("saved")}
+            />
+          </div>
         </div>
       </header>
 
@@ -153,390 +196,90 @@ export default function HomePage() {
 
       <section
         style={{
-          background:
-            "linear-gradient(180deg, #06122b 0%, #0b1b3d 58%, #f8fafc 58%, #f8fafc 100%)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1180px",
-            margin: "0 auto",
-            padding: "56px 20px 72px",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "28px",
-              alignItems: "center",
-            }}
-          >
-            <div>
-              <div style={pill}>
-                AI procurement for modern teams
-              </div>
-
-              <h1
-                style={{
-                  margin: "18px 0 0",
-                  fontSize: "clamp(38px, 8vw, 66px)",
-                  lineHeight: 1.02,
-                  color: "white",
-                  fontWeight: 900,
-                  letterSpacing: "-0.04em",
-                }}
-              >
-                Source vendors, compare quotes, and manage purchasing in one place.
-              </h1>
-
-              <p
-                style={{
-                  marginTop: "18px",
-                  fontSize: "20px",
-                  lineHeight: 1.65,
-                  color: "#cbd5e1",
-                  maxWidth: "700px",
-                }}
-              >
-                Shuka helps teams move faster with sourcing, quote comparison,
-                approvals, saved items, and order workflows — without spreadsheets
-                and messy inbox chains.
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "14px",
-                  flexWrap: "wrap",
-                  marginTop: "26px",
-                }}
-              >
-                {userEmail ? (
-                  <>
-                    <a href="/pricing" style={heroPrimary}>
-                      Upgrade or start trial
-                    </a>
-                    <a href="/profile" style={heroSecondary}>
-                      Manage account
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <a href="/login?next=/pricing" style={heroPrimary}>
-                      Start free trial
-                    </a>
-                    <a href="#demo" style={heroSecondary}>
-                      See live demo
-                    </a>
-                  </>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "18px",
-                  flexWrap: "wrap",
-                  marginTop: "24px",
-                  color: "#cbd5e1",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                }}
-              >
-                <span>7-day free trial</span>
-                <span>No setup headache</span>
-                <span>Built for real workflows</span>
-              </div>
-            </div>
-
-            <div>
-              <div
-                style={{
-                  background: "white",
-                  borderRadius: "24px",
-                  padding: "22px",
-                  boxShadow: "0 25px 60px rgba(2,6,23,0.28)",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "14px",
-                  }}
-                >
-                  <MiniCard
-                    title="AI sourcing"
-                    big="Faster"
-                    text="Generate vendor options from one request."
-                    bg="#eff6ff"
-                    border="#bfdbfe"
-                    titleColor="#1d4ed8"
-                  />
-                  <MiniCard
-                    title="Quote comparison"
-                    big="Clearer"
-                    text="See pricing and fit side by side."
-                    bg="#f8fafc"
-                    border="#e2e8f0"
-                    titleColor="#334155"
-                  />
-                  <MiniCard
-                    title="Approvals"
-                    big="Simpler"
-                    text="Keep decisions and requests together."
-                    bg="#f8fafc"
-                    border="#e2e8f0"
-                    titleColor="#334155"
-                  />
-                  <MiniCard
-                    title="Orders"
-                    big="Centralized"
-                    text="Track saved items and purchasing flow."
-                    bg="#ecfeff"
-                    border="#a5f3fc"
-                    titleColor="#0f766e"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="demo"
-        style={{
           maxWidth: "1180px",
           margin: "0 auto",
-          padding: "22px 20px 12px",
+          padding: "28px 20px 80px",
         }}
       >
-        <div style={{ maxWidth: "760px" }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "clamp(28px, 4vw, 44px)",
-              lineHeight: 1.1,
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-            }}
-          >
-            Try the product feel before you sign up
-          </h2>
-          <p
-            style={{
-              marginTop: "14px",
-              color: "#475569",
-              fontSize: "18px",
-              lineHeight: 1.7,
-            }}
-          >
-            These tabs are public so visitors can understand the workflow right away.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-            marginTop: "22px",
-          }}
-        >
-          <DemoTabButton
-            label="Sourcing"
-            active={activeTab === "sourcing"}
-            onClick={() => setActiveTab("sourcing")}
-          />
-          <DemoTabButton
-            label="Quote Compare"
-            active={activeTab === "quotes"}
-            onClick={() => setActiveTab("quotes")}
-          />
-          <DemoTabButton
-            label="Orders"
-            active={activeTab === "orders"}
-            onClick={() => setActiveTab("orders")}
-          />
-        </div>
-
         <div
           style={{
             background: "white",
-            border: "1px solid #e2e8f0",
-            borderRadius: "22px",
-            padding: "24px",
-            marginTop: "18px",
-            boxShadow: "0 8px 22px rgba(15,23,42,0.04)",
+            border: "1px solid #e5e7eb",
+            borderRadius: "24px",
+            padding: "28px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
           }}
         >
-          {activeTab === "sourcing" && (
-            <div>
-              <h3 style={demoTitle}>AI Sourcing Demo</h3>
-              <p style={demoText}>
-                Request: “Need stainless prep tables and commercial storage racks for a small food operation.”
-              </p>
-              <div style={demoGrid}>
-                <DemoResult
-                  title="Vendor A"
-                  subtitle="Fast ship • strong reviews"
-                  lines={["Prep tables", "Storage racks", "Good lead time"]}
-                />
-                <DemoResult
-                  title="Vendor B"
-                  subtitle="Lower pricing"
-                  lines={["Bulk discount", "Mid-range quality", "Longer delivery"]}
-                />
-                <DemoResult
-                  title="Vendor C"
-                  subtitle="Premium option"
-                  lines={["Best materials", "Higher cost", "Strong support"]}
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === "quotes" && (
-            <div>
-              <h3 style={demoTitle}>Quote Comparison Demo</h3>
-              <div style={compareWrap}>
-                <CompareCol
-                  title="Vendor A"
-                  price="$2,980"
-                  note="Best delivery speed"
-                />
-                <CompareCol
-                  title="Vendor B"
-                  price="$2,640"
-                  note="Lowest price"
-                />
-                <CompareCol
-                  title="Vendor C"
-                  price="$3,220"
-                  note="Best quality"
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === "orders" && (
-            <div>
-              <h3 style={demoTitle}>Order Workflow Demo</h3>
-              <div style={orderList}>
-                <OrderRow title="Prep tables" status="Approved" />
-                <OrderRow title="Storage racks" status="Quoted" />
-                <OrderRow title="Receiving bins" status="Saved item" />
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section
-        id="features"
-        style={{
-          maxWidth: "1180px",
-          margin: "0 auto",
-          padding: "54px 20px 80px",
-        }}
-      >
-        <div style={{ maxWidth: "760px" }}>
-          <h2
+          <h1
             style={{
               margin: 0,
-              fontSize: "clamp(28px, 4vw, 44px)",
-              lineHeight: 1.1,
+              fontSize: "clamp(34px, 6vw, 58px)",
+              lineHeight: 1.02,
               fontWeight: 900,
-              letterSpacing: "-0.03em",
+              letterSpacing: "-0.04em",
             }}
           >
-            Everything your team needs to move from request to purchase
-          </h2>
+            Procurement that actually feels organized.
+          </h1>
+
+          <p
+            style={{
+              marginTop: "16px",
+              maxWidth: "820px",
+              fontSize: "20px",
+              lineHeight: 1.7,
+              color: "#4b5563",
+            }}
+          >
+            Use the tabs above to preview sourcing, quote comparison, vendors,
+            orders, and workflow structure without getting blocked every two
+            clicks.
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              flexWrap: "wrap",
+              marginTop: "22px",
+            }}
+          >
+            {userEmail ? (
+              <>
+                <a href="/pricing" style={heroPrimary}>
+                  Upgrade plan
+                </a>
+                <a href="/profile" style={heroSecondary}>
+                  Open profile
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/login?next=/pricing" style={heroPrimary}>
+                  Start free trial
+                </a>
+                <a href="/login" style={heroSecondary}>
+                  Log in
+                </a>
+              </>
+            )}
+          </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "18px",
-            marginTop: "28px",
-          }}
-        >
-          {[
-            "AI vendor sourcing",
-            "Quote comparison",
-            "Approval workflow",
-            "Saved items and orders",
-            "Vendor ranking",
-            "Shipment visibility",
-          ].map((title) => (
-            <div
-              key={title}
-              style={{
-                background: "white",
-                border: "1px solid #e2e8f0",
-                borderRadius: "18px",
-                padding: "20px",
-                boxShadow: "0 8px 22px rgba(15,23,42,0.04)",
-              }}
-            >
-              <div style={{ fontSize: "18px", fontWeight: 800 }}>{title}</div>
-            </div>
-          ))}
+        <div style={{ marginTop: "22px" }}>
+          {activeTab === "requests" && <RequestsPanel />}
+          {activeTab === "quotes" && <QuotesPanel />}
+          {activeTab === "orders" && <OrdersPanel />}
+          {activeTab === "vendors" && <VendorsPanel />}
+          {activeTab === "ai" && <AIPanel />}
+          {activeTab === "saved" && <SavedPanel />}
         </div>
       </section>
     </main>
   );
 }
 
-function MiniCard({
-  title,
-  big,
-  text,
-  bg,
-  border,
-  titleColor,
-}: {
-  title: string;
-  big: string;
-  text: string;
-  bg: string;
-  border: string;
-  titleColor: string;
-}) {
-  return (
-    <div
-      style={{
-        background: bg,
-        border: `1px solid ${border}`,
-        borderRadius: "18px",
-        padding: "16px",
-      }}
-    >
-      <div style={{ color: titleColor, fontWeight: 800, fontSize: "14px" }}>
-        {title}
-      </div>
-      <div
-        style={{
-          marginTop: "8px",
-          fontSize: "26px",
-          fontWeight: 900,
-          color: "#0f172a",
-        }}
-      >
-        {big}
-      </div>
-      <div style={{ marginTop: "6px", color: "#475569", lineHeight: 1.6 }}>
-        {text}
-      </div>
-    </div>
-  );
-}
-
-function DemoTabButton({
+function TabButton({
   label,
   active,
   onClick,
@@ -549,13 +292,14 @@ function DemoTabButton({
     <button
       onClick={onClick}
       style={{
-        padding: "10px 14px",
+        padding: "12px 16px",
         borderRadius: "12px",
-        border: active ? "1px solid #111827" : "1px solid #d1d5db",
-        background: active ? "#111827" : "white",
-        color: active ? "white" : "#111827",
+        border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.12)",
+        background: active ? "#2563eb" : "rgba(255,255,255,0.06)",
+        color: "white",
         cursor: "pointer",
         fontWeight: 700,
+        whiteSpace: "nowrap",
       }}
     >
       {label}
@@ -563,69 +307,253 @@ function DemoTabButton({
   );
 }
 
-function DemoResult({
+function PanelShell({
   title,
   subtitle,
-  lines,
+  children,
 }: {
   title: string;
   subtitle: string;
-  lines: string[];
+  children: React.ReactNode;
 }) {
   return (
     <div
       style={{
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: "16px",
-        padding: "16px",
+        background: "white",
+        border: "1px solid #e5e7eb",
+        borderRadius: "24px",
+        padding: "24px",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
       }}
     >
-      <div style={{ fontWeight: 800 }}>{title}</div>
-      <div style={{ color: "#64748b", marginTop: "4px" }}>{subtitle}</div>
-      <ul style={{ margin: "12px 0 0", paddingLeft: "18px", color: "#334155", lineHeight: 1.8 }}>
-        {lines.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
+      <h2
+        style={{
+          margin: 0,
+          fontSize: "30px",
+          fontWeight: 900,
+          letterSpacing: "-0.03em",
+        }}
+      >
+        {title}
+      </h2>
+      <p
+        style={{
+          marginTop: "10px",
+          color: "#6b7280",
+          fontSize: "17px",
+          lineHeight: 1.7,
+        }}
+      >
+        {subtitle}
+      </p>
+      <div style={{ marginTop: "20px" }}>{children}</div>
     </div>
   );
 }
 
-function CompareCol({
-  title,
+function RequestsPanel() {
+  return (
+    <PanelShell
+      title="Requests"
+      subtitle="Start procurement with a simple structured request instead of scattered messages."
+    >
+      <div style={twoCol}>
+        <Card>
+          <FieldLabel>Request title</FieldLabel>
+          <FakeInput>Commercial prep tables for new kitchen setup</FakeInput>
+
+          <FieldLabel>Category</FieldLabel>
+          <FakeInput>Food service equipment</FakeInput>
+
+          <FieldLabel>Requirements</FieldLabel>
+          <FakeTextArea>
+            Stainless steel, easy to clean, 48–72 inch size range, commercial-grade durability.
+          </FakeTextArea>
+
+          <div style={{ marginTop: "16px" }}>
+            <ActionButton>Create request</ActionButton>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Why this helps</SectionTitle>
+          <Bullet>Centralizes buying requests</Bullet>
+          <Bullet>Makes sourcing easier to delegate</Bullet>
+          <Bullet>Keeps vendor searches tied to a real request</Bullet>
+          <Bullet>Gives buyers a repeatable workflow</Bullet>
+        </Card>
+      </div>
+    </PanelShell>
+  );
+}
+
+function QuotesPanel() {
+  return (
+    <PanelShell
+      title="Quote comparison"
+      subtitle="Compare vendors side by side so decisions are faster and more defensible."
+    >
+      <div style={threeCol}>
+        <QuoteCard vendor="Vendor A" price="$2,980" lead="5 days" quality="High" />
+        <QuoteCard vendor="Vendor B" price="$2,640" lead="12 days" quality="Medium" />
+        <QuoteCard vendor="Vendor C" price="$3,220" lead="6 days" quality="Premium" />
+      </div>
+    </PanelShell>
+  );
+}
+
+function OrdersPanel() {
+  return (
+    <PanelShell
+      title="Orders"
+      subtitle="Track what’s approved, quoted, and purchased without losing context."
+    >
+      <Card>
+        <OrderRow title="Prep tables" status="Approved" />
+        <OrderRow title="Storage racks" status="Quoted" />
+        <OrderRow title="Receiving bins" status="Saved item" />
+        <OrderRow title="Shelving kit" status="Ordered" />
+      </Card>
+    </PanelShell>
+  );
+}
+
+function VendorsPanel() {
+  return (
+    <PanelShell
+      title="Vendors"
+      subtitle="Keep supplier options organized so your team can actually compare and decide."
+    >
+      <div style={threeCol}>
+        <VendorCard
+          name="Vendor A"
+          note="Fast shipping"
+          tags={["Reliable", "Strong reviews", "Kitchen equipment"]}
+        />
+        <VendorCard
+          name="Vendor B"
+          note="Budget option"
+          tags={["Lower price", "Longer lead time", "Bulk discount"]}
+        />
+        <VendorCard
+          name="Vendor C"
+          note="Premium quality"
+          tags={["Best materials", "Higher price", "Great support"]}
+        />
+      </div>
+    </PanelShell>
+  );
+}
+
+function AIPanel() {
+  return (
+    <PanelShell
+      title="AI Assistant"
+      subtitle="Preview how Shuka can guide sourcing and comparison workflows."
+    >
+      <Card>
+        <div style={{ fontWeight: 700 }}>You:</div>
+        <div style={chatBubbleUser}>
+          Find vendors for stainless prep tables and compare likely tradeoffs.
+        </div>
+
+        <div style={{ fontWeight: 700, marginTop: "14px" }}>Shuka AI:</div>
+        <div style={chatBubbleAI}>
+          I found three vendor directions: one faster shipping option, one lower
+          price option, and one premium option with stronger materials. Open the
+          Quotes tab to compare them side by side.
+        </div>
+      </Card>
+    </PanelShell>
+  );
+}
+
+function SavedPanel() {
+  return (
+    <PanelShell
+      title="Saved items"
+      subtitle="Keep promising items and supplier options in one place for later review."
+    >
+      <div style={twoCol}>
+        <Card>
+          <SectionTitle>Saved items</SectionTitle>
+          <Bullet>Stainless prep table 60"</Bullet>
+          <Bullet>Commercial wall shelf kit</Bullet>
+          <Bullet>Heavy-duty storage rack</Bullet>
+        </Card>
+
+        <Card>
+          <SectionTitle>Why teams use this</SectionTitle>
+          <Bullet>Prevents re-searching the same products</Bullet>
+          <Bullet>Keeps shortlisted options visible</Bullet>
+          <Bullet>Makes future orders faster</Bullet>
+        </Card>
+      </div>
+    </PanelShell>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: "#f9fafb",
+        border: "1px solid #e5e7eb",
+        borderRadius: "18px",
+        padding: "18px",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function QuoteCard({
+  vendor,
   price,
-  note,
+  lead,
+  quality,
 }: {
-  title: string;
+  vendor: string;
   price: string;
-  note: string;
+  lead: string;
+  quality: string;
 }) {
   return (
-    <div
-      style={{
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: "16px",
-        padding: "16px",
-        minWidth: "180px",
-        flex: 1,
-      }}
-    >
-      <div style={{ fontWeight: 800 }}>{title}</div>
-      <div style={{ fontSize: "32px", fontWeight: 900, marginTop: "8px" }}>{price}</div>
-      <div style={{ color: "#64748b", marginTop: "6px" }}>{note}</div>
-    </div>
+    <Card>
+      <SectionTitle>{vendor}</SectionTitle>
+      <InfoLine label="Price" value={price} />
+      <InfoLine label="Lead time" value={lead} />
+      <InfoLine label="Quality" value={quality} />
+    </Card>
   );
 }
 
-function OrderRow({
-  title,
-  status,
+function VendorCard({
+  name,
+  note,
+  tags,
 }: {
-  title: string;
-  status: string;
+  name: string;
+  note: string;
+  tags: string[];
 }) {
+  return (
+    <Card>
+      <SectionTitle>{name}</SectionTitle>
+      <p style={{ color: "#6b7280", marginTop: "8px" }}>{note}</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+        {tags.map((tag) => (
+          <span key={tag} style={tagStyle}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function OrderRow({ title, status }: { title: string; status: string }) {
   return (
     <div
       style={{
@@ -642,13 +570,93 @@ function OrderRow({
   );
 }
 
-const navLink: React.CSSProperties = {
-  color: "#cbd5e1",
-  textDecoration: "none",
-  fontWeight: 600,
-};
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ marginTop: "10px", color: "#374151" }}>
+      <strong>{label}:</strong> {value}
+    </div>
+  );
+}
 
-const ghostButton: React.CSSProperties = {
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        marginTop: "12px",
+        marginBottom: "6px",
+        fontWeight: 700,
+        fontSize: "14px",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FakeInput({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        border: "1px solid #d1d5db",
+        borderRadius: "12px",
+        background: "white",
+        color: "#374151",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FakeTextArea({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: "100px",
+        padding: "12px 14px",
+        border: "1px solid #d1d5db",
+        borderRadius: "12px",
+        background: "white",
+        color: "#374151",
+        lineHeight: 1.7,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: "20px", fontWeight: 800 }}>{children}</div>
+  );
+}
+
+function Bullet({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ marginTop: "10px", color: "#374151" }}>• {children}</div>
+  );
+}
+
+function ActionButton({ children }: { children: React.ReactNode }) {
+  return (
+    <button
+      style={{
+        padding: "12px 16px",
+        borderRadius: "12px",
+        border: "none",
+        background: "#111827",
+        color: "white",
+        fontWeight: 700,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+const topButton: React.CSSProperties = {
   textDecoration: "none",
   color: "white",
   padding: "10px 16px",
@@ -657,7 +665,7 @@ const ghostButton: React.CSSProperties = {
   fontWeight: 700,
 };
 
-const ghostButtonButton: React.CSSProperties = {
+const topButtonButton: React.CSSProperties = {
   color: "white",
   padding: "10px 16px",
   borderRadius: "12px",
@@ -667,7 +675,7 @@ const ghostButtonButton: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const primaryButton: React.CSSProperties = {
+const topPrimaryButton: React.CSSProperties = {
   textDecoration: "none",
   color: "white",
   padding: "10px 16px",
@@ -678,61 +686,59 @@ const primaryButton: React.CSSProperties = {
 
 const heroPrimary: React.CSSProperties = {
   textDecoration: "none",
-  background: "#2563eb",
+  background: "#111827",
   color: "white",
   padding: "14px 18px",
   borderRadius: "14px",
   fontWeight: 800,
-  boxShadow: "0 10px 25px rgba(37,99,235,0.25)",
 };
 
 const heroSecondary: React.CSSProperties = {
   textDecoration: "none",
-  background: "rgba(255,255,255,0.08)",
-  color: "white",
+  background: "white",
+  color: "#111827",
   padding: "14px 18px",
   borderRadius: "14px",
   fontWeight: 800,
-  border: "1px solid rgba(255,255,255,0.1)",
+  border: "1px solid #d1d5db",
 };
 
-const pill: React.CSSProperties = {
-  display: "inline-block",
-  background: "rgba(37,99,235,0.15)",
-  color: "#93c5fd",
-  border: "1px solid rgba(147,197,253,0.25)",
-  borderRadius: "999px",
-  padding: "8px 12px",
-  fontWeight: 700,
-  fontSize: "14px",
+const twoCol: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+  gap: "16px",
 };
 
-const demoTitle: React.CSSProperties = {
-  margin: 0,
-  fontSize: "24px",
-  fontWeight: 900,
+const threeCol: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: "16px",
 };
 
-const demoText: React.CSSProperties = {
-  marginTop: "10px",
-  color: "#475569",
+const chatBubbleUser: React.CSSProperties = {
+  marginTop: "8px",
+  background: "#dbeafe",
+  border: "1px solid #bfdbfe",
+  borderRadius: "14px",
+  padding: "12px 14px",
+  color: "#1e3a8a",
+};
+
+const chatBubbleAI: React.CSSProperties = {
+  marginTop: "8px",
+  background: "#f3f4f6",
+  border: "1px solid #e5e7eb",
+  borderRadius: "14px",
+  padding: "12px 14px",
+  color: "#374151",
   lineHeight: 1.7,
 };
 
-const demoGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "14px",
-  marginTop: "18px",
-};
-
-const compareWrap: React.CSSProperties = {
-  display: "flex",
-  gap: "14px",
-  flexWrap: "wrap",
-  marginTop: "18px",
-};
-
-const orderList: React.CSSProperties = {
-  marginTop: "16px",
+const tagStyle: React.CSSProperties = {
+  background: "#e5e7eb",
+  color: "#374151",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  fontSize: "13px",
+  fontWeight: 700,
 };
