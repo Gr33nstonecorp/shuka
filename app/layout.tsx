@@ -1,5 +1,10 @@
 import "./globals.css";
 
+export const metadata = {
+  title: "ShukAI",
+  description: "AI-powered procurement platform",
+};
+
 export default function RootLayout({
   children,
 }: {
