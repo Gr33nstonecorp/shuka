@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import StatusBadge from "../components/StatusBadge";
+import { useEffect, useMemo, useState } from "react";
 
 type QuoteOption = {
   id: string;
@@ -13,6 +16,7 @@ type QuoteOption = {
   recommendation: string | null;
   product_url: string | null;
   created_at: string | null;
+  request_id: string | null;
 };
 
 function formatMoney(value: number | null | undefined) {
@@ -30,18 +34,75 @@ function formatDate(value: string | null | undefined) {
   return date.toLocaleString();
 }
 
-export default async function QuotesPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+export default function QuotesPage() {
+  const supabase = useMemo(
+    () =>
+      createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
-  const { data, error } = await supabase
-    .from("quote_options")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [quotes, setQuotes] = useState<QuoteOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
-  const quotes = (data || []) as QuoteOption[];
+  async function loadQuotes() {
+    setLoading(true);
+    setMessage("");
+
+    const { data, error } = await supabase
+      .from("quote_options")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setMessage("Could not load quotes: " + error.message);
+      setQuotes([]);
+      setLoading(false);
+      return;
+    }
+
+    setQuotes((data || []) as QuoteOption[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadQuotes();
+  }, []);
+
+  async function approveQuote(quoteId: string) {
+    setApprovingId(quoteId);
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/approve-quote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ quote_id: quoteId }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setMessage(data.error || "Failed to approve quote.");
+        setApprovingId(null);
+        return;
+      }
+
+      setMessage(data.message || "Quote approved.");
+      await loadQuotes();
+    } catch (error) {
+      console.error(error);
+      setMessage("Failed to approve quote.");
+    } finally {
+      setApprovingId(null);
+    }
+  }
 
   return (
     <main style={pageWrap}>
@@ -86,7 +147,7 @@ export default async function QuotesPage() {
             <div>
               <h1 style={pageTitle}>Quotes</h1>
               <p style={pageSubtitle}>
-                Compare sourcing options and jump directly to suppliers.
+                Compare sourcing options and approve the best one.
               </p>
             </div>
 
@@ -94,23 +155,21 @@ export default async function QuotesPage() {
               <Link href="/requests" style={secondaryLinkButton}>
                 New Request
               </Link>
-              <Link href="/assistant" style={primaryLinkButton}>
-                Open AI Assistant
+              <Link href="/orders" style={primaryLinkButton}>
+                View Orders
               </Link>
             </div>
           </div>
 
-          {error ? (
-            <div style={errorCard}>
-              <div style={errorTitle}>Could not load quotes</div>
-              <div style={errorText}>{error.message}</div>
-            </div>
+          {message && <div style={infoBox}>{message}</div>}
+
+          {loading ? (
+            <div style={emptyCard}>Loading quotes...</div>
           ) : quotes.length === 0 ? (
             <div style={emptyCard}>
               <div style={emptyTitle}>No quotes found yet</div>
               <div style={emptyText}>
-                Create a purchase request first, then generated quote options will
-                show up here.
+                Create a purchase request first, then generated quotes will show up here.
               </div>
               <div style={{ marginTop: "16px" }}>
                 <Link href="/requests" style={primaryLinkButton}>
@@ -120,87 +179,99 @@ export default async function QuotesPage() {
             </div>
           ) : (
             <div style={quotesGrid}>
-              {quotes.map((quote) => (
-                <article key={quote.id} style={quoteCard}>
-                  <div style={quoteHeader}>
-                    <div>
-                      <div style={vendorName}>
-                        {quote.vendor_name || "Unnamed Vendor"}
+              {quotes.map((quote) => {
+                const total =
+                  Number(quote.unit_price ?? 0) + Number(quote.shipping_cost ?? 0);
+
+                const isApproved = quote.status === "approved";
+                const isApproving = approvingId === quote.id;
+
+                return (
+                  <article key={quote.id} style={quoteCard}>
+                    <div style={quoteHeader}>
+                      <div>
+                        <div style={vendorName}>
+                          {quote.vendor_name || "Unnamed Vendor"}
+                        </div>
+                        <div style={createdText}>
+                          Added: {formatDate(quote.created_at)}
+                        </div>
                       </div>
-                      <div style={createdText}>
-                        Added: {formatDate(quote.created_at)}
-                      </div>
+
+                      <StatusBadge label={quote.status || "unknown"} />
                     </div>
 
-                    <StatusBadge label={quote.status || "unknown"} />
-                  </div>
+                    <div style={metricsGrid}>
+                      <Metric
+                        label="Unit Price"
+                        value={formatMoney(quote.unit_price)}
+                      />
+                      <Metric
+                        label="Shipping"
+                        value={formatMoney(quote.shipping_cost)}
+                      />
+                      <Metric
+                        label="Lead Time"
+                        value={
+                          quote.lead_time_days != null
+                            ? `${quote.lead_time_days} day(s)`
+                            : "—"
+                        }
+                      />
+                      <Metric
+                        label="AI Score"
+                        value={quote.ai_score != null ? String(quote.ai_score) : "—"}
+                      />
+                    </div>
 
-                  <div style={metricsGrid}>
-                    <Metric
-                      label="Unit Price"
-                      value={formatMoney(quote.unit_price)}
-                    />
-                    <Metric
-                      label="Shipping"
-                      value={formatMoney(quote.shipping_cost)}
-                    />
-                    <Metric
-                      label="Lead Time"
-                      value={
-                        quote.lead_time_days != null
-                          ? `${quote.lead_time_days} day(s)`
-                          : "—"
-                      }
-                    />
-                    <Metric
-                      label="AI Score"
-                      value={
-                        quote.ai_score != null ? String(quote.ai_score) : "—"
-                      }
-                    />
-                  </div>
+                    <div style={totalRow}>
+                      <span style={totalLabel}>Estimated Total</span>
+                      <span style={totalValue}>{formatMoney(total)}</span>
+                    </div>
 
-                  <div style={totalRow}>
-                    <span style={totalLabel}>Estimated Total</span>
-                    <span style={totalValue}>
-                      {formatMoney(
-                        Number(quote.unit_price ?? 0) +
-                          Number(quote.shipping_cost ?? 0)
+                    {quote.recommendation ? (
+                      <div style={recommendationBox}>
+                        <div style={recommendationTitle}>Recommendation</div>
+                        <div style={recommendationText}>
+                          {quote.recommendation}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div style={cardActions}>
+                      {quote.product_url ? (
+                        <a
+                          href={quote.product_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={secondaryAnchorButton}
+                        >
+                          Open Vendor
+                        </a>
+                      ) : (
+                        <div style={mutedNote}>No vendor link on this quote yet.</div>
                       )}
-                    </span>
-                  </div>
 
-                  {quote.recommendation ? (
-                    <div style={recommendationBox}>
-                      <div style={recommendationTitle}>Recommendation</div>
-                      <div style={recommendationText}>
-                        {quote.recommendation}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div style={cardActions}>
-                    {quote.product_url ? (
-                      <a
-                        href={quote.product_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={primaryAnchorButton}
+                      <button
+                        onClick={() => approveQuote(quote.id)}
+                        disabled={isApproved || isApproving}
+                        style={{
+                          ...primaryButton,
+                          opacity: isApproved || isApproving ? 0.6 : 1,
+                          cursor:
+                            isApproved || isApproving ? "not-allowed" : "pointer",
+                        }}
                       >
-                        Open Vendor
-                      </a>
-                    ) : (
-                      <div style={mutedNote}>
-                        No vendor link on this quote yet.
-                      </div>
-                    )}
-
-                    <Link href="/requests" style={secondaryLinkButton}>
-                      Back to Requests
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                        {isApproved
+                          ? "Approved"
+                          : isApproving
+                          ? "Approving..."
+                          : "Approve Quote"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
@@ -425,14 +496,25 @@ const cardActions: React.CSSProperties = {
   marginTop: "16px",
 };
 
-const primaryAnchorButton: React.CSSProperties = {
+const primaryButton: React.CSSProperties = {
   display: "inline-block",
   padding: "10px 14px",
-  background: "#2563eb",
+  background: "#111827",
   color: "white",
+  borderRadius: "8px",
+  border: "none",
+  fontWeight: 700,
+};
+
+const secondaryAnchorButton: React.CSSProperties = {
+  display: "inline-block",
+  padding: "10px 14px",
+  background: "white",
+  color: "#111827",
   borderRadius: "8px",
   textDecoration: "none",
   fontWeight: 700,
+  border: "1px solid #d1d5db",
 };
 
 const primaryLinkButton: React.CSSProperties = {
@@ -480,21 +562,11 @@ const emptyText: React.CSSProperties = {
   lineHeight: 1.7,
 };
 
-const errorCard: React.CSSProperties = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  borderRadius: "16px",
-  padding: "20px",
-};
-
-const errorTitle: React.CSSProperties = {
-  fontSize: "18px",
-  fontWeight: 800,
-  color: "#991b1b",
-};
-
-const errorText: React.CSSProperties = {
-  color: "#b91c1c",
-  marginTop: "8px",
-  lineHeight: 1.6,
+const infoBox: React.CSSProperties = {
+  marginBottom: "16px",
+  background: "#eff6ff",
+  color: "#1d4ed8",
+  padding: "12px 14px",
+  borderRadius: "10px",
+  border: "1px solid #bfdbfe",
 };
