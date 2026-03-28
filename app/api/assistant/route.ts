@@ -43,7 +43,6 @@ function hasActivePaidPlan(profile: ProfileRow | null) {
   if (!profile) return false;
 
   const paidPlan = profile.plan === "starter" || profile.plan === "premium";
-
   const activeStatus =
     profile.subscription_status === "active" ||
     profile.subscription_status === "trialing";
@@ -270,6 +269,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return Response.json(
+        { error: "Missing SUPABASE_SERVICE_ROLE_KEY in environment variables." },
+        { status: 500 }
+      );
+    }
+
     const authHeader = req.headers.get("authorization");
     const accessToken = authHeader?.startsWith("Bearer ")
       ? authHeader.slice(7)
@@ -305,7 +311,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (profileError) {
-      return Response.json({ error: "Profile lookup failed" }, { status: 500 });
+      return Response.json(
+        { error: "Profile lookup failed" },
+        { status: 500 }
+      );
     }
 
     if (!hasActivePaidPlan(profile)) {
@@ -328,7 +337,9 @@ export async function POST(req: NextRequest) {
 
     const { data: vendors, error: vendorError } = await supabaseAdmin
       .from("vendor_sources")
-      .select("id, name, vendor_type, category, default_ai_score, search_url_template, active")
+      .select(
+        "id, name, vendor_type, category, default_ai_score, search_url_template, active"
+      )
       .eq("active", true)
       .order("default_ai_score", { ascending: false });
 
@@ -339,7 +350,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const vendorCatalog = buildVendorOptions(items, (vendors || []) as VendorSource[]);
+    if (!vendors || vendors.length === 0) {
+      return Response.json(
+        { error: "No active vendor sources found." },
+        { status: 500 }
+      );
+    }
+
+    const vendorCatalog = buildVendorOptions(items, vendors as VendorSource[]);
 
     const systemPrompt = `
 You are the sourcing engine for ShukAI.
@@ -370,7 +388,7 @@ Return ONLY valid JSON in this exact shape:
 `.trim();
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
+      model: "gpt-4o-mini",
       response_format: { type: "json_object" },
       messages: [
         {
@@ -389,6 +407,7 @@ Return ONLY valid JSON in this exact shape:
           ),
         },
       ],
+      temperature: 0.2,
     });
 
     const content = completion.choices[0]?.message?.content || "";
