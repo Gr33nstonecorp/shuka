@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 function getSupabaseAdmin() {
   return createClient(
@@ -60,32 +59,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     throw new Error("Missing userId in checkout session metadata");
   }
 
-  let currentPeriodEnd: string | null = null;
-  let subscriptionStatus = "active";
-  let plan = requestedPlan;
-
-  if (subscriptionId) {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    subscriptionStatus = subscription.status;
-
-    const firstItem = subscription.items.data[0];
-    const priceId = firstItem?.price?.id || null;
-    plan = getPlanFromPriceId(priceId) || requestedPlan;
-
-    currentPeriodEnd = subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toISOString()
-      : null;
-  }
-
   const { error } = await supabase
     .from("profiles")
     .update({
       email,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
-      subscription_status: subscriptionStatus,
-      plan,
-      current_period_end: currentPeriodEnd,
+      subscription_status: "active",
+      plan: requestedPlan,
+      current_period_end: null,
     })
     .eq("id", userId);
 
@@ -94,7 +76,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpsert(subscription: Stripe.Subscription) {
   const customerId =
     typeof subscription.customer === "string" ? subscription.customer : null;
 
@@ -103,18 +85,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   const firstItem = subscription.items.data[0];
-  const priceId = firstItem?.price?.id || null;
+  const priceId =
+    typeof firstItem?.price === "object" && firstItem?.price?.id
+      ? firstItem.price.id
+      : null;
 
   const plan = getPlanFromPriceId(priceId);
-  const currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000).toISOString()
-    : null;
 
   await updateProfileByCustomerId(customerId, {
     stripe_subscription_id: subscription.id,
     subscription_status: subscription.status,
     plan,
-    current_period_end: currentPeriodEnd,
+    current_period_end: null,
   });
 }
 
@@ -127,10 +109,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   await updateProfileByCustomerId(customerId, {
+    stripe_subscription_id: subscription.id,
     subscription_status: "canceled",
     plan: "free",
     current_period_end: null,
-    stripe_subscription_id: subscription.id,
   });
 }
 
@@ -142,36 +124,37 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Missing Stripe signature" }, 400);
     }
 
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      return jsonResponse({ error: "Missing STRIPE_WEBHOOK_SECRET" }, 500);
+    }
+
     const body = await req.text();
 
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET
     );
 
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
         await handleCheckoutCompleted(
           event.data.object as Stripe.Checkout.Session
         );
         break;
-      }
 
       case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        await handleSubscriptionUpdated(
+      case "customer.subscription.updated":
+        await handleSubscriptionUpsert(
           event.data.object as Stripe.Subscription
         );
         break;
-      }
 
-      case "customer.subscription.deleted": {
+      case "customer.subscription.deleted":
         await handleSubscriptionDeleted(
           event.data.object as Stripe.Subscription
         );
         break;
-      }
 
       default:
         break;
