@@ -3,12 +3,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
-type ProfileRow = {
-  id: string;
+type Profile = {
   email: string | null;
   plan: string | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  current_period_end: string | null;
 };
 
 export default function ProfilePage() {
@@ -21,143 +20,133 @@ export default function ProfilePage() {
     []
   );
 
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [authUser, setAuthUser] = useState<{ id: string; email: string | null } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function loadProfile() {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        const user = session?.user ?? null;
-
-        if (!user) {
-          if (!cancelled) {
-            window.location.href = "/login";
-          }
-          return;
-        }
-
-        if (!cancelled) {
-          setAuthUser({
-            id: user.id,
-            email: user.email ?? null,
-          });
-        }
-
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, email, plan, stripe_customer_id, stripe_subscription_id")
-          .eq("email", user.email ?? "")
-          .maybeSingle();
-
-        if (!cancelled) {
-          setProfile(
-            data || {
-              id: user.id,
-              email: user.email ?? null,
-              plan: "trial",
-              stripe_customer_id: null,
-              stripe_subscription_id: null,
-            }
-          );
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Profile load failed:", err);
-        if (!cancelled) setLoading(false);
+      if (!session?.user) {
+        window.location.href = "/login?next=/profile";
+        return;
       }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("plan, subscription_status, current_period_end")
+        .eq("id", session.user.id)
+        .single();
+
+      setProfile({
+        email: session.user.email ?? null,
+        plan: data?.plan ?? "free",
+        subscription_status: data?.subscription_status ?? null,
+        current_period_end: data?.current_period_end ?? null,
+      });
+
+      setLoading(false);
     }
 
     loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
   }, [supabase]);
 
-  async function openPortal() {
-    const userId = profile?.id || authUser?.id;
-    const email = profile?.email || authUser?.email || null;
+  async function cancelSubscription() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    const res = await fetch("/api/stripe/portal", {
+    if (!session?.user) {
+      window.location.href = "/login?next=/profile";
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "If you are still in your free trial, canceling now will end the trial immediately and you will NOT be charged. If you are already on a paid plan, your subscription will remain active until the end of the current billing period."
+    );
+
+    if (!confirmed) return;
+
+    const res = await fetch("/api/stripe/cancel-subscription", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ userId, email }),
+      body: JSON.stringify({
+        userId: session.user.id,
+      }),
     });
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      alert(data.error || "Could not open billing portal.");
+      alert(data.error || "Could not cancel subscription.");
       return;
     }
 
-    window.location.href = data.url;
+    alert(data.message || "Subscription updated.");
+    window.location.reload();
   }
 
   if (loading) {
     return (
-      <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
-        <h1 style={{ marginTop: 0 }}>Profile</h1>
-        <p>Loading account...</p>
+      <main style={wrap}>
+        <div style={card}>Loading...</div>
       </main>
     );
   }
 
   return (
-    <main style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
-      <h1 style={{ marginTop: 0 }}>Profile</h1>
+    <main style={wrap}>
+      <div style={card}>
+        <h1 style={{ marginTop: 0 }}>Profile</h1>
 
-      <button
-        onClick={openPortal}
-        style={{
-          marginTop: "20px",
-          padding: "12px 16px",
-          background: "#111827",
-          color: "white",
-          borderRadius: "10px",
-          border: "none",
-          fontWeight: "700",
-          cursor: "pointer",
-        }}
-      >
-        Manage Subscription
-      </button>
+        <p><strong>Email:</strong> {profile?.email}</p>
+        <p><strong>Plan:</strong> {profile?.plan}</p>
+        <p><strong>Status:</strong> {profile?.subscription_status}</p>
 
-      <p style={{ color: "#6b7280", marginTop: "16px" }}>
-        View your current plan and manage billing.
-      </p>
+        {profile?.current_period_end && (
+          <p>
+            <strong>Current period ends:</strong>{" "}
+            {new Date(profile.current_period_end).toLocaleDateString()}
+          </p>
+        )}
 
-      <div
-        style={{
-          background: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: "16px",
-          padding: "18px",
-          marginTop: "20px",
-        }}
-      >
-        <div style={{ fontWeight: 800 }}>
-          {profile?.email || authUser?.email || "No email"}
-        </div>
-        <div style={{ color: "#6b7280", marginTop: "6px", fontSize: "14px" }}>
-          Plan: {profile?.plan || "trial"}
-        </div>
-        <div style={{ color: "#6b7280", marginTop: "4px", fontSize: "14px" }}>
-          Stripe Customer: {profile?.stripe_customer_id || "—"}
-        </div>
-        <div style={{ color: "#6b7280", marginTop: "4px", fontSize: "14px" }}>
-          Stripe Subscription: {profile?.stripe_subscription_id || "—"}
-        </div>
+        <button onClick={cancelSubscription} style={button}>
+          Cancel Subscription
+        </button>
       </div>
     </main>
   );
 }
+
+const wrap: React.CSSProperties = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f3f4f6",
+};
+
+const card: React.CSSProperties = {
+  background: "white",
+  padding: "28px",
+  borderRadius: "16px",
+  border: "1px solid #ddd",
+  width: "100%",
+  maxWidth: "500px",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+};
+
+const button: React.CSSProperties = {
+  marginTop: "20px",
+  padding: "12px 16px",
+  borderRadius: "10px",
+  background: "#111827",
+  color: "white",
+  border: "none",
+  fontWeight: 700,
+  cursor: "pointer",
+};
