@@ -61,6 +61,8 @@ export default function LoginPage() {
       return;
     }
 
+    const acceptedAt = new Date().toISOString();
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -68,7 +70,11 @@ export default function LoginPage() {
         emailRedirectTo: "https://www.shukai.co/",
         data: {
           accepted_legal: true,
-          accepted_legal_at: new Date().toISOString(),
+          accepted_terms: true,
+          accepted_privacy: true,
+          accepted_msa: true,
+          accepted_legal_at: acceptedAt,
+          accepted_legal_version: "2026-03-25",
         },
       },
     });
@@ -253,7 +259,7 @@ export default function LoginPage() {
                   href="/terms"
                   style={{ color: "#2563eb", textDecoration: "none" }}
                 >
-                  Terms
+                  Terms of Service
                 </Link>
                 ,{" "}
                 <Link
@@ -273,7 +279,15 @@ export default function LoginPage() {
               </span>
             </label>
 
-            <button type="submit" disabled={loading} style={primaryButtonStyle}>
+            <button
+              type="submit"
+              disabled={loading || !acceptedLegal}
+              style={{
+                ...primaryButtonStyle,
+                opacity: acceptedLegal ? 1 : 0.5,
+                cursor: acceptedLegal ? "pointer" : "not-allowed",
+              }}
+            >
               {loading ? "Creating..." : "Create Account"}
             </button>
           </form>
