@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
+import { hasActivePaidPlan } from "@/lib/subscription";
 
 type ProfileRow = {
   id: string;
@@ -22,22 +23,6 @@ function formatDate(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleDateString();
-}
-
-function isPaidProfile(profile: ProfileRow | null) {
-  if (!profile) return false;
-
-  const paidPlan = profile.plan === "starter" || profile.plan === "premium";
-  const activeStatus =
-    profile.subscription_status === "active" ||
-    profile.subscription_status === "trialing";
-
-  if (!paidPlan || !activeStatus) return false;
-
-  if (!profile.current_period_end) return true;
-
-  const end = new Date(profile.current_period_end).getTime();
-  return Number.isFinite(end) && end > Date.now();
 }
 
 export default function PricingPage() {
@@ -171,7 +156,7 @@ export default function PricingPage() {
     }
   }
 
-  const hasPaidPlan = isPaidProfile(profile);
+  const hasPaidPlan = hasActivePaidPlan(profile);
 
   return (
     <main style={pageWrap}>
