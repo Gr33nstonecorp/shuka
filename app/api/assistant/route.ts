@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
+import { hasActivePaidPlan } from "@/lib/subscription";
 
 type ProfileRow = {
   id: string;
@@ -38,22 +39,6 @@ type ModelResult = {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-function hasActivePaidPlan(profile: ProfileRow | null) {
-  if (!profile) return false;
-
-  const paidPlan = profile.plan === "starter" || profile.plan === "premium";
-  const activeStatus =
-    profile.subscription_status === "active" ||
-    profile.subscription_status === "trialing";
-
-  if (!paidPlan || !activeStatus) return false;
-
-  if (!profile.current_period_end) return activeStatus;
-
-  const end = new Date(profile.current_period_end).getTime();
-  return Number.isFinite(end) && end > Date.now();
-}
 
 function parseInput(input: string): ParsedItem[] {
   return input
@@ -308,7 +293,7 @@ export async function POST(req: NextRequest) {
       .from("profiles")
       .select("id, plan, subscription_status, current_period_end")
       .eq("id", user.id)
-      .single();
+      .single<ProfileRow>();
 
     if (profileError) {
       return Response.json(
