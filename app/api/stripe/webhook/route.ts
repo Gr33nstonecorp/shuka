@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        const userId = session.metadata?.user_id;
+        const userId = session.metadata?.userId;
         const subscriptionId =
           typeof session.subscription === "string"
             ? session.subscription
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const userId = subscription.metadata?.user_id;
+        const userId = subscription.metadata?.userId;
 
         if (!userId) break;
 
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
           .from("profiles")
           .update({
             subscription_status: subscription.status,
+            plan: subscription.metadata?.plan || undefined,
             current_period_end: null,
           })
           .eq("id", userId);
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const userId = subscription.metadata?.user_id;
+        const userId = subscription.metadata?.userId;
 
         if (!userId) break;
 
