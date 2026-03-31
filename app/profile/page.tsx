@@ -58,13 +58,13 @@ export default function ProfilePage() {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session?.user) {
+    if (!session?.user || !session.access_token) {
       window.location.href = "/login?next=/profile";
       return;
     }
 
     const confirmed = window.confirm(
-      "If you are still in your free trial, canceling now will end the trial immediately and you will NOT be charged. If you are already on a paid plan, your subscription will remain active until the end of the current billing period."
+      "This will cancel your subscription immediately and stop future charges. Continue?"
     );
 
     if (!confirmed) return;
@@ -73,10 +73,8 @@ export default function ProfilePage() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({
-        userId: session.user.id,
-      }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -86,7 +84,7 @@ export default function ProfilePage() {
       return;
     }
 
-    alert(data.message || "Subscription updated.");
+    alert(data.message || "Subscription canceled.");
     window.location.reload();
   }
 
