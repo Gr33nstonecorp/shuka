@@ -44,7 +44,9 @@ export async function POST(req: Request) {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, stripe_subscription_id, stripe_customer_id, plan, subscription_status")
+      .select(
+        "id, email, stripe_subscription_id, stripe_customer_id, plan, subscription_status"
+      )
       .eq("id", user.id)
       .maybeSingle();
 
@@ -63,16 +65,87 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!profile.stripe_subscription_id) {
-      return Response.json(
-        { error: "No Stripe subscription is attached to this account." },
-        { status: 400 }
-      );
+    // Already canceled/free in DB -> treat as success
+    if (
+      profile.subscription_status === "canceled" ||
+      profile.plan === "free" ||
+      !profile.stripe_subscription_id
+    ) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          subscription_status: "canceled",
+          plan: "free",
+          current_period_end: null,
+        })
+        .eq("id", user.id);
+
+      return Response.json({
+        success: true,
+        message: "Subscription is already canceled.",
+      });
     }
 
     const subscriptionId = profile.stripe_subscription_id as string;
 
-    await stripe.subscriptions.cancel(subscriptionId);
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+      if (
+        subscription.status === "canceled" ||
+        // defensive fallback for odd SDK shapes
+        (subscription as any).canceled_at
+      ) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({
+            subscription_status: "canceled",
+            plan: "free",
+            current_period_end: null,
+            stripe_subscription_id: null,
+          })
+          .eq("id", user.id);
+
+        return Response.json({
+          success: true,
+          message: "Subscription is already canceled.",
+        });
+      }
+
+      await stripe.subscriptions.cancel(subscriptionId);
+    } catch (stripeError: any) {
+      console.error("Stripe cancel/retrieve error:", stripeError);
+
+      const msg = String(stripeError?.message || "").toLowerCase();
+
+      // If Stripe says it is already canceled / missing, treat as success
+      if (
+        msg.includes("no such subscription") ||
+        msg.includes("already canceled") ||
+        msg.includes("cannot cancel") ||
+        msg.includes("a canceled subscription")
+      ) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({
+            subscription_status: "canceled",
+            plan: "free",
+            current_period_end: null,
+            stripe_subscription_id: null,
+          })
+          .eq("id", user.id);
+
+        return Response.json({
+          success: true,
+          message: "Subscription is already canceled.",
+        });
+      }
+
+      return Response.json(
+        { error: "Server error while canceling subscription." },
+        { status: 500 }
+      );
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from("profiles")
@@ -89,7 +162,7 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error:
-            "Stripe canceled the subscription, but profile update failed. Check the profile row.",
+            "Stripe canceled the subscription, but profile update failed.",
         },
         { status: 500 }
       );
