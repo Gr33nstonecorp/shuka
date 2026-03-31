@@ -10,6 +10,16 @@ type Profile = {
   current_period_end: string | null;
 };
 
+function isCancelable(profile: Profile | null) {
+  if (!profile) return false;
+
+  return (
+    profile.plan !== "free" &&
+    profile.subscription_status !== "canceled" &&
+    profile.subscription_status !== "inactive"
+  );
+}
+
 export default function ProfilePage() {
   const supabase = useMemo(
     () =>
@@ -36,43 +46,11 @@ export default function ProfilePage() {
 
       const user = session.user;
 
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("plan, subscription_status, current_period_end")
         .eq("id", user.id)
-        .maybeSingle();
-
-      // If missing, create the profile row automatically
-      if (!data) {
-        const { error: insertError } = await supabase.from("profiles").insert({
-          id: user.id,
-          email: user.email ?? null,
-          plan: "free",
-          subscription_status: "inactive",
-          current_period_end: null,
-        });
-
-        if (insertError) {
-          alert("Could not create profile row.");
-          setLoading(false);
-          return;
-        }
-
-        const { data: newData, error: reloadError } = await supabase
-          .from("profiles")
-          .select("plan, subscription_status, current_period_end")
-          .eq("id", user.id)
-          .single();
-
-        if (reloadError) {
-          alert("Profile row was created but could not be loaded.");
-          setLoading(false);
-          return;
-        }
-
-        data = newData;
-        error = null;
-      }
+        .single();
 
       if (error) {
         alert("Could not load profile.");
@@ -152,9 +130,15 @@ export default function ProfilePage() {
           </p>
         )}
 
-        <button onClick={cancelSubscription} style={button}>
-          Cancel Subscription
-        </button>
+        {isCancelable(profile) ? (
+          <button onClick={cancelSubscription} style={button}>
+            Cancel Subscription
+          </button>
+        ) : (
+          <div style={mutedBox}>
+            No active subscription to cancel.
+          </div>
+        )}
       </div>
     </main>
   );
@@ -187,4 +171,14 @@ const button: React.CSSProperties = {
   border: "none",
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const mutedBox: React.CSSProperties = {
+  marginTop: "20px",
+  padding: "12px 16px",
+  borderRadius: "10px",
+  background: "#f3f4f6",
+  color: "#4b5563",
+  border: "1px solid #e5e7eb",
+  fontWeight: 600,
 };
