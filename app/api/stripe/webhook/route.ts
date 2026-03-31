@@ -29,33 +29,30 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      // ✅ NEW SUB / TRIAL START
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
         const userId = session.metadata?.user_id;
-        const subscriptionId = session.subscription as string;
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : null;
 
         if (!userId || !subscriptionId) break;
-
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
         await supabase
           .from("profiles")
           .update({
             stripe_subscription_id: subscriptionId,
-            subscription_status: subscription.status,
+            subscription_status: "active",
             plan: session.metadata?.plan || "starter",
-            current_period_end: subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000).toISOString()
-              : null,
+            current_period_end: null,
           })
           .eq("id", userId);
 
         break;
       }
 
-      // ✅ SUB UPDATED (trial → active, renewals, etc)
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
@@ -67,16 +64,13 @@ export async function POST(req: Request) {
           .from("profiles")
           .update({
             subscription_status: subscription.status,
-            current_period_end: subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000).toISOString()
-              : null,
+            current_period_end: null,
           })
           .eq("id", userId);
 
         break;
       }
 
-      // 🔥 MOST IMPORTANT — CANCEL HANDLING
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
@@ -96,6 +90,9 @@ export async function POST(req: Request) {
 
         break;
       }
+
+      default:
+        break;
     }
 
     return new Response("ok", { status: 200 });
