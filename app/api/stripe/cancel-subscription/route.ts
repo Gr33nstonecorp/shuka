@@ -115,7 +115,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const subscriptionId = profile.stripe_subscription_id;
+    const subscriptionId = profile.stripe_subscription_id as string;
 
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
