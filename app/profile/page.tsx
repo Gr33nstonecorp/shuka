@@ -34,16 +34,56 @@ export default function ProfilePage() {
         return;
       }
 
-      const { data } = await supabase
+      const user = session.user;
+
+      let { data, error } = await supabase
         .from("profiles")
         .select("plan, subscription_status, current_period_end")
-        .eq("id", session.user.id)
-        .single();
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // If missing, create the profile row automatically
+      if (!data) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: user.id,
+          email: user.email ?? null,
+          plan: "free",
+          subscription_status: "inactive",
+          current_period_end: null,
+        });
+
+        if (insertError) {
+          alert("Could not create profile row.");
+          setLoading(false);
+          return;
+        }
+
+        const { data: newData, error: reloadError } = await supabase
+          .from("profiles")
+          .select("plan, subscription_status, current_period_end")
+          .eq("id", user.id)
+          .single();
+
+        if (reloadError) {
+          alert("Profile row was created but could not be loaded.");
+          setLoading(false);
+          return;
+        }
+
+        data = newData;
+        error = null;
+      }
+
+      if (error) {
+        alert("Could not load profile.");
+        setLoading(false);
+        return;
+      }
 
       setProfile({
-        email: session.user.email ?? null,
+        email: user.email ?? null,
         plan: data?.plan ?? "free",
-        subscription_status: data?.subscription_status ?? null,
+        subscription_status: data?.subscription_status ?? "inactive",
         current_period_end: data?.current_period_end ?? null,
       });
 
