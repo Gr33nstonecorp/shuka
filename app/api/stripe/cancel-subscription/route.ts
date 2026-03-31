@@ -44,37 +44,56 @@ export async function POST(req: Request) {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("stripe_subscription_id, subscription_status")
+      .select("id, email, stripe_subscription_id, stripe_customer_id, plan, subscription_status")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
+      console.error("Profile lookup error:", profileError);
       return Response.json(
         { error: "Could not load subscription profile." },
         { status: 500 }
       );
     }
 
-    if (!profile?.stripe_subscription_id) {
+    if (!profile) {
       return Response.json(
-        { error: "No subscription found." },
+        { error: "No profile row found for this account." },
+        { status: 404 }
+      );
+    }
+
+    if (!profile.stripe_subscription_id) {
+      return Response.json(
+        { error: "No Stripe subscription is attached to this account." },
         { status: 400 }
       );
     }
 
     const subscriptionId = profile.stripe_subscription_id as string;
 
-    // Immediate cancellation = safest way to stop further charges.
     await stripe.subscriptions.cancel(subscriptionId);
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("profiles")
       .update({
         subscription_status: "canceled",
         plan: "free",
         current_period_end: null,
+        stripe_subscription_id: null,
       })
       .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Profile update error after cancel:", updateError);
+      return Response.json(
+        {
+          error:
+            "Stripe canceled the subscription, but profile update failed. Check the profile row.",
+        },
+        { status: 500 }
+      );
+    }
 
     return Response.json({
       success: true,
