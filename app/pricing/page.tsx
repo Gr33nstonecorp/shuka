@@ -245,7 +245,7 @@ export default function PricingPage() {
           <div style={pricingGrid}>
             <PlanCard
               title="Starter"
-              price="$29/mo"
+              price="$9/mo"
               description="For small teams getting organized."
               features={[
                 "Requests workflow",
@@ -269,7 +269,7 @@ export default function PricingPage() {
 
             <PlanCard
               title="Premium"
-              price="$79/mo"
+              price="$25/mo"
               description="For teams using AI-powered sourcing workflows."
               features={[
                 "Everything in Starter",
