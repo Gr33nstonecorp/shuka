@@ -54,7 +54,6 @@ export default function HomePage() {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
     });
 
-    // Handle checkout success
     const url = new URL(window.location.href);
     if (url.searchParams.get("checkout") === "success") {
       setShowCheckoutSuccess(true);
@@ -90,7 +89,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* Header - Fixed button contrast */}
+      {/* Header */}
       <header className="bg-zinc-950 text-white border-b border-zinc-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
           <div className="text-3xl font-black tracking-tighter">ShukAI</div>
@@ -106,28 +105,18 @@ export default function HomePage() {
             {user ? (
               <>
                 <span className="text-sm text-zinc-400 px-3 hidden sm:inline">{user.email}</span>
-                <Link
-                  href="/profile"
-                  className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
-                >
+                <Link href="/profile" className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors">
                   Profile
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
-                >
+                <button onClick={handleLogout} className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors">
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="px-5 py-2.5 text-sm font-semibold rounded-2xl hover:bg-zinc-900 transition-colors"
-                >
+                <Link href="/login" className="px-5 py-2.5 text-sm font-semibold rounded-2xl hover:bg-zinc-900 transition-colors">
                   Log in
                 </Link>
-                {/* Fixed bright primary button */}
                 <Link
                   href="/login?next=/pricing"
                   className="px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30"
@@ -149,7 +138,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="pt-16 pb-20 bg-zinc-50 dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -166,20 +155,13 @@ export default function HomePage() {
                 ShukAI brings your entire procurement workflow into one powerful platform.
               </p>
 
-              {/* Fixed Hero Buttons */}
               <div className="flex flex-wrap gap-4">
                 {user ? (
                   <>
-                    <Link
-                      href="/pricing"
-                      className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all active:scale-[0.985]"
-                    >
+                    <Link href="/pricing" className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all">
                       Manage plan
                     </Link>
-                    <Link
-                      href="/assistant"
-                      className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all"
-                    >
+                    <Link href="/assistant" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
                       Open AI Assistant
                     </Link>
                   </>
@@ -191,10 +173,7 @@ export default function HomePage() {
                     >
                       Start free trial
                     </Link>
-                    <Link
-                      href="/login"
-                      className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all"
-                    >
+                    <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
                       Log in
                     </Link>
                   </>
@@ -202,7 +181,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stats Card */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-2 gap-6">
                 <StatCard title="Requests" value="Structured" />
@@ -215,7 +193,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Workspace Section */}
+      {/* Workspace */}
       <section id="workspace" className="py-20 bg-white dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mb-12">
@@ -235,9 +213,7 @@ export default function HomePage() {
                 <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {tab.label}
                 </div>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">
-                  {tab.description}
-                </p>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">{tab.description}</p>
                 <div className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
                   Open →
                 </div>
@@ -247,37 +223,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* CTA */}
       <section className="py-20 bg-zinc-950 text-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-zinc-900 rounded-3xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
             <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">
-                Ready to use ShukAI for real?
-              </h2>
-              <p className="text-xl text-zinc-400 max-w-md">
-                Start with the trial, then move straight into your actual workflow.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">Ready to use ShukAI for real?</h2>
+              <p className="text-xl text-zinc-400 max-w-md">Start with the trial, then move straight into your actual workflow.</p>
             </div>
 
             <div className="flex flex-wrap gap-4">
               {user ? (
                 <>
-                  <Link href="/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">
-                    Go to pricing
-                  </Link>
-                  <Link href="/profile" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">
-                    Open profile
-                  </Link>
+                  <Link href="/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Go to pricing</Link>
+                  <Link href="/profile" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Open profile</Link>
                 </>
               ) : (
                 <>
-                  <Link href="/login?next=/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">
-                    Start free trial
-                  </Link>
-                  <Link href="/login" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">
-                    Log in
-                  </Link>
+                  <Link href="/login?next=/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Start free trial</Link>
+                  <Link href="/login" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Log in</Link>
                 </>
               )}
             </div>
