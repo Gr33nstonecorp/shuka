@@ -40,7 +40,6 @@ export default function HomePage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
-
         setUser(session?.user ? { email: session.user.email ?? null } : null);
       } catch (error) {
         console.error("Failed to load session:", error);
@@ -91,7 +90,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* Header */}
+      {/* Header - Fixed button contrast */}
       <header className="bg-zinc-950 text-white border-b border-zinc-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
           <div className="text-3xl font-black tracking-tighter">ShukAI</div>
@@ -106,7 +105,7 @@ export default function HomePage() {
 
             {user ? (
               <>
-                <span className="text-sm text-zinc-400 px-3">{user.email}</span>
+                <span className="text-sm text-zinc-400 px-3 hidden sm:inline">{user.email}</span>
                 <Link
                   href="/profile"
                   className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
@@ -128,9 +127,10 @@ export default function HomePage() {
                 >
                   Log in
                 </Link>
+                {/* Fixed bright primary button */}
                 <Link
                   href="/login?next=/pricing"
-                  className="px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl transition-colors"
+                  className="px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30"
                 >
                   Start free trial
                 </Link>
@@ -166,12 +166,13 @@ export default function HomePage() {
                 ShukAI brings your entire procurement workflow into one powerful platform.
               </p>
 
+              {/* Fixed Hero Buttons */}
               <div className="flex flex-wrap gap-4">
                 {user ? (
                   <>
                     <Link
                       href="/pricing"
-                      className="px-8 py-4 bg-zinc-900 hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 font-semibold rounded-2xl transition-all active:scale-[0.985]"
+                      className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all active:scale-[0.985]"
                     >
                       Manage plan
                     </Link>
@@ -186,7 +187,7 @@ export default function HomePage() {
                   <>
                     <Link
                       href="/login?next=/pricing"
-                      className="px-8 py-4 bg-zinc-900 hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 font-semibold rounded-2xl transition-all active:scale-[0.985]"
+                      className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30"
                     >
                       Start free trial
                     </Link>
