@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { hasActivePaidPlan } from "@/lib/subscription";
 
 type ProfileRow = {
@@ -28,17 +28,13 @@ function formatDate(value: string | null | undefined) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString();
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
 export default function AssistantPage() {
-  const supabase = useMemo(
-    () =>
-      createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      ),
-    []
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
@@ -53,12 +49,7 @@ export default function AssistantPage() {
 
     async function loadProfile() {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
+        const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
 
         if (!user) {
@@ -74,17 +65,15 @@ export default function AssistantPage() {
           .maybeSingle();
 
         if (error) {
-          setMessage("Could not load subscription profile: " + error.message);
+          setMessage("Could not load profile: " + error.message);
+        } else {
+          setProfile(data as ProfileRow | null);
         }
-
-        setProfile((data as ProfileRow | null) || null);
       } catch (error) {
         console.error(error);
-        setMessage("Could not load assistant access.");
+        setMessage("Failed to load assistant access.");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
@@ -96,7 +85,6 @@ export default function AssistantPage() {
   }, [supabase]);
 
   const hasPaidAccess = hasActivePaidPlan(profile);
-  const isPremium = profile?.plan === "premium" && hasPaidAccess;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,10 +105,7 @@ export default function AssistantPage() {
     }
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
 
       if (!accessToken) {
@@ -141,18 +126,19 @@ export default function AssistantPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setMessage(data.error || "AI request failed.");
-        setRunning(false);
+        setMessage(data.error || "AI request failed. Please try again.");
         return;
       }
 
-      setResults(Array.isArray(data.results) ? data.results : []);
-      if (!Array.isArray(data.results) || data.results.length === 0) {
-        setMessage("No sourcing results were returned.");
+      const newResults = Array.isArray(data.results) ? data.results : [];
+      setResults(newResults);
+
+      if (newResults.length === 0) {
+        setMessage("No sourcing results returned.");
       }
     } catch (error) {
       console.error(error);
-      setMessage("AI request failed.");
+      setMessage("AI request failed. Please check your connection.");
     } finally {
       setRunning(false);
     }
@@ -160,584 +146,198 @@ export default function AssistantPage() {
 
   if (loading) {
     return (
-      <main style={loadingWrap}>
-        <div style={loadingCard}>Loading assistant...</div>
-      </main>
+      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="bg-white dark:bg-zinc-900 px-10 py-8 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          Loading assistant...
+        </div>
+      </div>
     );
   }
 
   return (
-    <main style={pageWrap}>
-      <header style={headerStyle}>
-        <div style={headerInner}>
-          <Link href="/" style={brandStyle}>
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      {/* Header */}
+      <header className="bg-zinc-950 text-white border-b border-zinc-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+          <Link href="/" className="text-3xl font-black tracking-tighter">
             ShukAI
           </Link>
 
-          <nav style={topNav}>
-            <Link href="/requests" style={navLink}>
-              Requests
-            </Link>
-            <Link href="/quotes" style={navLink}>
-              Quotes
-            </Link>
-            <Link href="/orders" style={navLink}>
-              Orders
-            </Link>
-            <Link href="/vendors" style={navLink}>
-              Vendors
-            </Link>
-            <Link href="/saved-items" style={navLink}>
-              Saved Items
-            </Link>
-            <Link href="/assistant" style={navLinkActive}>
-              AI Assistant
-            </Link>
-            <Link href="/pricing" style={navLink}>
-              Pricing
-            </Link>
-            <Link href="/profile" style={ghostButtonLink}>
+          <nav className="flex items-center gap-2 flex-wrap">
+            {[
+              { href: "/requests", label: "Requests" },
+              { href: "/quotes", label: "Quotes" },
+              { href: "/orders", label: "Orders" },
+              { href: "/vendors", label: "Vendors" },
+              { href: "/saved-items", label: "Saved Items" },
+              { href: "/assistant", label: "AI Assistant" },
+              { href: "/pricing", label: "Pricing" },
+            ].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
+                  link.href === "/assistant"
+                    ? "bg-white text-zinc-950 font-semibold"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              href="/profile"
+              className="ml-4 px-5 py-2.5 text-sm font-semibold bg-zinc-800 hover:bg-zinc-700 rounded-2xl transition-colors"
+            >
               Profile
             </Link>
           </nav>
         </div>
       </header>
 
-      <section style={heroSection}>
-        <div style={container}>
-          <div style={heroGrid}>
-            <div>
-              <div style={eyebrow}>AI sourcing</div>
-
-              <h1 style={heroTitle}>
-                Turn a simple request into vendor options fast.
-              </h1>
-
-              <p style={heroText}>
-                Enter one or multiple items and let ShukAI return sourcing results
-                tied to your procurement workflow.
-              </p>
-
-              <div style={statusBox}>
-                <div style={statusTitle}>Subscription access</div>
-                <div style={statusValue}>
-                  {hasPaidAccess ? `${profile?.plan || "paid"} active` : "No active paid plan"}
-                </div>
-                <div style={statusMeta}>
-                  Status: {profile?.subscription_status || "free"}
-                </div>
-                <div style={statusMeta}>
-                  Period ends: {formatDate(profile?.current_period_end)}
-                </div>
-              </div>
-            </div>
-
-            <div style={sideCard}>
-              <div style={sideTitle}>Best input format</div>
-              <div style={exampleBlock}>
-                gloves - 50{"\n"}
-                packing tape - 20{"\n"}
-                shipping labels - 10
-              </div>
-              <div style={sideNote}>
-                {isPremium
-                  ? "Premium access confirmed. Multi-item sourcing is enabled."
-                  : hasPaidAccess
-                  ? "Paid access confirmed. Assistant is available on your account."
-                  : "Upgrade to an active paid plan to run AI sourcing."}
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="max-w-3xl mb-12">
+          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
+            AI Sourcing Engine
           </div>
+          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
+            Turn simple requests into vendor options fast.
+          </h1>
+          <p className="text-xl text-zinc-600 dark:text-zinc-400">
+            Enter your items and let ShukAI find the best suppliers, pricing, and lead times.
+          </p>
+        </div>
 
-          {!hasPaidAccess && (
-            <div style={upsellCard}>
-              <div>
-                <div style={upsellTitle}>Active subscription required</div>
-                <div style={upsellText}>
-                  The AI Assistant is available only to users with an active Starter or Premium subscription.
-                </div>
+        {/* Subscription Status */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-10">
+          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-1">SUBSCRIPTION STATUS</div>
+              <div className="text-3xl font-bold">
+                {hasPaidAccess ? `${profile?.plan || "Paid"} • Active` : "No Active Paid Plan"}
               </div>
-
-              <div style={upsellActions}>
-                <Link href="/pricing" style={primaryLink}>
-                  View Pricing
-                </Link>
-                <Link href="/profile" style={secondaryLink}>
-                  Open Profile
-                </Link>
+              <div className="mt-2 text-zinc-600 dark:text-zinc-400">
+                Period ends: {formatDate(profile?.current_period_end)}
               </div>
             </div>
-          )}
 
-          <div style={formCard}>
-            <form onSubmit={handleSubmit} style={{ display: "grid", gap: "14px" }}>
-              <label style={labelStyle}>Items to source</label>
+            {!hasPaidAccess && (
+              <Link
+                href="/pricing"
+                className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
+              >
+                Upgrade Now
+              </Link>
+            )}
+          </div>
+        </div>
 
+        {/* Input Form */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-3">Items to source</label>
               <textarea
-                placeholder="Example: gloves - 50, tape - 20"
+                placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 rows={7}
-                style={textareaStyle}
                 disabled={!hasPaidAccess || running}
+                className="w-full resize-y min-h-[160px] p-5 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
               />
+              <p className="mt-2 text-xs text-zinc-500">One item per line. Format: Item name - quantity</p>
+            </div>
 
-              <div style={buttonRow}>
-                <button
-                  type="submit"
-                  disabled={!hasPaidAccess || running}
-                  style={{
-                    ...primaryButton,
-                    opacity: !hasPaidAccess || running ? 0.65 : 1,
-                    cursor: !hasPaidAccess || running ? "not-allowed" : "pointer",
-                  }}
+            <div className="flex flex-wrap gap-4">
+              <button
+                type="submit"
+                disabled={!hasPaidAccess || running}
+                className="px-10 py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition disabled:cursor-not-allowed flex-1 md:flex-none"
+              >
+                {running ? "Sourcing vendors..." : "Run AI Sourcing"}
+              </button>
+
+              <Link
+                href="/quotes"
+                className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl font-medium transition"
+              >
+                View All Quotes
+              </Link>
+            </div>
+          </form>
+
+          {message && (
+            <div className="mt-6 p-5 rounded-2xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+              {message}
+            </div>
+          )}
+        </div>
+
+        {/* Results Section */}
+        {results.length > 0 && (
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all group"
                 >
-                  {running ? "Running..." : "Run AI Sourcing"}
-                </button>
+                  <div className="font-semibold text-2xl mb-4">{result.item || "Item"}</div>
 
-                <Link href="/quotes" style={secondaryLinkDark}>
-                  View Quotes
-                </Link>
-              </div>
-            </form>
+                  <div className="text-zinc-500 dark:text-zinc-400 mb-6">
+                    Quantity: <span className="font-medium text-zinc-900 dark:text-white">{result.quantity}</span>
+                  </div>
 
-            {message && <div style={messageBox}>{message}</div>}
-          </div>
-
-          <div style={resultsWrap}>
-            <h2 style={resultsTitle}>Results</h2>
-
-            {results.length === 0 ? (
-              <div style={emptyState}>
-                No results yet. Run the assistant to see sourcing options here.
-              </div>
-            ) : (
-              <div style={resultsGrid}>
-                {results.map((result, index) => (
-                  <div key={index} style={resultCard}>
-                    <div style={resultTitle}>{result.item || "Unnamed item"}</div>
-
-                    <div style={resultMeta}>
-                      Quantity: {String(result.quantity ?? "—")}
-                    </div>
-
-                    {result.best_quote ? (
-                      <>
-                        <div style={metricGrid}>
+                  {result.best_quote ? (
+                    <>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <div style={metricLabel}>Best Vendor</div>
-                            <div style={metricValue}>
-                              {result.best_quote.vendor_name || "—"}
-                            </div>
+                            <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
+                            <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
                           </div>
-
                           <div>
-                            <div style={metricLabel}>Estimated Total</div>
-                            <div style={metricValue}>
+                            <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
+                            <div className="font-bold text-2xl mt-1">
                               ${Number(result.best_quote.total || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>
 
                         {result.best_quote.reason && (
-                          <div style={reasonBox}>{result.best_quote.reason}</div>
+                          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
+                            {result.best_quote.reason}
+                          </div>
                         )}
 
-                        {result.best_quote.product_url ? (
+                        {result.best_quote.product_url && (
                           <a
                             href={result.best_quote.product_url}
                             target="_blank"
                             rel="noreferrer"
-                            style={vendorLink}
+                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium group-hover:gap-3 transition-all"
                           >
-                            Open supplier →
+                            View on supplier site →
                           </a>
-                        ) : (
-                          <div style={mutedText}>No supplier URL available yet.</div>
                         )}
-                      </>
-                    ) : (
-                      <div style={mutedText}>No quote data returned for this item.</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-zinc-500 italic">No quote data available for this item.</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        )}
+
+        {results.length === 0 && !message && (
+          <div className="text-center py-20 text-zinc-500">
+            Run the AI Assistant above to see sourcing recommendations here.
+          </div>
+        )}
+      </div>
     </main>
   );
 }
-
-const pageWrap: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#f3f4f6",
-  color: "#111827",
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-};
-
-const loadingWrap: React.CSSProperties = {
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#f3f4f6",
-};
-
-const loadingCard: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "16px",
-  padding: "20px 24px",
-  fontWeight: 700,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const headerStyle: React.CSSProperties = {
-  background: "#0b1220",
-  color: "white",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
-};
-
-const headerInner: React.CSSProperties = {
-  maxWidth: "1180px",
-  margin: "0 auto",
-  padding: "20px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "16px",
-  flexWrap: "wrap",
-};
-
-const brandStyle: React.CSSProperties = {
-  fontSize: "28px",
-  fontWeight: 900,
-  color: "white",
-  textDecoration: "none",
-};
-
-const topNav: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const navLink: React.CSSProperties = {
-  color: "#cbd5e1",
-  textDecoration: "none",
-  fontWeight: 600,
-};
-
-const navLinkActive: React.CSSProperties = {
-  color: "white",
-  textDecoration: "none",
-  fontWeight: 800,
-};
-
-const ghostButtonLink: React.CSSProperties = {
-  textDecoration: "none",
-  color: "white",
-  padding: "10px 16px",
-  borderRadius: "12px",
-  background: "rgba(255,255,255,0.08)",
-  fontWeight: 700,
-};
-
-const heroSection: React.CSSProperties = {
-  padding: "32px 0 80px",
-};
-
-const container: React.CSSProperties = {
-  maxWidth: "1180px",
-  margin: "0 auto",
-  padding: "0 20px",
-};
-
-const heroGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-  gap: "20px",
-  alignItems: "start",
-};
-
-const eyebrow: React.CSSProperties = {
-  display: "inline-block",
-  background: "#dbeafe",
-  color: "#1d4ed8",
-  border: "1px solid #bfdbfe",
-  borderRadius: "999px",
-  padding: "8px 12px",
-  fontWeight: 700,
-  fontSize: "14px",
-};
-
-const heroTitle: React.CSSProperties = {
-  margin: "18px 0 0",
-  fontSize: "clamp(34px, 6vw, 56px)",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  letterSpacing: "-0.04em",
-};
-
-const heroText: React.CSSProperties = {
-  marginTop: "18px",
-  maxWidth: "760px",
-  fontSize: "20px",
-  lineHeight: 1.7,
-  color: "#4b5563",
-};
-
-const statusBox: React.CSSProperties = {
-  marginTop: "22px",
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "18px",
-  padding: "18px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const statusTitle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "#6b7280",
-  fontWeight: 700,
-};
-
-const statusValue: React.CSSProperties = {
-  marginTop: "8px",
-  fontSize: "24px",
-  fontWeight: 900,
-};
-
-const statusMeta: React.CSSProperties = {
-  marginTop: "6px",
-  color: "#4b5563",
-  lineHeight: 1.6,
-};
-
-const sideCard: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "22px",
-  padding: "20px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const sideTitle: React.CSSProperties = {
-  fontSize: "18px",
-  fontWeight: 800,
-};
-
-const exampleBlock: React.CSSProperties = {
-  marginTop: "12px",
-  background: "#f9fafb",
-  border: "1px solid #e5e7eb",
-  borderRadius: "14px",
-  padding: "14px",
-  whiteSpace: "pre-wrap",
-  lineHeight: 1.7,
-  color: "#374151",
-  fontFamily:
-    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-};
-
-const sideNote: React.CSSProperties = {
-  marginTop: "12px",
-  color: "#4b5563",
-  lineHeight: 1.7,
-};
-
-const upsellCard: React.CSSProperties = {
-  marginTop: "24px",
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
-  color: "#1d4ed8",
-  borderRadius: "18px",
-  padding: "18px",
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "16px",
-  flexWrap: "wrap",
-  alignItems: "center",
-};
-
-const upsellTitle: React.CSSProperties = {
-  fontWeight: 800,
-  fontSize: "18px",
-};
-
-const upsellText: React.CSSProperties = {
-  marginTop: "6px",
-  lineHeight: 1.6,
-};
-
-const upsellActions: React.CSSProperties = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const primaryLink: React.CSSProperties = {
-  textDecoration: "none",
-  background: "#111827",
-  color: "white",
-  padding: "12px 16px",
-  borderRadius: "12px",
-  fontWeight: 700,
-};
-
-const secondaryLink: React.CSSProperties = {
-  textDecoration: "none",
-  background: "white",
-  color: "#111827",
-  padding: "12px 16px",
-  borderRadius: "12px",
-  fontWeight: 700,
-  border: "1px solid #d1d5db",
-};
-
-const formCard: React.CSSProperties = {
-  marginTop: "24px",
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "22px",
-  padding: "20px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "14px",
-  fontWeight: 700,
-};
-
-const textareaStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "14px",
-  borderRadius: "14px",
-  border: "1px solid #d1d5db",
-  fontSize: "14px",
-  lineHeight: 1.6,
-  boxSizing: "border-box",
-  resize: "vertical",
-};
-
-const buttonRow: React.CSSProperties = {
-  display: "flex",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const primaryButton: React.CSSProperties = {
-  background: "#111827",
-  color: "white",
-  border: "none",
-  borderRadius: "12px",
-  padding: "12px 18px",
-  fontWeight: 700,
-};
-
-const secondaryLinkDark: React.CSSProperties = {
-  textDecoration: "none",
-  background: "white",
-  color: "#111827",
-  padding: "12px 18px",
-  borderRadius: "12px",
-  fontWeight: 700,
-  border: "1px solid #d1d5db",
-};
-
-const messageBox: React.CSSProperties = {
-  marginTop: "16px",
-  background: "#f9fafb",
-  border: "1px solid #e5e7eb",
-  borderRadius: "12px",
-  padding: "12px 14px",
-  color: "#374151",
-};
-
-const resultsWrap: React.CSSProperties = {
-  marginTop: "28px",
-};
-
-const resultsTitle: React.CSSProperties = {
-  fontSize: "28px",
-  fontWeight: 900,
-  margin: 0,
-};
-
-const emptyState: React.CSSProperties = {
-  marginTop: "16px",
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "18px",
-  padding: "18px",
-  color: "#6b7280",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const resultsGrid: React.CSSProperties = {
-  display: "grid",
-  gap: "16px",
-  marginTop: "16px",
-};
-
-const resultCard: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "18px",
-  padding: "18px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-};
-
-const resultTitle: React.CSSProperties = {
-  fontSize: "20px",
-  fontWeight: 800,
-};
-
-const resultMeta: React.CSSProperties = {
-  marginTop: "8px",
-  color: "#6b7280",
-};
-
-const metricGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "12px",
-  marginTop: "16px",
-};
-
-const metricLabel: React.CSSProperties = {
-  color: "#6b7280",
-  fontSize: "13px",
-};
-
-const metricValue: React.CSSProperties = {
-  fontWeight: 800,
-  marginTop: "4px",
-};
-
-const reasonBox: React.CSSProperties = {
-  marginTop: "14px",
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
-  color: "#1d4ed8",
-  borderRadius: "12px",
-  padding: "12px 14px",
-  lineHeight: 1.6,
-};
-
-const vendorLink: React.CSSProperties = {
-  display: "inline-block",
-  marginTop: "14px",
-  color: "#2563eb",
-  textDecoration: "none",
-  fontWeight: 700,
-};
-
-const mutedText: React.CSSProperties = {
-  marginTop: "14px",
-  color: "#6b7280",
-};
