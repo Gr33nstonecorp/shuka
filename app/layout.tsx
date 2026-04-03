@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import Link from "next/link";   // ← This line was missing
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +18,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ShukAI - AI Procurement Platform",
-  description: "AI-powered marketplace for modern procurement.",
+  description: "AI-powered procurement platform. Source vendors, compare quotes, manage requests and orders in one place.",
+  keywords: ["procurement", "AI sourcing", "vendor quotes", "supply chain", "purchase requests"],
+  authors: [{ name: "ShukAI" }],
+  openGraph: {
+    title: "ShukAI - AI Procurement Platform",
+    description: "Modern AI-powered marketplace for requests, quotes, orders, and vendor management.",
+    images: [{ url: "https://www.shukai.co/og-image.jpg" }], // Add an image later
+    url: "https://www.shukai.co",
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -38,7 +49,7 @@ export default function RootLayout({
             <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacy</Link>
-              <Link href="/msa" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Agreement</Link>
+              <Link href="/msa" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Master Service Agreement</Link>
             </div>
             <div className="text-sm text-zinc-500">© {new Date().getFullYear()} ShukAI. All rights reserved.</div>
           </div>
