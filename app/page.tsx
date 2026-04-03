@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
 type UserState = {
   email: string | null;
@@ -30,30 +30,19 @@ export default function HomePage() {
   );
 
   const [user, setUser] = useState<UserState | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!mounted) return;
-        setUser(session?.user ? { email: session.user.email ?? null } : null);
-      } catch (error) {
-        console.error("Failed to load session:", error);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    loadSession();
+    // Load session without blocking render
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ? { email: session.user.email ?? null } : null);
+    }).catch(console.error);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
     });
 
+    // Checkout success banner
     const url = new URL(window.location.href);
     if (url.searchParams.get("checkout") === "success") {
       setShowCheckoutSuccess(true);
@@ -61,30 +50,27 @@ export default function HomePage() {
       window.history.replaceState({}, "", url.toString());
     }
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
   async function handleLogout() {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      window.location.href = "/";
-    }
-  }
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    await supabase.auth.signOut();
+    window.location.href = "/";
   }
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      {/* Success Banner */}
+      {showCheckoutSuccess && (
+        <div className="max-w-7xl mx-auto px-6 pt-6">
+          <div className="bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-2xl px-6 py-4 text-sm font-medium">
+            Subscription started successfully. Your account is now active.
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
-      <section className="pt-16 pb-20 bg-zinc-50 dark:bg-zinc-950">
+      <section className="pt-16 pb-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -103,21 +89,13 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 {user ? (
                   <>
-                    <Link href="/pricing" className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all">
-                      Manage plan
-                    </Link>
-                    <Link href="/assistant" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
-                      Open AI Assistant
-                    </Link>
+                    <Link href="/pricing" className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all">Manage plan</Link>
+                    <Link href="/assistant" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">Open AI Assistant</Link>
                   </>
                 ) : (
                   <>
-                    <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30">
-                      Start free trial
-                    </Link>
-                    <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
-                      Log in
-                    </Link>
+                    <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30">Start free trial</Link>
+                    <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">Log in</Link>
                   </>
                 )}
               </div>
@@ -135,7 +113,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Workspace Section */}
+      {/* Workspace */}
       <section id="workspace" className="py-20 bg-white dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mb-12">
@@ -173,7 +151,6 @@ export default function HomePage() {
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">Ready to use ShukAI for real?</h2>
               <p className="text-xl text-zinc-400 max-w-md">Start with the trial, then move straight into your actual workflow.</p>
             </div>
-
             <div className="flex flex-wrap gap-4">
               {user ? (
                 <>
