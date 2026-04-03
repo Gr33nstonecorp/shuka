@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import LoadingSkeleton from "@/components/LoadingSkeleton";
 
 type UserState = {
   email: string | null;
@@ -32,16 +31,11 @@ export default function HomePage() {
 
   const [user, setUser] = useState<UserState | null>(null);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
-      setLoading(false);
-    }).catch((err) => {
-      console.error("Session error:", err);
-      setLoading(false);
-    });
+    }).catch(console.error);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
@@ -57,18 +51,8 @@ export default function HomePage() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  }
-
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* Success Banner */}
       {showCheckoutSuccess && (
         <div className="max-w-7xl mx-auto px-6 pt-6">
           <div className="bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-2xl px-6 py-4 text-sm font-medium">
@@ -77,8 +61,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="pt-16 pb-20 bg-zinc-50 dark:bg-zinc-950">
+      {/* Hero */}
+      <section className="pt-16 pb-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -95,41 +79,40 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                {user ? (
-                  <>
-                    <Link href="/pricing" className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all">
-                      Manage plan
-                    </Link>
-                    <Link href="/assistant" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
-                      Open AI Assistant
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30">
-                      Start free trial
-                    </Link>
-                    <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
-                      Log in
-                    </Link>
-                  </>
-                )}
+                <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all">
+                  Start free trial
+                </Link>
+                <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
+                  Log in
+                </Link>
               </div>
             </div>
 
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-2 gap-6">
-                <StatCard title="Requests" value="Structured" />
-                <StatCard title="Quotes" value="Comparable" />
-                <StatCard title="Orders" value="Trackable" />
-                <StatCard title="AI" value="Actionable" />
+                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
+                  <div className="text-sm font-semibold text-zinc-500">Requests</div>
+                  <div className="text-3xl font-bold mt-2">Structured</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
+                  <div className="text-sm font-semibold text-zinc-500">Quotes</div>
+                  <div className="text-3xl font-bold mt-2">Comparable</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
+                  <div className="text-sm font-semibold text-zinc-500">Orders</div>
+                  <div className="text-3xl font-bold mt-2">Trackable</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
+                  <div className="text-sm font-semibold text-zinc-500">AI</div>
+                  <div className="text-3xl font-bold mt-2">Actionable</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Workspace Section */}
+      {/* Workspace */}
       <section id="workspace" className="py-20 bg-white dark:bg-zinc-900">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mb-12">
@@ -159,7 +142,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* CTA */}
       <section className="py-20 bg-zinc-950 text-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-zinc-900 rounded-3xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
@@ -167,32 +150,13 @@ export default function HomePage() {
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">Ready to use ShukAI for real?</h2>
               <p className="text-xl text-zinc-400 max-w-md">Start with the trial, then move straight into your actual workflow.</p>
             </div>
-
             <div className="flex flex-wrap gap-4">
-              {user ? (
-                <>
-                  <Link href="/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Go to pricing</Link>
-                  <Link href="/profile" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Open profile</Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/login?next=/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Start free trial</Link>
-                  <Link href="/login" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Log in</Link>
-                </>
-              )}
+              <Link href="/login?next=/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Start free trial</Link>
+              <Link href="/login" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Log in</Link>
             </div>
           </div>
         </div>
       </section>
     </main>
-  );
-}
-
-function StatCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
-      <div className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{title}</div>
-      <div className="text-3xl font-bold mt-2 tracking-tight">{value}</div>
-    </div>
   );
 }
