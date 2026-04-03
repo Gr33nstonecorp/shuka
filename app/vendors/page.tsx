@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function VendorsPage() {
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12">
@@ -45,7 +47,9 @@ export default function VendorsPage() {
         </div>
 
         <div className="mt-16 text-center">
-          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Homepage</Link>
+          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
+            ← Back to Homepage
+          </Link>
         </div>
       </div>
     </main>
