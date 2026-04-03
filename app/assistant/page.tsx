@@ -144,21 +144,21 @@ export default function AssistantPage() {
   }
 
   const addToRequest = (index: number, result: AssistantResult) => {
-    if (!result.item || !result.quantity) return;
+    if (!result.item) return;
 
     const savedRequests = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
 
     const newRequest = {
       id: Date.now(),
       name: result.item,
-      quantity: Number(result.quantity),
+      quantity: Number(result.quantity || 1),
       dateAdded: new Date().toISOString()
     };
 
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...savedRequests]));
 
     setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" has been added to your Requests!`);
+    alert(`✅ "${result.item}" has been added to your Requests! Go to /requests to see it.`);
   };
 
   if (loading) {
