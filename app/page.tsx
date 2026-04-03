@@ -4,122 +4,105 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-type UserState = {
-  email: string | null;
-};
-
-type AppTab = {
-  label: string;
-  href: string;
-  description: string;
-};
-
-const TABS: AppTab[] = [
-  { label: "Requests", href: "/requests", description: "Create and manage purchasing requests." },
-  { label: "Quotes", href: "/quotes", description: "Review and compare vendor quotes." },
-  { label: "Orders", href: "/orders", description: "Track approved and active orders." },
-  { label: "Vendors", href: "/vendors", description: "Browse and manage supplier options." },
-  { label: "AI Assistant", href: "/assistant", description: "Use the sourcing assistant workflow." },
-  { label: "Saved Items", href: "/saved-items", description: "Keep shortlisted products and options." },
-];
-
 export default function HomePage() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [user, setUser] = useState<UserState | null>(null);
-  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ? { email: session.user.email ?? null } : null);
-    }).catch(console.error);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { email: session.user.email ?? null } : null);
-    });
-
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("checkout") === "success") {
-      setShowCheckoutSuccess(true);
-      url.searchParams.delete("checkout");
-      window.history.replaceState({}, "", url.toString());
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
     }
 
-    return () => subscription.unsubscribe();
+    checkSession();
+
+    // Check for checkout success
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("checkout") === "success") {
+        setShowSuccess(true);
+        // Clean URL
+        window.history.replaceState({}, "", "/");
+      }
+    }
   }, [supabase]);
 
+  const TABS = [
+    { label: "Requests", href: "/requests", description: "Create and manage purchasing requests." },
+    { label: "Quotes", href: "/quotes", description: "Review and compare vendor quotes." },
+    { label: "Orders", href: "/orders", description: "Track approved and active orders." },
+    { label: "Vendors", href: "/vendors", description: "Browse and manage supplier options." },
+    { label: "AI Assistant", href: "/assistant", description: "Use the sourcing assistant workflow." },
+    { label: "Saved Items", href: "/saved-items", description: "Keep shortlisted products and options." },
+  ];
+
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {showCheckoutSuccess && (
-        <div className="max-w-7xl mx-auto px-6 pt-6">
-          <div className="bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-2xl px-6 py-4 text-sm font-medium">
-            Subscription started successfully. Your account is now active.
-          </div>
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      {/* Success Banner */}
+      {showSuccess && (
+        <div className="bg-green-600 text-white py-4 text-center">
+          🎉 Payment successful! Welcome to ShukAI. Your subscription is now active.
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="pt-16 pb-20 bg-zinc-50 dark:bg-zinc-950">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-                AI procurement for modern teams
-              </div>
-
-              <h1 className="text-5xl lg:text-7xl font-black tracking-tighter leading-none mb-8">
-                Source vendors,<br />compare quotes,<br />and manage purchasing
-              </h1>
-
-              <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-lg mb-10">
-                ShukAI brings your entire procurement workflow into one powerful platform.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985]">
-                  Start free trial
-                </Link>
-                <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
-                  Log in
-                </Link>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
-                  <div className="text-sm font-semibold text-zinc-500">Requests</div>
-                  <div className="text-3xl font-bold mt-2">Structured</div>
-                </div>
-                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
-                  <div className="text-sm font-semibold text-zinc-500">Quotes</div>
-                  <div className="text-3xl font-bold mt-2">Comparable</div>
-                </div>
-                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
-                  <div className="text-sm font-semibold text-zinc-500">Orders</div>
-                  <div className="text-3xl font-bold mt-2">Trackable</div>
-                </div>
-                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-6">
-                  <div className="text-sm font-semibold text-zinc-500">AI</div>
-                  <div className="text-3xl font-bold mt-2">Actionable</div>
-                </div>
-              </div>
-            </div>
+      {/* Hero */}
+      <div className="pt-24 pb-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full px-5 py-2 mb-8">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">Now in Early Beta</span>
           </div>
-        </div>
-      </section>
 
-      {/* Workspace */}
-      <section id="workspace" className="py-20 bg-white dark:bg-zinc-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="max-w-2xl mb-12">
-            <h2 className="text-5xl font-black tracking-tighter mb-4">Workspace</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400">
-              Manage requests, compare quotes, track orders, and work with suppliers in one place.
-            </p>
+          <h1 className="text-6xl lg:text-7xl font-black tracking-tighter leading-none mb-8">
+            AI that finds<br />better vendors,<br />faster.
+          </h1>
+
+          <p className="text-2xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-12">
+            ShukAI helps modern teams source products, compare quotes, and manage procurement — all in one place.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {isLoggedIn ? (
+              <Link
+                href="/assistant"
+                className="px-10 py-4 bg-zinc-900 hover:bg-black text-white text-lg font-semibold rounded-2xl transition"
+              >
+                Open AI Assistant
+              </Link>
+            ) : (
+              <Link
+                href="/pricing"
+                className="px-10 py-4 bg-zinc-900 hover:bg-black text-white text-lg font-semibold rounded-2xl transition"
+              >
+                Start Free Trial — $9/mo
+              </Link>
+            )}
+
+            <Link
+              href="/pricing"
+              className="px-10 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-lg font-semibold rounded-2xl transition"
+            >
+              See Pricing
+            </Link>
+          </div>
+
+          <p className="text-sm text-zinc-500 mt-6">
+            No credit card required • Cancel anytime
+          </p>
+        </div>
+      </div>
+
+      {/* Workspace Section */}
+      <div className="bg-white dark:bg-zinc-900 py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="text-sm font-semibold tracking-widest text-zinc-500 mb-3">YOUR WORKSPACE</div>
+            <h2 className="text-4xl font-bold tracking-tight">Everything in one place</h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -127,36 +110,34 @@ export default function HomePage() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-xl"
+                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all hover:shadow-xl"
               >
-                <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {tab.label}
-                </div>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">{tab.description}</p>
-                <div className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
-                  Open →
-                </div>
+                <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 transition">{tab.label}</div>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">{tab.description}</p>
+                <div className="mt-8 text-blue-600 font-medium group-hover:underline">Open →</div>
               </Link>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Final CTA */}
-      <section className="py-20 bg-zinc-950 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-zinc-900 rounded-3xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">Ready to use ShukAI for real?</h2>
-              <p className="text-xl text-zinc-400 max-w-md">Start with the trial, then move straight into your actual workflow.</p>
-            </div>
-            <div className="flex flex-wrap gap-4">
-              <Link href="/login?next=/pricing" className="px-8 py-4 bg-white text-zinc-950 font-semibold rounded-2xl hover:bg-zinc-100 transition">Start free trial</Link>
-              <Link href="/login" className="px-8 py-4 border border-zinc-700 hover:bg-zinc-800 font-semibold rounded-2xl transition">Log in</Link>
-            </div>
-          </div>
+      <div className="py-24 px-6 bg-zinc-900 text-white">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-4xl font-bold tracking-tight mb-6">
+            Ready to source smarter?
+          </h2>
+          <p className="text-xl text-zinc-400 mb-10">
+            Start with our $9 Starter plan or go Premium for full AI power.
+          </p>
+          <Link
+            href="/pricing"
+            className="inline-block px-12 py-5 bg-white text-zinc-900 font-semibold rounded-2xl hover:bg-zinc-100 text-lg transition"
+          >
+            Choose Your Plan
+          </Link>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
