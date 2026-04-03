@@ -60,13 +60,11 @@ export default function AssistantPage() {
 
         if (error) {
           console.error(error);
-          setMessage("Could not load profile.");
         } else {
           setProfile(data as ProfileRow | null);
         }
       } catch (error) {
         console.error(error);
-        setMessage("Failed to load assistant access.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -168,7 +166,7 @@ export default function AssistantPage() {
           </p>
           <Link
             href="/pricing"
-            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black"
+            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
           >
             View Pricing & Upgrade
           </Link>
@@ -192,7 +190,6 @@ export default function AssistantPage() {
           </p>
         </div>
 
-        {/* Input Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -220,7 +217,6 @@ export default function AssistantPage() {
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
-        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold mb-8">Sourcing Results</h2>
