@@ -2,91 +2,59 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 
 type RequestItem = {
-  id: string;
+  id: number;
   name: string;
   quantity: number;
-  status: string;
-  created_at: string;
+  dateAdded: string;
 };
 
 export default function RequestsPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [items, setItems] = useState<RequestItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
 
-  // Load user's requests from Supabase
+  // Load from localStorage when page loads
   useEffect(() => {
-    async function loadRequests() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setLoading(false);
-        return;
-      }
+    const saved = localStorage.getItem("shukai_requests");
+    if (saved) {
+      setItems(JSON.parse(saved));
+    }
+  }, []);
 
-      const { data, error } = await supabase
-        .from("requests")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
+  // Save to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem("shukai_requests", JSON.stringify(items));
+  }, [items]);
 
-      if (error) console.error(error);
-      else setItems(data || []);
-      
-      setLoading(false);
+  const addItem = () => {
+    if (!newItemName.trim()) {
+      alert("Please enter an item name");
+      return;
     }
 
-    loadRequests();
-  }, [supabase]);
+    const newItem: RequestItem = {
+      id: Date.now(),
+      name: newItemName.trim(),
+      quantity: newItemQuantity,
+      dateAdded: new Date().toISOString()
+    };
 
-  const addItem = async () => {
-    if (!newItemName.trim()) return;
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { error } = await supabase
-      .from("requests")
-      .insert({
-        user_id: session.user.id,
-        name: newItemName.trim(),
-        quantity: newItemQuantity,
-        status: "draft"
-      });
-
-    if (error) {
-      alert("Failed to add item");
-    } else {
-      // Refresh list
-      const { data } = await supabase
-        .from("requests")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
-      
-      setItems(data || []);
-      setNewItemName("");
-      setNewItemQuantity(1);
-    }
+    setItems([newItem, ...items]);
+    setNewItemName("");           // Clear input
+    setNewItemQuantity(1);        // Reset quantity
   };
 
-  const removeItem = async (id: string) => {
-    const { error } = await supabase.from("requests").delete().eq("id", id);
-    if (!error) {
-      setItems(items.filter(item => item.id !== id));
-    }
+  const removeItem = (id: number) => {
+    setItems(items.filter(item => item.id !== id));
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading your requests...</div>;
+  const clearAll = () => {
+    if (confirm("Clear all requests?")) {
+      setItems([]);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12">
@@ -94,21 +62,36 @@ export default function RequestsPage() {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-5xl font-black tracking-tighter">Requests</h1>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400 mt-2">Your purchasing requests</p>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400 mt-2">
+              Create and manage your purchasing requests
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={clearAll}
+              className="px-5 py-3 text-red-600 hover:text-red-700 font-medium transition"
+            >
+              Clear All
+            </button>
+            <button className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition">
+              Submit Request
+            </button>
           </div>
         </div>
 
-        {/* Add New Item */}
+        {/* Add New Item Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
-          <h2 className="text-2xl font-semibold mb-6">New Request Item</h2>
+          <h2 className="text-2xl font-semibold mb-6">Add New Item</h2>
           <div className="grid md:grid-cols-12 gap-4">
             <div className="md:col-span-8">
               <input
                 type="text"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
-                placeholder="Item name"
-                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700"
+                placeholder="Item name (e.g. Industrial nitrile gloves)"
+                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 focus:outline-none focus:border-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && addItem()}
               />
             </div>
             <div className="md:col-span-2">
@@ -116,30 +99,35 @@ export default function RequestsPage() {
                 type="number"
                 value={newItemQuantity}
                 onChange={(e) => setNewItemQuantity(Number(e.target.value))}
-                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700"
+                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 focus:outline-none focus:border-blue-500"
                 min="1"
               />
             </div>
             <div className="md:col-span-2">
-              <button onClick={addItem} className="w-full h-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl">
-                Add
+              <button
+                onClick={addItem}
+                className="w-full h-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition active:scale-95"
+              >
+                Add Item
               </button>
             </div>
           </div>
         </div>
 
-        {/* List */}
+        {/* Current Requests */}
         {items.length > 0 ? (
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center">
                 <div>
                   <div className="font-semibold text-xl">{item.name}</div>
-                  <div className="text-zinc-500">Quantity: {item.quantity}</div>
+                  <div className="text-zinc-500">
+                    Quantity: {item.quantity} • Added {new Date(item.dateAdded).toLocaleDateString()}
+                  </div>
                 </div>
                 <button
                   onClick={() => removeItem(item.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 font-medium px-4 py-2 transition"
                 >
                   Remove
                 </button>
@@ -148,9 +136,17 @@ export default function RequestsPage() {
           </div>
         ) : (
           <div className="text-center py-20 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl">
-            <p className="text-zinc-500">No requests yet. Add some from the AI Assistant!</p>
+            <div className="text-6xl mb-6">📋</div>
+            <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
+            <p className="text-zinc-600 dark:text-zinc-400">Add items above or from the AI Assistant.</p>
           </div>
         )}
+
+        <div className="mt-16 text-center">
+          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
+            ← Back to Homepage
+          </Link>
+        </div>
       </div>
     </main>
   );
