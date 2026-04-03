@@ -33,15 +33,15 @@ export default function HomePage() {
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
 
   useEffect(() => {
+    // Non-blocking session load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
-    }).catch(console.error);
+    }).catch((err) => console.error("Session error:", err));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
     });
 
-    // Handle checkout success banner
     const url = new URL(window.location.href);
     if (url.searchParams.get("checkout") === "success") {
       setShowCheckoutSuccess(true);
@@ -88,31 +88,19 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 {user ? (
                   <>
-                    <Link 
-                      href="/pricing" 
-                      className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all"
-                    >
+                    <Link href="/pricing" className="px-8 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition-all">
                       Manage plan
                     </Link>
-                    <Link 
-                      href="/assistant" 
-                      className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all"
-                    >
+                    <Link href="/assistant" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
                       Open AI Assistant
                     </Link>
                   </>
                 ) : (
                   <>
-                    <Link 
-                      href="/login?next=/pricing" 
-                      className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30"
-                    >
+                    <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30">
                       Start free trial
                     </Link>
-                    <Link 
-                      href="/login" 
-                      className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all"
-                    >
+                    <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
                       Log in
                     </Link>
                   </>
@@ -120,7 +108,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stats Card */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
               <div className="grid grid-cols-2 gap-6">
                 <StatCard title="Requests" value="Structured" />
@@ -153,9 +140,7 @@ export default function HomePage() {
                 <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {tab.label}
                 </div>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">
-                  {tab.description}
-                </p>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed mb-6">{tab.description}</p>
                 <div className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
                   Open →
                 </div>
@@ -170,12 +155,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-zinc-900 rounded-3xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
             <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">
-                Ready to use ShukAI for real?
-              </h2>
-              <p className="text-xl text-zinc-400 max-w-md">
-                Start with the trial, then move straight into your actual workflow.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">Ready to use ShukAI for real?</h2>
+              <p className="text-xl text-zinc-400 max-w-md">Start with the trial, then move straight into your actual workflow.</p>
             </div>
 
             <div className="flex flex-wrap gap-4">
