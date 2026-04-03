@@ -151,11 +151,11 @@ export default function AssistantPage() {
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
 
     setAddedItems([...addedItems, index]);
-    alert(`✅ Added "${result.item}" to your Requests!`);
+    alert(`✅ "${result.item}" added to your Requests!`);
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading assistant...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-xl">Loading assistant...</div>;
   }
 
   if (!hasPaidAccess) {
@@ -163,8 +163,8 @@ export default function AssistantPage() {
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
-          <p className="mb-8 text-zinc-600">{message || "Please log in with an active subscription."}</p>
-          <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
+          <p className="text-zinc-600 mb-8">{message || "Please log in with an active subscription to use the AI Assistant."}</p>
+          <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black block">
             Log In
           </Link>
         </div>
@@ -176,66 +176,85 @@ export default function AssistantPage() {
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-blue-100 text-blue-700 px-5 py-2 rounded-full text-sm font-semibold mb-6">
+          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
             AI Sourcing Engine
           </div>
-          <h1 className="text-5xl font-black tracking-tighter mb-6">
+          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
             Turn simple requests into vendor options fast.
           </h1>
-          <p className="text-xl text-zinc-600">
-            Enter your items and let ShukAI find the best suppliers.
+          <p className="text-xl text-zinc-600 dark:text-zinc-400">
+            Enter your items and let ShukAI find the best suppliers, pricing, and lead times.
           </p>
         </div>
 
-        <div className="bg-white border rounded-3xl p-8 mb-12">
+        {/* Input Form */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold mb-3">Items to source</label>
               <textarea
-                placeholder="gloves - 50&#10;packing tape - 20"
+                placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 rows={8}
                 disabled={running}
-                className="w-full p-6 rounded-2xl border font-mono focus:outline-none focus:border-blue-500"
+                className="w-full resize-y min-h-[180px] p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
               />
+              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: Item name - quantity</p>
             </div>
 
             <button
               type="submit"
               disabled={running}
-              className="w-full py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black disabled:bg-zinc-400"
+              className="w-full py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition"
             >
-              {running ? "Running..." : "Run AI Sourcing"}
+              {running ? "Running AI Sourcing..." : "Run AI Sourcing"}
             </button>
           </form>
 
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
+        {/* Results */}
         {results.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold mb-8">Results</h2>
-            <div className="grid gap-6">
-              {results.map((result, i) => (
-                <div key={i} className="bg-white border rounded-3xl p-8">
-                  <div className="font-semibold text-xl mb-2">{result.item}</div>
+            <h2 className="text-3xl font-bold mb-8">Sourcing Results</h2>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {results.map((result, index) => (
+                <div key={index} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8">
+                  <div className="font-semibold text-2xl mb-4">{result.item}</div>
                   <div className="text-zinc-500 mb-6">Quantity: {result.quantity}</div>
 
                   {result.best_quote && (
                     <div>
-                      <div className="font-medium">Best: {result.best_quote.vendor_name} — ${result.best_quote.total}</div>
+                      <div className="font-medium mb-4">
+                        Best: {result.best_quote.vendor_name} — ${result.best_quote.total}
+                      </div>
+                      {result.best_quote.reason && (
+                        <div className="bg-blue-50 p-4 rounded-2xl text-sm mb-6">
+                          {result.best_quote.reason}
+                        </div>
+                      )}
                       <button
-                        onClick={() => addToRequest(i, result)}
-                        className="mt-4 px-6 py-3 bg-green-600 text-white rounded-2xl hover:bg-green-700"
+                        onClick={() => addToRequest(index, result)}
+                        disabled={addedItems.includes(index)}
+                        className={`w-full py-3 rounded-2xl font-semibold transition ${
+                          addedItems.includes(index) ? "bg-green-600 text-white" : "bg-zinc-900 text-white hover:bg-black"
+                        }`}
                       >
-                        Add to Request
+                        {addedItems.includes(index) ? "✓ Added to Request" : "Add to Request"}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {results.length === 0 && !message && (
+          <div className="text-center py-20 text-zinc-500">
+            Run the AI Assistant above to see sourcing recommendations.
           </div>
         )}
       </div>
