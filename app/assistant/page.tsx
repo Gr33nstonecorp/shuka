@@ -43,6 +43,7 @@ export default function AssistantPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [addedToRequest, setAddedToRequest] = useState<number[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -88,6 +89,7 @@ export default function AssistantPage() {
     setRunning(true);
     setMessage("");
     setResults([]);
+    setAddedToRequest([]);
 
     if (!hasPaidAccess) {
       setMessage("An active paid subscription is required to use the AI Assistant.");
@@ -140,6 +142,15 @@ export default function AssistantPage() {
       setRunning(false);
     }
   }
+
+  const addToRequest = (index: number, result: AssistantResult) => {
+    if (!result.item) return;
+
+    // In a real app, you would save this to Supabase
+    alert(`Added "${result.item}" (${result.quantity} units) to your Requests!`);
+    
+    setAddedToRequest([...addedToRequest, index]);
+  };
 
   if (loading) {
     return (
@@ -276,6 +287,21 @@ export default function AssistantPage() {
                           View on supplier site →
                         </a>
                       )}
+
+                      <button
+                        onClick={() => {
+                          alert(`Added "${result.item}" to your Requests!`);
+                          setAddedToRequest(prev => [...prev, index]);
+                        }}
+                        disabled={addedToRequest.includes(index)}
+                        className={`w-full py-3 rounded-2xl font-semibold transition mt-4 ${
+                          addedToRequest.includes(index)
+                            ? "bg-green-600 text-white"
+                            : "bg-zinc-900 hover:bg-black text-white"
+                        }`}
+                      >
+                        {addedToRequest.includes(index) ? "Added to Request ✓" : "Add to Request"}
+                      </button>
                     </div>
                   ) : (
                     <div className="text-zinc-500 italic">No quote data available for this item.</div>
