@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
 
 type UserState = {
   email: string | null;
@@ -31,12 +32,16 @@ export default function HomePage() {
 
   const [user, setUser] = useState<UserState | null>(null);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Non-blocking session load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
-    }).catch((err) => console.error("Session error:", err));
+      setLoading(false);
+    }).catch((err) => {
+      console.error("Session error:", err);
+      setLoading(false);
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { email: session.user.email ?? null } : null);
@@ -55,6 +60,10 @@ export default function HomePage() {
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/";
+  }
+
+  if (loading) {
+    return <LoadingSkeleton />;
   }
 
   return (
