@@ -1,20 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type RequestItem = {
   id: number;
   name: string;
   quantity: number;
-  status: "draft" | "submitted" | "quoted";
+  dateAdded: string;
 };
 
 export default function RequestsPage() {
   const [items, setItems] = useState<RequestItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
-  const [showForm, setShowForm] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("shukai_requests");
+    if (saved) {
+      setItems(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save to localStorage whenever items change
+  useEffect(() => {
+    localStorage.setItem("shukai_requests", JSON.stringify(items));
+  }, [items]);
 
   const addItem = () => {
     if (!newItemName.trim()) return;
@@ -23,17 +35,22 @@ export default function RequestsPage() {
       id: Date.now(),
       name: newItemName.trim(),
       quantity: newItemQuantity,
-      status: "draft"
+      dateAdded: new Date().toISOString()
     };
 
-    setItems([...items, newItem]);
+    setItems([newItem, ...items]);
     setNewItemName("");
     setNewItemQuantity(1);
-    setShowForm(false);
   };
 
   const removeItem = (id: number) => {
     setItems(items.filter(item => item.id !== id));
+  };
+
+  const clearAll = () => {
+    if (confirm("Clear all requests?")) {
+      setItems([]);
+    }
   };
 
   return (
@@ -46,92 +63,84 @@ export default function RequestsPage() {
               Create and manage your purchasing requests
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-6 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
-          >
-            + New Request
-          </button>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={clearAll}
+              className="px-5 py-3 text-red-600 hover:text-red-700 font-medium transition"
+            >
+              Clear All
+            </button>
+            <button
+              onClick={() => {/* Future: Submit request */}}
+              className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
+            >
+              Submit Request
+            </button>
+          </div>
         </div>
 
-        {/* Add New Item Form */}
-        {showForm && (
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
-            <h2 className="text-2xl font-semibold mb-6">Add Item to Request</h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">Item Name</label>
-                <input
-                  type="text"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="e.g. Industrial nitrile gloves"
-                  className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Quantity</label>
-                <input
-                  type="number"
-                  value={newItemQuantity}
-                  onChange={(e) => setNewItemQuantity(Number(e.target.value))}
-                  className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950"
-                  min="1"
-                />
-              </div>
+        {/* Add New Item */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
+          <h2 className="text-2xl font-semibold mb-6">Add New Item</h2>
+          <div className="grid md:grid-cols-12 gap-4">
+            <div className="md:col-span-8">
+              <input
+                type="text"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="Item name (e.g. Industrial nitrile gloves)"
+                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950"
+              />
             </div>
-            <div className="flex gap-4 mt-6">
+            <div className="md:col-span-2">
+              <input
+                type="number"
+                value={newItemQuantity}
+                onChange={(e) => setNewItemQuantity(Number(e.target.value))}
+                className="w-full p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950"
+                min="1"
+              />
+            </div>
+            <div className="md:col-span-2">
               <button
                 onClick={addItem}
-                className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-2xl hover:bg-blue-700 transition"
+                className="w-full h-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition"
               >
-                Add Item
-              </button>
-              <button
-                onClick={() => setShowForm(false)}
-                className="px-8 py-3 border border-zinc-300 dark:border-zinc-700 rounded-2xl font-medium"
-              >
-                Cancel
+                Add
               </button>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Requests List */}
+        {/* Current Requests */}
         {items.length > 0 ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center">
                 <div>
                   <div className="font-semibold text-xl">{item.name}</div>
-                  <div className="text-zinc-500">Quantity: {item.quantity}</div>
+                  <div className="text-zinc-500">Quantity: {item.quantity} • Added {new Date(item.dateAdded).toLocaleDateString()}</div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="px-4 py-1.5 text-sm bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-full">
-                    Draft
-                  </span>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    Remove
-                  </button>
-                </div>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  className="text-red-600 hover:text-red-700 font-medium px-4 py-2"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
+          <div className="text-center py-20 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl">
             <div className="text-6xl mb-6">📋</div>
             <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-8">Create your first purchasing request above.</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Add items above or from the AI Assistant.</p>
           </div>
         )}
 
-        <div className="mt-16 text-center">
-          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to Homepage
-          </Link>
+        <div className="mt-12 text-center">
+          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Homepage</Link>
         </div>
       </div>
     </main>
