@@ -1,296 +1,107 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-type ProfileRow = {
-  id: string;
+type UserState = {
   email: string | null;
-  plan: string | null;
-  trial_ends_at: string | null;
 };
 
-function getPlanLabel(profile: ProfileRow | null) {
-  if (!profile) return "Trial";
-
-  const plan = (profile.plan || "trial").toLowerCase();
-
-  if (plan === "premium") return "Premium";
-  if (plan === "starter") return "Starter";
-
-  if (plan === "trial") {
-    if (!profile.trial_ends_at) return "Trial";
-
-    const now = new Date();
-    const end = new Date(profile.trial_ends_at);
-    const diffMs = end.getTime() - now.getTime();
-    const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-
-    return `Trial · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
-  }
-
-  return plan;
-}
-
-export default function AppNavbar() {
-  const pathname = usePathname();
+export default function Navbar() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [email, setEmail] = useState("");
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [user, setUser] = useState<UserState | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    // Initial session load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ? { email: session.user.email ?? null } : null);
+      setLoading(false);
+    }).catch((error) => {
+      console.error("Session load error:", error);
+      setLoading(false);
+    });
 
-    async function loadUserAndProfile() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const user = session?.user;
-
-      if (!mounted) return;
-
-      setEmail(user?.email || "");
-
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, email, plan, trial_ends_at")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-      setProfile((data as ProfileRow | null) || null);
-    }
-
-    loadUserAndProfile();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user;
-      setEmail(user?.email || "");
-
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, email, plan, trial_ends_at")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      setProfile((data as ProfileRow | null) || null);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { email: session.user.email ?? null } : null);
+      setLoading(false);
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, [supabase]);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      window.location.href = "/";
+    }
   }
 
-  const links = [
-    ["Dashboard", "/"],
-    ["Requests", "/requests"],
-    ["Quotes", "/quotes"],
-    ["Approvals", "/approvals"],
-    ["Orders", "/orders"],
-    ["Saved Items", "/saved-items"],
-    ["Shipments", "/shipments"],
-    ["Vendors", "/vendors"],
-    ["AI", "/assistant"],
-    ["Profile", "/profile"],
-  ] as const;
-
-  const planLabel = getPlanLabel(profile);
-
   return (
-    <nav
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "#0f172a",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 16px",
-          gap: "12px",
-          maxWidth: "1400px",
-          margin: "0 auto",
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: "18px",
-            color: "white",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Shuka
-        </div>
+    <header className="bg-zinc-950 text-white border-b border-zinc-800 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+        <Link href="/" className="text-3xl font-black tracking-tighter">
+          ShukAI
+        </Link>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            overflowX: "auto",
-            paddingBottom: "4px",
-            flex: 1,
-          }}
-        >
-          {links.map(([label, href]) => {
-            const isActive =
-              pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
+        <nav className="flex items-center gap-3 flex-wrap">
+          <Link href="#workspace" className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+            Workspace
+          </Link>
+          <Link href="/pricing" className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+            Pricing
+          </Link>
+          <Link href="/assistant" className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+            AI Assistant
+          </Link>
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  color: isActive ? "white" : "#9ca3af",
-                  textDecoration: "none",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  whiteSpace: "nowrap",
-                  background: isActive ? "#1f2937" : "transparent",
-                }}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {email ? (
+          {loading ? (
+            <div className="px-5 py-2.5 text-sm text-zinc-400">Loading...</div>
+          ) : user ? (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  lineHeight: 1.2,
-                }}
-              >
-                <span
-                  style={{
-                    color: "#9ca3af",
-                    fontSize: "12px",
-                    maxWidth: "160px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                  title={email}
-                >
-                  {email}
-                </span>
-
-                <span
-                  style={{
-                    marginTop: "4px",
-                    display: "inline-block",
-                    padding: "4px 8px",
-                    borderRadius: "999px",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    background:
-                      profile?.plan === "premium"
-                        ? "#dcfce7"
-                        : profile?.plan === "starter"
-                        ? "#dbeafe"
-                        : "#fef3c7",
-                    color:
-                      profile?.plan === "premium"
-                        ? "#166534"
-                        : profile?.plan === "starter"
-                        ? "#1d4ed8"
-                        : "#92400e",
-                  }}
-                >
-                  {planLabel}
-                </span>
-              </div>
-
+              <span className="text-sm text-zinc-400 px-3 hidden sm:inline">{user.email}</span>
               <Link
-                href="/pricing"
-                style={{
-                  color: "white",
-                  textDecoration: "none",
-                  fontSize: "12px",
-                  background: "#2563eb",
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  fontWeight: 700,
-                }}
+                href="/profile"
+                className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
               >
-                Upgrade
+                Profile
               </Link>
-
               <button
                 onClick={handleLogout}
-                style={{
-                  background: "#1f2937",
-                  color: "white",
-                  border: "none",
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
+                className="px-5 py-2.5 text-sm font-semibold rounded-2xl bg-zinc-800 hover:bg-zinc-700 transition-colors"
               >
                 Logout
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              style={{
-                color: "white",
-                textDecoration: "none",
-                fontSize: "12px",
-                background: "#1f2937",
-                padding: "6px 10px",
-                borderRadius: "8px",
-              }}
-            >
-              Login
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="px-5 py-2.5 text-sm font-semibold rounded-2xl hover:bg-zinc-900 transition-colors"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/login?next=/pricing"
+                className="px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl transition-all active:scale-[0.985] shadow-lg shadow-blue-500/30"
+              >
+                Start free trial
+              </Link>
+            </>
           )}
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }
