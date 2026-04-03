@@ -23,7 +23,7 @@ export default function RequestsPage() {
     }
   }, []);
 
-  // Save to localStorage whenever items change
+  // Auto-save to localStorage
   useEffect(() => {
     localStorage.setItem("shukai_requests", JSON.stringify(items));
   }, [items]);
@@ -44,7 +44,7 @@ export default function RequestsPage() {
   };
 
   const removeItem = (id: number) => {
-    setItems(items.filter(item => item.id !== id));
+    setItems(items.filter((item) => item.id !== id));
   };
 
   const clearAll = () => {
@@ -79,15 +79,16 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* Add New Item */}
+        {/* Quick Add Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <h2 className="text-xl font-semibold mb-6">Add New Request</h2>
           <div className="flex flex-col md:flex-row gap-4">
             <input
               type="text"
-              placeholder="Item name (e.g. Industrial gloves)"
+              placeholder="Item name (e.g. Heavy duty gloves)"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addItem()}
               className="flex-1 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-blue-500"
             />
             <input
@@ -112,7 +113,7 @@ export default function RequestsPage() {
             <div className="text-6xl mb-6">📋</div>
             <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
             <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-md mx-auto">
-              Use the AI Assistant to quickly generate requests, or add them manually above.
+              Use the AI Assistant to generate smart requests, or add them manually above.
             </p>
             <Link
               href="/assistant"
@@ -128,7 +129,7 @@ export default function RequestsPage() {
                 key={item.id}
                 className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center group"
               >
-                <div className="flex-1">
+                <div>
                   <div className="font-semibold text-xl">{item.name}</div>
                   <div className="text-zinc-500 mt-1">
                     Quantity: <span className="font-medium">{item.quantity}</span> • 
