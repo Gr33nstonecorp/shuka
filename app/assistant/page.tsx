@@ -85,7 +85,7 @@ export default function AssistantPage() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
           <p className="text-zinc-600 mb-8">Please log in to use the AI Assistant.</p>
           <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black block">
@@ -114,7 +114,7 @@ export default function AssistantPage() {
                 placeholder="10 gloves&#10;20 packing tape&#10;10 shipping labels"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                rows={6}
+                rows={8}
                 disabled={running}
                 className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono focus:outline-none focus:border-blue-500"
               />
@@ -135,7 +135,7 @@ export default function AssistantPage() {
 
         {results.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold mb-8">Results</h2>
+            <h2 className="text-3xl font-bold mb-8">Sourcing Results</h2>
             <div className="grid gap-6">
               {results.map((result, i) => (
                 <div key={i} className="bg-white border rounded-3xl p-8">
