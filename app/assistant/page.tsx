@@ -43,7 +43,6 @@ export default function AssistantPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
-  const [addedToRequest, setAddedToRequest] = useState<number[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,11 +64,8 @@ export default function AssistantPage() {
           .eq("id", user.id)
           .maybeSingle();
 
-        if (error) {
-          setMessage("Could not load profile: " + error.message);
-        } else {
-          setProfile(data as ProfileRow | null);
-        }
+        if (error) setMessage("Could not load profile: " + error.message);
+        else setProfile(data as ProfileRow | null);
       } catch (error) {
         console.error(error);
         setMessage("Failed to load assistant access.");
@@ -89,16 +85,15 @@ export default function AssistantPage() {
     setRunning(true);
     setMessage("");
     setResults([]);
-    setAddedToRequest([]);
 
     if (!hasPaidAccess) {
-      setMessage("An active paid subscription is required to use the AI Assistant.");
+      setMessage("An active paid subscription is required.");
       setRunning(false);
       return;
     }
 
     if (!input.trim()) {
-      setMessage("Please enter at least one item to source.");
+      setMessage("Please enter at least one item.");
       setRunning(false);
       return;
     }
@@ -115,54 +110,54 @@ export default function AssistantPage() {
 
       const res = await fetch("/api/assistant", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ input }),
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setMessage(data.error || "AI request failed. Please try again.");
+        setMessage(data.error || "AI request failed.");
         return;
       }
 
       const newResults = Array.isArray(data.results) ? data.results : [];
       setResults(newResults);
 
-      if (newResults.length === 0) {
-        setMessage("No sourcing results were returned.");
-      }
+      if (newResults.length === 0) setMessage("No results returned.");
     } catch (error) {
       console.error(error);
-      setMessage("AI request failed. Please check your connection.");
+      setMessage("AI request failed.");
     } finally {
       setRunning(false);
     }
   }
 
-  const addToRequest = (index: number, result: AssistantResult) => {
+  const addToRequest = (result: AssistantResult) => {
     if (!result.item) return;
 
-    // In a real app, you would save this to Supabase
-    alert(`Added "${result.item}" (${result.quantity} units) to your Requests!`);
-    
-    setAddedToRequest([...addedToRequest, index]);
+    const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
+
+    const newRequest = {
+      id: Date.now(),
+      name: result.item,
+      quantity: Number(result.quantity || 1),
+      dateAdded: new Date().toISOString()
+    };
+
+    localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
+
+    alert(`✅ Added "${result.item}" to your Requests!`);
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="text-xl">Loading assistant...</div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading assistant...</div>;
   }
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* Header */}
         <div className="max-w-3xl mb-12">
           <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
             AI Sourcing Engine
@@ -171,150 +166,94 @@ export default function AssistantPage() {
             Turn simple requests into vendor options fast.
           </h1>
           <p className="text-xl text-zinc-600 dark:text-zinc-400">
-            Enter your items and let ShukAI find the best suppliers, pricing, and lead times.
+            Enter your items and let ShukAI find the best suppliers.
           </p>
         </div>
 
         {/* Subscription Status */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-10">
-          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
+          <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-1">SUBSCRIPTION STATUS</div>
-              <div className="text-3xl font-bold">
+              <div className="text-sm font-semibold text-zinc-500">SUBSCRIPTION STATUS</div>
+              <div className="text-3xl font-bold mt-1">
                 {hasPaidAccess ? `${profile?.plan || "Paid"} • Active` : "No Active Paid Plan"}
               </div>
-              <div className="mt-2 text-zinc-600 dark:text-zinc-400">
-                Period ends: {formatDate(profile?.current_period_end)}
-              </div>
             </div>
-
             {!hasPaidAccess && (
-              <Link
-                href="/pricing"
-                className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
-              >
+              <Link href="/pricing" className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black">
                 Upgrade Now
               </Link>
             )}
           </div>
         </div>
 
-        {/* Input Form */}
+        {/* Input */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold mb-3">Items to source</label>
               <textarea
-                placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
+                placeholder="gloves - 50&#10;packing tape - 20"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 rows={8}
                 disabled={!hasPaidAccess || running}
-                className="w-full resize-y min-h-[180px] p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
+                className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono"
               />
-              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: Item name - quantity</p>
             </div>
 
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="submit"
-                disabled={!hasPaidAccess || running}
-                className="px-12 py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition disabled:cursor-not-allowed flex-1 md:flex-none"
-              >
-                {running ? "Running AI Sourcing..." : "Run AI Sourcing"}
-              </button>
-
-              <Link
-                href="/quotes"
-                className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl font-medium transition"
-              >
-                View All Quotes
-              </Link>
-            </div>
+            <button
+              type="submit"
+              disabled={!hasPaidAccess || running}
+              className="w-full py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition"
+            >
+              {running ? "Running AI Sourcing..." : "Run AI Sourcing"}
+            </button>
           </form>
 
-          {message && (
-            <div className="mt-6 p-5 rounded-2xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
-              {message}
-            </div>
-          )}
+          {message && <div className="mt-6 p-5 bg-amber-50 dark:bg-amber-950 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
         {/* Results */}
         {results.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
+            <h2 className="text-3xl font-bold mb-8">Sourcing Results</h2>
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {results.map((result, index) => (
-                <div
-                  key={index}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all group"
-                >
-                  <div className="font-semibold text-2xl mb-4">{result.item || "Item"}</div>
+                <div key={index} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8">
+                  <div className="font-semibold text-2xl mb-4">{result.item}</div>
+                  <div className="text-zinc-500 mb-6">Quantity: {result.quantity}</div>
 
-                  <div className="text-zinc-500 dark:text-zinc-400 mb-6">
-                    Quantity: <span className="font-medium text-zinc-900 dark:text-white">{result.quantity}</span>
-                  </div>
-
-                  {result.best_quote ? (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-6">
+                  {result.best_quote && (
+                    <>
+                      <div className="grid grid-cols-2 gap-6 mb-6">
                         <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
-                          <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
+                          <div className="text-xs text-zinc-500">Vendor</div>
+                          <div className="font-semibold">{result.best_quote.vendor_name}</div>
                         </div>
                         <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                          <div className="font-bold text-2xl mt-1">
-                            ${Number(result.best_quote.total || 0).toFixed(2)}
-                          </div>
+                          <div className="text-xs text-zinc-500">Total</div>
+                          <div className="font-bold text-xl">${Number(result.best_quote.total).toFixed(2)}</div>
                         </div>
                       </div>
 
                       {result.best_quote.reason && (
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
+                        <div className="bg-blue-50 dark:bg-blue-950 p-5 rounded-2xl text-sm mb-6">
                           {result.best_quote.reason}
                         </div>
                       )}
 
-                      {result.best_quote.product_url && (
-                        <a
-                          href={result.best_quote.product_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium group-hover:gap-3 transition-all"
-                        >
-                          View on supplier site →
-                        </a>
-                      )}
-
                       <button
-                        onClick={() => {
-                          alert(`Added "${result.item}" to your Requests!`);
-                          setAddedToRequest(prev => [...prev, index]);
-                        }}
-                        disabled={addedToRequest.includes(index)}
-                        className={`w-full py-3 rounded-2xl font-semibold transition mt-4 ${
-                          addedToRequest.includes(index)
-                            ? "bg-green-600 text-white"
-                            : "bg-zinc-900 hover:bg-black text-white"
-                        }`}
+                        onClick={() => addToRequest(result)}
+                        className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-2xl transition"
                       >
-                        {addedToRequest.includes(index) ? "Added to Request ✓" : "Add to Request"}
+                        Add to Request
                       </button>
-                    </div>
-                  ) : (
-                    <div className="text-zinc-500 italic">No quote data available for this item.</div>
+                    </>
                   )}
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {results.length === 0 && !message && (
-          <div className="text-center py-20 text-zinc-500">
-            Run the AI Assistant above to see sourcing recommendations here.
           </div>
         )}
       </div>
