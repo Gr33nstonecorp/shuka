@@ -40,7 +40,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Helper Functions
 function parseInput(input: string): ParsedItem[] {
   return input
     .split("\n")
@@ -171,7 +170,6 @@ function cleanJsonText(text: string) {
     .trim();
 }
 
-// Main Handler
 export async function POST(req: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -253,7 +251,7 @@ Selection criteria (in order):
 3. Shortest lead time
 4. Best category fit
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
 {
   "results": [
     {
