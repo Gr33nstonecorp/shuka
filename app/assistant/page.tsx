@@ -229,7 +229,7 @@ export default function AssistantPage() {
           )}
         </div>
 
-        {/* Results Section */}
+        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
