@@ -12,61 +12,83 @@ export default function AssistantPage() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [running, setRunning] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    async function checkSession() {
+    async function checkLogin() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          setIsLoggedIn(true);
-          setUserEmail(session.user.email || null);
-        } else {
-          setIsLoggedIn(false);
-        }
+        setIsLoggedIn(!!session);
       } catch (error) {
-        console.error("Session check failed:", error);
-        setIsLoggedIn(false);
+        console.error(error);
       } finally {
         setLoading(false);
       }
     }
 
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setIsLoggedIn(true);
-        setUserEmail(session.user.email || null);
-      } else {
-        setIsLoggedIn(false);
-        setUserEmail(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    checkLogin();
   }, [supabase]);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) {
+      setMessage("Please enter at least one item.");
+      return;
+    }
+
+    setRunning(true);
+    setMessage("");
+    setResults([]);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage("Please log in again.");
+        setRunning(false);
+        return;
+      }
+
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ input }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "AI request failed.");
+      } else {
+        setResults(data.results || []);
+        if (!data.results || data.results.length === 0) {
+          setMessage("No results returned.");
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage("AI request failed. Please try again.");
+    } finally {
+      setRunning(false);
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="text-xl">Loading assistant...</div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
-        <div className="max-w-md text-center">
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+        <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
           <p className="text-zinc-600 mb-8">Please log in to use the AI Assistant.</p>
-          <Link
-            href="/login"
-            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
-          >
+          <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black block">
             Log In
           </Link>
         </div>
@@ -74,48 +96,61 @@ export default function AssistantPage() {
     );
   }
 
-  // Logged in - show the assistant interface
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-            AI Sourcing Engine
-          </div>
-          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
-            Welcome back, {userEmail?.split('@')[0] || "User"}
-          </h1>
+          <h1 className="text-5xl font-black tracking-tighter mb-6">AI Assistant</h1>
           <p className="text-xl text-zinc-600 dark:text-zinc-400">
             Enter your items below and let ShukAI find the best suppliers.
           </p>
         </div>
 
-        {/* Input Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold mb-3">Items to source</label>
               <textarea
-                placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
-                className="w-full resize-y min-h-[180px] p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
-                rows={8}
+                placeholder="10 gloves&#10;20 packing tape&#10;10 shipping labels"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                rows={6}
+                disabled={running}
+                className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono focus:outline-none focus:border-blue-500"
               />
-              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: Item name - quantity</p>
+              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: quantity item name</p>
             </div>
 
             <button
-              type="button"
-              className="w-full py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition"
+              type="submit"
+              disabled={running}
+              className="w-full py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition"
             >
-              Run AI Sourcing
+              {running ? "Running AI Sourcing..." : "Run AI Sourcing"}
             </button>
           </form>
+
+          {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
-        <div className="text-center text-zinc-500">
-          Full AI sourcing functionality is coming soon.<br />
-          <Link href="/" className="text-blue-600 hover:underline">← Back to Homepage</Link>
-        </div>
+        {results.length > 0 && (
+          <div>
+            <h2 className="text-3xl font-bold mb-8">Results</h2>
+            <div className="grid gap-6">
+              {results.map((result, i) => (
+                <div key={i} className="bg-white border rounded-3xl p-8">
+                  <div className="font-semibold text-xl mb-2">{result.item}</div>
+                  {result.best_quote && (
+                    <div className="mt-4">
+                      <p>Best Vendor: <strong>{result.best_quote.vendor_name}</strong></p>
+                      <p>Total: <strong>${result.best_quote.total}</strong></p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
