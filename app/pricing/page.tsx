@@ -7,7 +7,7 @@ const plans = [
   {
     name: "Starter",
     price: 9,
-    yearlyPrice: 99, // $9 × 11 months effectively
+    yearlyPrice: 99,
     description: "Perfect for individuals and small teams getting started",
     features: [
       "Manual purchase requests",
@@ -17,12 +17,13 @@ const plans = [
       "Email support",
     ],
     cta: "Start with Starter",
+    href: "/login",           // Changed to /login or signup flow
     popular: false,
   },
   {
     name: "Premium",
     price: 29,
-    yearlyPrice: 290, // $29 × 10 months effectively (2 months free)
+    yearlyPrice: 290,
     description: "Full AI power for faster sourcing and better decisions",
     features: [
       "Everything in Starter",
@@ -33,6 +34,7 @@ const plans = [
       "Export reports",
     ],
     cta: "Upgrade to Premium",
+    href: "/assistant",       // Goes straight to AI for paid users
     popular: true,
   },
 ];
@@ -114,7 +116,7 @@ export default function PricingPage() {
                 </ul>
 
                 <Link
-                  href={plan.popular ? "/assistant" : "#"}
+                  href={plan.href}
                   className={`block text-center py-4 rounded-2xl font-semibold transition ${
                     plan.popular
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
@@ -129,7 +131,7 @@ export default function PricingPage() {
         </div>
 
         <div className="text-center mt-16 text-zinc-500 text-sm">
-          All plans include 14-day free trial. Cancel anytime. Questions?{" "}
+          All plans include a free trial. Cancel anytime. Questions?{" "}
           <a href="mailto:hello@shukai.co" className="text-blue-600 hover:underline">
             Contact us
           </a>
