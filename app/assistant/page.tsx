@@ -1,343 +1,306 @@
-"use client";
-
-import Link from "next/link";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import OpenAI from "openai";
 import { hasActivePaidPlan } from "@/lib/subscription";
 
 type ProfileRow = {
   id: string;
-  email: string | null;
   plan: string | null;
   subscription_status: string | null;
   current_period_end: string | null;
 };
 
-type AssistantResult = {
-  item?: string;
-  quantity?: number | string;
-  best_quote?: {
-    vendor_name?: string;
-    total?: number | string;
-    reason?: string;
-    product_url?: string;
+type ParsedItem = {
+  item: string;
+  quantity: number;
+};
+
+type VendorSource = {
+  id: string;
+  name: string;
+  vendor_type: string | null;
+  category: string | null;
+  default_ai_score: number | null;
+  search_url_template: string | null;
+  active: boolean | null;
+};
+
+type ModelResult = {
+  item: string;
+  quantity: number;
+  best_quote: {
+    vendor_name: string;
+    total: number;
+    reason: string;
+    product_url: string;
   };
 };
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// ==================== Helper Functions ====================
+
+function parseInput(input: string): ParsedItem[] {
+  return input
+    .split("\n")
+    .map((line) => {
+      const [name, qty] = line.split("-");
+      return {
+        item: name?.trim() || "",
+        quantity: Number(qty?.trim()) || 1,
+      };
+    })
+    .filter((x) => x.item.length > 0);
 }
 
-export default function AssistantPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+function enhanceSearch(term: string): string {
+  const t = term.toLowerCase();
+  if (t.includes("tape")) return "heavy duty packing tape bulk";
+  if (t.includes("gloves")) return "industrial nitrile gloves bulk powder free";
+  if (t.includes("box")) return "corrugated shipping boxes bulk";
+  if (t.includes("label")) return "thermal shipping labels roll";
+  if (t.includes("clean")) return "industrial cleaning supplies bulk";
+  if (t.includes("paper towel")) return "paper towels bulk commercial";
+  if (t.includes("toilet paper")) return "toilet paper bulk commercial";
+  if (t.includes("trash bag")) return "heavy duty trash bags bulk";
+  if (t.includes("scanner")) return "barcode scanner handheld commercial";
+  return `${term} bulk wholesale`;
+}
 
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [input, setInput] = useState("");
-  const [results, setResults] = useState<AssistantResult[]>([]);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState(false);
+function estimateVendorPricing(
+  vendorType: string,
+  vendorCategory: string,
+  vendorName: string,
+  quantity: number
+) {
+  const type = (vendorType || "").toLowerCase();
+  const category = (vendorCategory || "").toLowerCase();
+  const name = (vendorName || "").toLowerCase();
+  const qty = Number(quantity) || 1;
 
-  useEffect(() => {
-    let mounted = true;
+  let unitPrice = 20;
+  let shippingCost = 6;
+  let leadTimeDays = 3;
 
-    async function loadProfile() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+  // ... (your existing pricing logic stays exactly the same)
+  if (type.includes("marketplace")) { unitPrice = 17; shippingCost = 7; leadTimeDays = 4; }
+  if (type.includes("supplier")) { unitPrice = 21; shippingCost = 6; leadTimeDays = 3; }
+  if (category.includes("industrial")) { unitPrice += 3; leadTimeDays = Math.max(2, leadTimeDays - 1); }
+  if (category.includes("office")) { unitPrice += 1; shippingCost -= 1; }
+  if (category.includes("packaging")) { unitPrice -= 1; }
+  if (category.includes("wholesale")) { unitPrice -= 2; leadTimeDays += 3; }
 
-        if (!user) {
-          setProfile(null);
-          setLoading(false);
-          return;
-        }
+  if (name.includes("amazon")) { unitPrice -= 1; shippingCost -= 1; leadTimeDays = 2; }
+  if (name.includes("uline")) { unitPrice += 1; shippingCost += 1; leadTimeDays = 3; }
+  if (name.includes("grainger")) { unitPrice += 2; leadTimeDays = 2; }
+  if (name.includes("alibaba")) { unitPrice -= 4; shippingCost += 8; leadTimeDays = 10; }
+  if (name.includes("global")) { unitPrice += 1; shippingCost += 1; leadTimeDays = 4; }
+  if (name.includes("staples")) { unitPrice += 1; shippingCost -= 1; leadTimeDays = 2; }
+  if (name.includes("office depot")) { unitPrice += 2; leadTimeDays = 3; }
+  if (name.includes("fastenal")) { unitPrice += 3; shippingCost += 1; leadTimeDays = 2; }
+  if (name.includes("msc")) { unitPrice += 4; shippingCost += 1; leadTimeDays = 3; }
+  if (name.includes("walmart")) { unitPrice -= 2; leadTimeDays = 3; }
 
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, email, plan, subscription_status, current_period_end")
-          .eq("id", user.id)
-          .maybeSingle();
+  let bulkDiscount = 0;
+  if (qty >= 500) bulkDiscount = 0.18;
+  else if (qty >= 200) bulkDiscount = 0.12;
+  else if (qty >= 100) bulkDiscount = 0.08;
+  else if (qty >= 50) bulkDiscount = 0.05;
+  else if (qty >= 20) bulkDiscount = 0.03;
 
-        if (error) {
-          setMessage("Could not load profile: " + error.message);
-        } else {
-          setProfile(data as ProfileRow | null);
-        }
-      } catch (error) {
-        console.error(error);
-        setMessage("Failed to load assistant access.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
+  unitPrice = unitPrice * (1 - bulkDiscount);
 
-    loadProfile();
+  if (qty >= 100) shippingCost += 4;
+  else if (qty >= 50) shippingCost += 2;
 
-    return () => {
-      mounted = false;
+  return {
+    unit_price: Number(unitPrice.toFixed(2)),
+    shipping_cost: Number(Math.max(0, shippingCost).toFixed(2)),
+    lead_time_days: leadTimeDays,
+  };
+}
+
+function buildVendorOptions(items: ParsedItem[], vendors: VendorSource[]) {
+  return items.map((item) => {
+    const enhanced = enhanceSearch(item.item);
+    const options = vendors.map((vendor) => {
+      const pricing = estimateVendorPricing(
+        vendor.vendor_type || "",
+        vendor.category || "",
+        vendor.name || "",
+        item.quantity
+      );
+
+      const total = Number((pricing.unit_price * item.quantity + pricing.shipping_cost).toFixed(2));
+
+      const searchTerm = encodeURIComponent(
+        enhanced.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim()
+      );
+
+      const productUrl = vendor.search_url_template
+        ? vendor.search_url_template.replace("{searchTerm}", searchTerm)
+        : "";
+
+      return {
+        vendor_name: vendor.name,
+        vendor_type: vendor.vendor_type || "",
+        category: vendor.category || "",
+        ai_score: Number(vendor.default_ai_score || 0),
+        estimated_unit_price: pricing.unit_price,
+        estimated_shipping_cost: pricing.shipping_cost,
+        estimated_lead_time_days: pricing.lead_time_days,
+        estimated_total: total,
+        product_url: productUrl,
+        search_used: enhanced,
+      };
+    });
+
+    return {
+      item: item.item,
+      quantity: item.quantity,
+      vendor_options: options,
     };
-  }, [supabase]);
+  });
+}
 
-  const hasPaidAccess = hasActivePaidPlan(profile);
+function cleanJsonText(text: string) {
+  return text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setRunning(true);
-    setMessage("");
-    setResults([]);
+// ==================== Main POST Handler ====================
 
-    if (!hasPaidAccess) {
-      setMessage("An active paid subscription is required to use the AI Assistant.");
-      setRunning(false);
-      return;
+export async function POST(req: NextRequest) {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      return Response.json({ error: "AI service unavailable" }, { status: 500 });
     }
 
-    if (!input.trim()) {
-      setMessage("Please enter at least one item to source.");
-      setRunning(false);
-      return;
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return Response.json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
     }
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
+    const authHeader = req.headers.get("authorization");
+    const accessToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-      if (!accessToken) {
-        setMessage("You must be logged in.");
-        setRunning(false);
-        return;
-      }
-
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ input }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setMessage(data.error || "AI request failed. Please try again.");
-        return;
-      }
-
-      const newResults = Array.isArray(data.results) ? data.results : [];
-      setResults(newResults);
-
-      if (newResults.length === 0) {
-        setMessage("No sourcing results returned.");
-      }
-    } catch (error) {
-      console.error(error);
-      setMessage("AI request failed. Please check your connection.");
-    } finally {
-      setRunning(false);
+    if (!accessToken) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="bg-white dark:bg-zinc-900 px-10 py-8 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          Loading assistant...
-        </div>
-      </div>
+    const supabaseUserClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
+
+    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser(accessToken);
+
+    if (authError || !user) {
+      return Response.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, plan, subscription_status, current_period_end")
+      .eq("id", user.id)
+      .single<ProfileRow>();
+
+    if (profileError || !profile) {
+      return Response.json({ error: "Profile lookup failed" }, { status: 500 });
+    }
+
+    if (!hasActivePaidPlan(profile)) {
+      return Response.json({ error: "Active paid subscription required for AI Assistant" }, { status: 403 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const rawInput: string = typeof body?.input === "string" ? body.input.trim() : "";
+
+    if (!rawInput) {
+      return Response.json({ error: "Please provide at least one item" }, { status: 400 });
+    }
+
+    const items = parseInput(rawInput);
+    if (items.length === 0) {
+      return Response.json({ error: "No valid items found. Format: Item Name - quantity" }, { status: 400 });
+    }
+
+    const { data: vendors, error: vendorError } = await supabaseAdmin
+      .from("vendor_sources")
+      .select("id, name, vendor_type, category, default_ai_score, search_url_template, active")
+      .eq("active", true)
+      .order("default_ai_score", { ascending: false });
+
+    if (vendorError || !vendors?.length) {
+      return Response.json({ error: "No vendors available at the moment" }, { status: 500 });
+    }
+
+    const vendorCatalog = buildVendorOptions(items, vendors as VendorSource[]);
+
+    const systemPrompt = `
+You are ShukAI's intelligent sourcing engine.
+Choose the single best vendor option for each item from the provided catalog only.
+
+Selection criteria (in order):
+1. Lowest total cost
+2. Highest AI score
+3. Shortest lead time
+4. Best category fit
+
+Return ONLY valid JSON:
+{
+  "results": [
+    {
+      "item": "exact item name",
+      "quantity": number,
+      "best_quote": {
+        "vendor_name": "string",
+        "total": number,
+        "reason": "short explanation",
+        "product_url": "string or empty"
+      }
+    }
+  ]
+}
+`.trim();
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify({ requested_items: items, available_vendors: vendorCatalog }, null, 2) },
+      ],
+    });
+
+    const content = completion.choices[0]?.message?.content || "";
+    const cleaned = cleanJsonText(content);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      return Response.json({ error: "Failed to parse AI response" }, { status: 500 });
+    }
+
+    if (!Array.isArray(parsed?.results)) {
+      return Response.json({ error: "Invalid response format from AI" }, { status: 500 });
+    }
+
+    return Response.json({ results: parsed.results as ModelResult[] });
+
+  } catch (err: any) {
+    console.error("Assistant API error:", err);
+    return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
-
-  return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* Header */}
-      <header className="bg-zinc-950 text-white border-b border-zinc-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between flex-wrap gap-4">
-          <Link href="/" className="text-3xl font-black tracking-tighter">
-            ShukAI
-          </Link>
-
-          <nav className="flex items-center gap-2 flex-wrap">
-            {[
-              { href: "/requests", label: "Requests" },
-              { href: "/quotes", label: "Quotes" },
-              { href: "/orders", label: "Orders" },
-              { href: "/vendors", label: "Vendors" },
-              { href: "/saved-items", label: "Saved Items" },
-              { href: "/assistant", label: "AI Assistant" },
-              { href: "/pricing", label: "Pricing" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
-                  link.href === "/assistant"
-                    ? "bg-white text-zinc-950 font-semibold"
-                    : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link
-              href="/profile"
-              className="ml-4 px-5 py-2.5 text-sm font-semibold bg-zinc-800 hover:bg-zinc-700 rounded-2xl transition-colors"
-            >
-              Profile
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-            AI Sourcing Engine
-          </div>
-          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
-            Turn simple requests into vendor options fast.
-          </h1>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400">
-            Enter your items and let ShukAI find the best suppliers, pricing, and lead times.
-          </p>
-        </div>
-
-        {/* Subscription Status */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-10">
-          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-1">SUBSCRIPTION STATUS</div>
-              <div className="text-3xl font-bold">
-                {hasPaidAccess ? `${profile?.plan || "Paid"} • Active` : "No Active Paid Plan"}
-              </div>
-              <div className="mt-2 text-zinc-600 dark:text-zinc-400">
-                Period ends: {formatDate(profile?.current_period_end)}
-              </div>
-            </div>
-
-            {!hasPaidAccess && (
-              <Link
-                href="/pricing"
-                className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
-              >
-                Upgrade Now
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Input Form */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold mb-3">Items to source</label>
-              <textarea
-                placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                rows={7}
-                disabled={!hasPaidAccess || running}
-                className="w-full resize-y min-h-[160px] p-5 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
-              />
-              <p className="mt-2 text-xs text-zinc-500">One item per line. Format: Item name - quantity</p>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="submit"
-                disabled={!hasPaidAccess || running}
-                className="px-10 py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition disabled:cursor-not-allowed flex-1 md:flex-none"
-              >
-                {running ? "Sourcing vendors..." : "Run AI Sourcing"}
-              </button>
-
-              <Link
-                href="/quotes"
-                className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl font-medium transition"
-              >
-                View All Quotes
-              </Link>
-            </div>
-          </form>
-
-          {message && (
-            <div className="mt-6 p-5 rounded-2xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
-              {message}
-            </div>
-          )}
-        </div>
-
-        {/* Results Section */}
-        {results.length > 0 && (
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {results.map((result, index) => (
-                <div
-                  key={index}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all group"
-                >
-                  <div className="font-semibold text-2xl mb-4">{result.item || "Item"}</div>
-
-                  <div className="text-zinc-500 dark:text-zinc-400 mb-6">
-                    Quantity: <span className="font-medium text-zinc-900 dark:text-white">{result.quantity}</span>
-                  </div>
-
-                  {result.best_quote ? (
-                    <>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                          <div>
-                            <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
-                            <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                            <div className="font-bold text-2xl mt-1">
-                              ${Number(result.best_quote.total || 0).toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {result.best_quote.reason && (
-                          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
-                            {result.best_quote.reason}
-                          </div>
-                        )}
-
-                        {result.best_quote.product_url && (
-                          <a
-                            href={result.best_quote.product_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium group-hover:gap-3 transition-all"
-                          >
-                            View on supplier site →
-                          </a>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-zinc-500 italic">No quote data available for this item.</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {results.length === 0 && !message && (
-          <div className="text-center py-20 text-zinc-500">
-            Run the AI Assistant above to see sourcing recommendations here.
-          </div>
-        )}
-      </div>
-    </main>
-  );
 }
