@@ -1,57 +1,106 @@
 "use client";
 
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 type RequestItem = {
-  id: number;
+  id: string;
   name: string;
   quantity: number;
-  dateAdded: string;
+  date_added: string;
+  status: string;
 };
 
 export default function RequestsPage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const [items, setItems] = useState<RequestItem[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Load items from localStorage (shared with AI Assistant)
   useEffect(() => {
-    const saved = localStorage.getItem("shukai_requests");
-    if (saved) {
-      setItems(JSON.parse(saved));
-    }
+    checkLoginAndLoad();
   }, []);
 
-  // Auto-save to localStorage
-  useEffect(() => {
-    localStorage.setItem("shukai_requests", JSON.stringify(items));
-  }, [items]);
+  async function checkLoginAndLoad() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setIsLoggedIn(false);
+      setLoading(false);
+      return;
+    }
 
-  const addItem = () => {
+    setIsLoggedIn(true);
+    loadRequests(session.user.id);
+  }
+
+  async function loadRequests(userId: string) {
+    const { data, error } = await supabase
+      .from("requests")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date_added", { ascending: false });
+
+    if (error) {
+      console.error("Error loading requests:", error);
+    } else {
+      setItems(data || []);
+    }
+    setLoading(false);
+  }
+
+  const addItem = async () => {
     if (!newItemName.trim()) return;
 
-    const newItem: RequestItem = {
-      id: Date.now(),
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase.from("requests").insert({
+      user_id: session.user.id,
       name: newItemName.trim(),
       quantity: newItemQuantity,
-      dateAdded: new Date().toISOString(),
-    };
+      status: "pending",
+    });
 
-    setItems([newItem, ...items]);
-    setNewItemName("");
-    setNewItemQuantity(1);
-  };
-
-  const removeItem = (id: number) => {
-    setItems(items.filter((item) => item.id !== id));
-  };
-
-  const clearAll = () => {
-    if (confirm("Clear all requests?")) {
-      setItems([]);
+    if (error) {
+      alert("Failed to add request");
+    } else {
+      setNewItemName("");
+      setNewItemQuantity(1);
+      loadRequests(session.user.id); // Refresh list
     }
   };
+
+  const removeItem = async (id: string) => {
+    const { error } = await supabase.from("requests").delete().eq("id", id);
+    if (error) {
+      alert("Failed to remove");
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) loadRequests(session.user.id);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading requests...</div>;
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Please log in</h1>
+          <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl">Log In</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -59,86 +108,59 @@ export default function RequestsPage() {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-5xl font-black tracking-tighter">Requests</h1>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400 mt-2">
-              Manage your purchase requests
-            </p>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400 mt-2">Your purchase requests</p>
           </div>
-          <div className="flex gap-4">
-            <button
-              onClick={clearAll}
-              className="px-6 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-2xl transition"
-            >
-              Clear All
-            </button>
-            <Link
-              href="/assistant"
-              className="px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl transition"
-            >
-              ← Back to AI Assistant
-            </Link>
-          </div>
+          <Link href="/assistant" className="px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl transition">
+            ← Back to AI Assistant
+          </Link>
         </div>
 
-        {/* Quick Add Form */}
+        {/* Add Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <h2 className="text-xl font-semibold mb-6">Add New Request</h2>
           <div className="flex flex-col md:flex-row gap-4">
             <input
               type="text"
-              placeholder="Item name (e.g. Heavy duty gloves)"
+              placeholder="Item name"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addItem()}
-              className="flex-1 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-blue-500"
+              className="flex-1 p-4 rounded-2xl border focus:outline-none focus:border-blue-500"
             />
             <input
               type="number"
               min="1"
               value={newItemQuantity}
               onChange={(e) => setNewItemQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-28 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:border-blue-500 text-center"
+              className="w-28 p-4 rounded-2xl border focus:outline-none focus:border-blue-500 text-center"
             />
             <button
               onClick={addItem}
               className="px-10 py-4 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition"
             >
-              Add Item
+              Add
             </button>
           </div>
         </div>
 
-        {/* Requests List */}
+        {/* List */}
         {items.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 text-center">
-            <div className="text-6xl mb-6">📋</div>
             <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-md mx-auto">
-              Use the AI Assistant to generate smart requests, or add them manually above.
-            </p>
-            <Link
-              href="/assistant"
-              className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
-            >
-              Go to AI Assistant
-            </Link>
+            <p className="text-zinc-600 mb-8">Add requests manually or from the AI Assistant.</p>
+            <Link href="/assistant" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">Go to AI Assistant</Link>
           </div>
         ) : (
           <div className="space-y-4">
             {items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center group"
-              >
+              <div key={item.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center">
                 <div>
                   <div className="font-semibold text-xl">{item.name}</div>
-                  <div className="text-zinc-500 mt-1">
-                    Quantity: <span className="font-medium">{item.quantity}</span> • 
-                    Added {new Date(item.dateAdded).toLocaleDateString()}
-                  </div>
+                  <div className="text-zinc-500">Qty: {item.quantity} • {new Date(item.date_added).toLocaleDateString()}</div>
                 </div>
                 <button
                   onClick={() => removeItem(item.id)}
-                  className="px-6 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-2xl transition opacity-0 group-hover:opacity-100"
+                  className="px-6 py-3 text-red-600 hover:bg-red-50 rounded-2xl transition"
                 >
                   Remove
                 </button>
