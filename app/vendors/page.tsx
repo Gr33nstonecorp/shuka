@@ -1,56 +1,140 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
+
+type Vendor = {
+  id: number;
+  name: string;
+  category: string;
+  rating: number;
+  leadTime: string;
+  description: string;
+};
 
 export default function VendorsPage() {
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Simulated vendors (replace with real Supabase query later)
+  useEffect(() => {
+    setTimeout(() => {
+      const sampleVendors: Vendor[] = [
+        {
+          id: 1,
+          name: "Global Supplies Co.",
+          category: "Safety & PPE",
+          rating: 4.8,
+          leadTime: "2-4 days",
+          description: "Bulk industrial gloves, safety equipment, and cleaning supplies.",
+        },
+        {
+          id: 2,
+          name: "PackPro Inc.",
+          category: "Packaging",
+          rating: 4.6,
+          leadTime: "1-3 days",
+          description: "Heavy duty tape, boxes, bubble wrap, and shipping materials.",
+        },
+        {
+          id: 3,
+          name: "BoxMaster Logistics",
+          category: "Shipping",
+          rating: 4.9,
+          leadTime: "3-5 days",
+          description: "Corrugated boxes, pallets, and custom packaging solutions.",
+        },
+        {
+          id: 4,
+          name: "LabelDirect",
+          category: "Labels & Printing",
+          rating: 4.7,
+          leadTime: "1-2 days",
+          description: "High-quality shipping labels, printers, and office supplies.",
+        },
+      ];
+      setVendors(sampleVendors);
+      setLoading(false);
+    }, 700);
+  }, []);
+
+  const filteredVendors = vendors.filter(vendor =>
+    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="text-xl">Loading vendors...</div>
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <div className="text-7xl mb-6">🤝</div>
-          <h1 className="text-5xl font-black tracking-tighter mb-6">Vendors</h1>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto">
-            Browse trusted suppliers, view performance scores, and manage your vendor network.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
-            { name: "Grainger", category: "Industrial Supplies", score: 94, leadTime: "2-4 days" },
-            { name: "Uline", category: "Packaging & Shipping", score: 89, leadTime: "3-5 days" },
-            { name: "Amazon Business", category: "General Procurement", score: 91, leadTime: "1-3 days" },
-            { name: "Fastenal", category: "Tools & Hardware", score: 87, leadTime: "4-7 days" },
-            { name: "Staples", category: "Office Supplies", score: 85, leadTime: "2-4 days" },
-            { name: "MSC Industrial", category: "Maintenance Supplies", score: 92, leadTime: "5-8 days" },
-          ].map((vendor, i) => (
-            <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:shadow-xl transition">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <div className="font-semibold text-2xl">{vendor.name}</div>
-                  <div className="text-zinc-500 text-sm">{vendor.category}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600">{vendor.score}</div>
-                  <div className="text-xs text-zinc-500">AI Score</div>
-                </div>
-              </div>
-
-              <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                Average lead time: <span className="font-medium">{vendor.leadTime}</span>
-              </div>
-
-              <button className="w-full py-3 border border-zinc-300 dark:border-zinc-700 rounded-2xl font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                View Catalog
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-16 text-center">
-          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to Homepage
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h1 className="text-5xl font-black tracking-tighter">Vendors</h1>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400 mt-2">Browse trusted suppliers</p>
+          </div>
+          <Link href="/assistant" className="px-6 py-3 bg-zinc-900 hover:bg-black text-white rounded-2xl transition">
+            ← Back to AI Assistant
           </Link>
         </div>
+
+        {/* Search */}
+        <div className="mb-10">
+          <input
+            type="text"
+            placeholder="Search vendors or categories..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-5 rounded-3xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-lg focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
+        {filteredVendors.length === 0 ? (
+          <div className="text-center py-20 text-zinc-500">
+            No vendors match your search.
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredVendors.map((vendor) => (
+              <div
+                key={vendor.id}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all group"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <div className="font-semibold text-2xl mb-1">{vendor.name}</div>
+                    <div className="text-sm text-zinc-500">{vendor.category}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-yellow-500">★ {vendor.rating}</div>
+                  </div>
+                </div>
+
+                <p className="text-zinc-600 dark:text-zinc-400 mb-8 line-clamp-3">
+                  {vendor.description}
+                </p>
+
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <span className="text-zinc-500">Lead time:</span>{" "}
+                    <span className="font-medium">{vendor.leadTime}</span>
+                  </div>
+                  <button className="text-blue-600 font-medium group-hover:underline">
+                    View Catalog →
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
