@@ -158,7 +158,7 @@ export default function AssistantPage() {
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...savedRequests]));
 
     setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" has been added to your Requests! Go to /requests to see it.`);
+    alert(`✅ "${result.item}" has been added to your Requests!\n\nGo to /requests to see it.`);
   };
 
   if (loading) {
