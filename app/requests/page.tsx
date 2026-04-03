@@ -15,7 +15,7 @@ export default function RequestsPage() {
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
 
-  // Load from localStorage on mount
+  // Load from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("shukai_requests");
     if (saved) {
@@ -72,7 +72,6 @@ export default function RequestsPage() {
               Clear All
             </button>
             <button
-              onClick={() => {/* Future: Submit request */}}
               className="px-8 py-3 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
             >
               Submit Request
@@ -80,7 +79,7 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* Add New Item */}
+        {/* Add New Item Form */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <h2 className="text-2xl font-semibold mb-6">Add New Item</h2>
           <div className="grid md:grid-cols-12 gap-4">
@@ -113,14 +112,16 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* Current Requests */}
+        {/* Current Requests List */}
         {items.length > 0 ? (
           <div className="space-y-4">
             {items.map((item) => (
               <div key={item.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 flex justify-between items-center">
                 <div>
                   <div className="font-semibold text-xl">{item.name}</div>
-                  <div className="text-zinc-500">Quantity: {item.quantity} • Added {new Date(item.dateAdded).toLocaleDateString()}</div>
+                  <div className="text-zinc-500">
+                    Quantity: {item.quantity} • Added {new Date(item.dateAdded).toLocaleDateString()}
+                  </div>
                 </div>
                 <button
                   onClick={() => removeItem(item.id)}
@@ -139,7 +140,7 @@ export default function RequestsPage() {
           </div>
         )}
 
-        <div className="mt-12 text-center">
+        <div className="mt-16 text-center">
           <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Homepage</Link>
         </div>
       </div>
