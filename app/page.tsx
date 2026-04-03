@@ -61,8 +61,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hero */}
-      <section className="pt-16 pb-20">
+      {/* Hero Section */}
+      <section className="pt-16 pb-20 bg-zinc-50 dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -79,7 +79,7 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all">
+                <Link href="/login?next=/pricing" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all active:scale-[0.985]">
                   Start free trial
                 </Link>
                 <Link href="/login" className="px-8 py-4 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 font-semibold rounded-2xl transition-all">
@@ -142,7 +142,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Final CTA */}
       <section className="py-20 bg-zinc-950 text-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-zinc-900 rounded-3xl p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
