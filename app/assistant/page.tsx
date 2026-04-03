@@ -28,11 +28,7 @@ function formatDate(value: string | null | undefined) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { 
-    year: "numeric", 
-    month: "short", 
-    day: "numeric" 
-  });
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
 export default function AssistantPage() {
@@ -83,9 +79,7 @@ export default function AssistantPage() {
 
     loadProfile();
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [supabase]);
 
   const hasPaidAccess = hasActivePaidPlan(profile);
@@ -150,16 +144,14 @@ export default function AssistantPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center pt-20">
-        <div className="bg-white dark:bg-zinc-900 px-10 py-8 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          Loading assistant...
-        </div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="text-xl">Loading assistant...</div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 pt-8">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
           <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
@@ -238,7 +230,7 @@ export default function AssistantPage() {
           )}
         </div>
 
-        {/* Results Section */}
+        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
@@ -255,39 +247,37 @@ export default function AssistantPage() {
                   </div>
 
                   {result.best_quote ? (
-                    <>
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                          <div>
-                            <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
-                            <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                            <div className="font-bold text-2xl mt-1">
-                              ${Number(result.best_quote.total || 0).toFixed(2)}
-                            </div>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
+                          <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
+                          <div className="font-bold text-2xl mt-1">
+                            ${Number(result.best_quote.total || 0).toFixed(2)}
                           </div>
                         </div>
-
-                        {result.best_quote.reason && (
-                          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
-                            {result.best_quote.reason}
-                          </div>
-                        )}
-
-                        {result.best_quote.product_url && (
-                          <a
-                            href={result.best_quote.product_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium group-hover:gap-3 transition-all"
-                          >
-                            View on supplier site →
-                          </a>
-                        )}
                       </div>
-                    </>
+
+                      {result.best_quote.reason && (
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
+                          {result.best_quote.reason}
+                        </div>
+                      )}
+
+                      {result.best_quote.product_url && (
+                        <a
+                          href={result.best_quote.product_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium group-hover:gap-3 transition-all"
+                        >
+                          View on supplier site →
+                        </a>
+                      )}
+                    </div>
                   ) : (
                     <div className="text-zinc-500 italic">No quote data available for this item.</div>
                   )}
