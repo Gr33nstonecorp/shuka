@@ -37,7 +37,7 @@ export default function RequestsPage() {
     }
 
     setIsLoggedIn(true);
-    loadRequests(session.user.id);
+    await loadRequests(session.user.id);
   }
 
   async function loadRequests(userId: string) {
@@ -47,11 +47,9 @@ export default function RequestsPage() {
       .eq("user_id", userId)
       .order("date_added", { ascending: false });
 
-    if (error) {
-      console.error("Error loading requests:", error);
-    } else {
-      setItems(data || []);
-    }
+    if (error) console.error(error);
+    else setItems(data || []);
+
     setLoading(false);
   }
 
@@ -68,32 +66,28 @@ export default function RequestsPage() {
       status: "pending",
     });
 
-    if (error) {
-      alert("Failed to add request");
-    } else {
+    if (!error) {
       setNewItemName("");
       setNewItemQuantity(1);
-      loadRequests(session.user.id); // Refresh list
+      loadRequests(session.user.id);
     }
   };
 
   const removeItem = async (id: string) => {
     const { error } = await supabase.from("requests").delete().eq("id", id);
-    if (error) {
-      alert("Failed to remove");
-    } else {
+    if (!error) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) loadRequests(session.user.id);
     }
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading requests...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-xl">Loading your requests...</div>;
   }
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Please log in</h1>
           <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl">Log In</Link>
@@ -143,7 +137,6 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* List */}
         {items.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 text-center">
             <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
