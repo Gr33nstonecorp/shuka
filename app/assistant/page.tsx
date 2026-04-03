@@ -78,7 +78,6 @@ export default function AssistantPage() {
     }
 
     loadProfile();
-
     return () => { mounted = false; };
   }, [supabase]);
 
@@ -132,7 +131,7 @@ export default function AssistantPage() {
       setResults(newResults);
 
       if (newResults.length === 0) {
-        setMessage("No sourcing results returned.");
+        setMessage("No sourcing results were returned.");
       }
     } catch (error) {
       console.error(error);
@@ -152,7 +151,7 @@ export default function AssistantPage() {
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
           <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
             AI Sourcing Engine
@@ -198,20 +197,20 @@ export default function AssistantPage() {
                 placeholder="gloves - 50&#10;packing tape - 20&#10;shipping labels - 10"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                rows={7}
+                rows={8}
                 disabled={!hasPaidAccess || running}
-                className="w-full resize-y min-h-[160px] p-5 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
+                className="w-full resize-y min-h-[180px] p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none focus:border-blue-500 font-mono text-sm"
               />
-              <p className="mt-2 text-xs text-zinc-500">One item per line. Format: Item name - quantity</p>
+              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: Item name - quantity</p>
             </div>
 
             <div className="flex flex-wrap gap-4">
               <button
                 type="submit"
                 disabled={!hasPaidAccess || running}
-                className="px-10 py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition disabled:cursor-not-allowed flex-1 md:flex-none"
+                className="px-12 py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition disabled:cursor-not-allowed flex-1 md:flex-none"
               >
-                {running ? "Sourcing vendors..." : "Run AI Sourcing"}
+                {running ? "Running AI Sourcing..." : "Run AI Sourcing"}
               </button>
 
               <Link
@@ -230,7 +229,7 @@ export default function AssistantPage() {
           )}
         </div>
 
-        {/* Results */}
+        {/* Results Section */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold tracking-tight mb-8">Sourcing Results</h2>
