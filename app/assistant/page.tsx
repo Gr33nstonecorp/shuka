@@ -52,17 +52,13 @@ export default function AssistantPage() {
           return;
         }
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("profiles")
           .select("id, email, plan, subscription_status, current_period_end")
           .eq("id", user.id)
           .maybeSingle();
 
-        if (error) {
-          console.error(error);
-        } else {
-          setProfile(data as ProfileRow | null);
-        }
+        setProfile(data as ProfileRow | null);
       } catch (error) {
         console.error(error);
       } finally {
@@ -84,7 +80,7 @@ export default function AssistantPage() {
     setAddedItems([]);
 
     if (!hasPaidAccess) {
-      setMessage("Active paid subscription required for AI Assistant.");
+      setMessage("Active paid subscription required.");
       setRunning(false);
       return;
     }
@@ -118,9 +114,6 @@ export default function AssistantPage() {
         setMessage(data.error || "AI request failed.");
       } else {
         setResults(data.results || []);
-        if (!data.results || data.results.length === 0) {
-          setMessage("No results returned.");
-        }
       }
     } catch (error) {
       console.error(error);
@@ -134,7 +127,6 @@ export default function AssistantPage() {
     if (!result.item) return;
 
     const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
-
     const newRequest = {
       id: Date.now(),
       name: result.item,
@@ -143,30 +135,21 @@ export default function AssistantPage() {
     };
 
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
-
     setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" has been added to your Requests!`);
+    alert(`✅ "${result.item}" added to Requests!`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="text-xl">Loading assistant...</div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   if (!hasPaidAccess) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
-          <p className="text-zinc-600 mb-8">
-            Active paid subscription required for AI Assistant.
-          </p>
+          <p className="text-zinc-600 mb-8">Active paid subscription ($29/month) required for AI Assistant.</p>
           <Link
             href="/pricing"
-            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black transition"
+            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black"
           >
             View Pricing & Upgrade
           </Link>
@@ -179,14 +162,9 @@ export default function AssistantPage() {
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-            AI Sourcing Engine
-          </div>
-          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
-            AI Assistant
-          </h1>
+          <h1 className="text-5xl font-black tracking-tighter mb-6">AI Assistant</h1>
           <p className="text-xl text-zinc-600 dark:text-zinc-400">
-            Enter your items below and let ShukAI find the best suppliers.
+            Enter items and get AI-powered vendor recommendations.
           </p>
         </div>
 
@@ -202,7 +180,6 @@ export default function AssistantPage() {
                 disabled={running}
                 className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono focus:outline-none focus:border-blue-500"
               />
-              <p className="mt-3 text-xs text-zinc-500">One item per line • Format: quantity item name</p>
             </div>
 
             <button
@@ -224,36 +201,21 @@ export default function AssistantPage() {
               {results.map((result, index) => (
                 <div key={index} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8">
                   <div className="font-semibold text-2xl mb-4">{result.item}</div>
-                  <div className="text-zinc-500 mb-6">Quantity: {result.quantity}</div>
+                  <div className="text-zinc-500 mb-6">Qty: {result.quantity}</div>
 
                   {result.best_quote && (
                     <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
-                          <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                          <div className="font-bold text-2xl mt-1">
-                            ${Number(result.best_quote.total || 0).toFixed(2)}
-                          </div>
-                        </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
+                        <div className="font-semibold text-lg">{result.best_quote.vendor_name}</div>
+                        <div className="font-bold text-2xl">${result.best_quote.total}</div>
                       </div>
-
-                      {result.best_quote.reason && (
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
-                          {result.best_quote.reason}
-                        </div>
-                      )}
 
                       <button
                         onClick={() => addToRequest(index, result)}
                         disabled={addedItems.includes(index)}
                         className={`w-full py-3.5 rounded-2xl font-semibold transition ${
-                          addedItems.includes(index)
-                            ? "bg-green-600 text-white"
-                            : "bg-zinc-900 hover:bg-black text-white"
+                          addedItems.includes(index) ? "bg-green-600 text-white" : "bg-zinc-900 hover:bg-black text-white"
                         }`}
                       >
                         {addedItems.includes(index) ? "✓ Added to Request" : "Add to Request"}
@@ -263,12 +225,6 @@ export default function AssistantPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {results.length === 0 && !message && (
-          <div className="text-center py-20 text-zinc-500">
-            Run the AI Assistant above to see sourcing recommendations.
           </div>
         )}
       </div>
