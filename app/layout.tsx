@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
 
 const geistSans = Geist({
@@ -18,17 +17,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ShukAI - AI Procurement Platform",
-  description: "AI-powered procurement platform. Source vendors, compare quotes, manage requests and orders in one place.",
-  keywords: ["procurement", "AI sourcing", "vendor quotes", "supply chain", "purchase requests"],
-  authors: [{ name: "ShukAI" }],
-  openGraph: {
-    title: "ShukAI - AI Procurement Platform",
-    description: "Modern AI-powered marketplace for requests, quotes, orders, and vendor management.",
-    images: [{ url: "https://www.shukai.co/og-image.jpg" }], // Add an image later
-    url: "https://www.shukai.co",
-  },
+  description: "AI that finds better vendors and quotes faster. Procurement made simple.",
   icons: {
     icon: "/favicon.ico",
+  },
+  openGraph: {
+    title: "ShukAI - AI Procurement Platform",
+    description: "AI-powered sourcing for modern teams.",
+    images: [{ url: "https://www.shukai.co/og-image.jpg" }],
   },
 };
 
@@ -38,20 +34,61 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased">
-        <Navbar />
-        <main>{children}</main>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} dark`}>
+      <body className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+        {/* Navbar */}
+        <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <Link href="/" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
+              ShukAI
+            </Link>
 
-        <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-16">
-          <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="font-bold text-xl tracking-tight">ShukAI</div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Terms</Link>
-              <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Privacy</Link>
-              <Link href="/msa" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Master Service Agreement</Link>
+            <div className="flex items-center gap-8 text-sm">
+              <Link href="/" className="hover:text-blue-600 transition">Home</Link>
+              <Link href="/pricing" className="hover:text-blue-600 transition">Pricing</Link>
+              <Link href="/assistant" className="hover:text-blue-600 transition">AI Assistant</Link>
+              <Link href="/requests" className="hover:text-blue-600 transition">Requests</Link>
             </div>
-            <div className="text-sm text-zinc-500">© {new Date().getFullYear()} ShukAI. All rights reserved.</div>
+
+            <div className="flex items-center gap-4">
+              <Link
+                href="/login"
+                className="px-6 py-2 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/pricing"
+                className="px-6 py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl hover:bg-black transition"
+              >
+                Get Started
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="flex-1">
+          {children}
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-12 mt-auto">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+              <div className="font-bold text-xl">ShukAI</div>
+
+              <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-white transition">Terms</Link>
+                <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-white transition">Privacy</Link>
+                <Link href="/pricing" className="hover:text-zinc-900 dark:hover:text-white transition">Pricing</Link>
+                <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
+              </div>
+
+              <div className="text-sm text-zinc-500">
+                © {new Date().getFullYear()} ShukAI. All rights reserved.
+              </div>
+            </div>
           </div>
         </footer>
       </body>
