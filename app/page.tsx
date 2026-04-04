@@ -85,12 +85,12 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why teams use ShukAI */}
+      {/* Why should I care? — Punchy and relatable */}
       <div className="py-20 px-6 bg-white dark:bg-zinc-900">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold tracking-tight mb-4">Why teams are switching to ShukAI</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400">Real time and money saved on procurement</p>
+            <h2 className="text-4xl font-bold tracking-tight mb-4">Stop wasting hours sourcing vendors manually</h2>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400">ShukAI does the work for you</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-10">
@@ -98,7 +98,7 @@ export default function HomePage() {
               <div className="text-5xl mb-6">⏱️</div>
               <h3 className="text-2xl font-semibold mb-4">Save hours every week</h3>
               <p className="text-zinc-600 dark:text-zinc-400">
-                Stop manually searching vendors. AI finds suppliers and quotes in seconds.
+                Instead of manual vendor research, AI finds suppliers and quotes in seconds.
               </p>
             </div>
 
