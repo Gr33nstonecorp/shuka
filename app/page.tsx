@@ -85,17 +85,51 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* How it works - AI Assistant as the star */}
+      {/* Why should I care? — Strong emotional hook */}
       <div className="py-20 px-6 bg-white dark:bg-zinc-900">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold tracking-tight mb-4">Why teams are switching to ShukAI</h2>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400">Stop wasting hours on manual sourcing</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10">
+              <div className="text-5xl mb-6">⏱️</div>
+              <h3 className="text-2xl font-semibold mb-4">Save hours every week</h3>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Instead of searching vendors manually, describe what you need and let AI do the heavy lifting.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10">
+              <div className="text-5xl mb-6">💰</div>
+              <h3 className="text-2xl font-semibold mb-4">Get better prices</h3>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                AI instantly compares real quotes from multiple suppliers so you never overpay.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10">
+              <div className="text-5xl mb-6">📦</div>
+              <h3 className="text-2xl font-semibold mb-4">Everything stays organized</h3>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Requests, quotes, orders, and saved items — all in one clean workspace.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* How it works — AI as the star */}
+      <div className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-5 py-2 rounded-full text-sm font-semibold mb-6">
               CORE FEATURE
             </div>
             <h2 className="text-4xl font-bold tracking-tight mb-4">Your AI Procurement Agent</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-              The fastest way to source products
-            </p>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400">Three simple steps to better sourcing</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-10">
@@ -123,36 +157,6 @@ export default function HomePage() {
             >
               Try the AI Assistant Now
             </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Workspace */}
-      <div className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold tracking-tight">Your full procurement workspace</h2>
-            <p className="text-zinc-600 dark:text-zinc-400 mt-4">Everything you need in one place</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { label: "Requests", href: "/requests", description: "Create and manage purchasing requests." },
-              { label: "Quotes", href: "/quotes", description: "Review and compare vendor quotes." },
-              { label: "Orders", href: "/orders", description: "Track approved and active orders." },
-              { label: "Vendors", href: "/vendors", description: "Browse trusted suppliers." },
-              { label: "Saved Items", href: "/saved-items", description: "Your shortlisted products." },
-            ].map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all hover:shadow-xl"
-              >
-                <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 transition">{tab.label}</div>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">{tab.description}</p>
-                <div className="mt-8 text-blue-600 font-medium group-hover:underline">Open →</div>
-              </Link>
-            ))}
           </div>
         </div>
       </div>
