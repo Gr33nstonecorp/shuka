@@ -51,7 +51,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-2xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-12">
-            Describe what you need. ShukAI finds suppliers, compares pricing, and helps you place orders — automatically.
+            Stop wasting hours manually searching suppliers. Tell ShukAI what you need — it finds options, compares prices, and helps you order.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -80,17 +80,17 @@ export default function HomePage() {
           </div>
 
           <p className="text-sm text-zinc-500 mt-6">
-            No charge today • Cancel anytime before billing starts
+            No charge today • Cancel anytime before billing starts • Takes less than 30 seconds to begin
           </p>
         </div>
       </div>
 
-      {/* Why should I care? — Strong emotional hook */}
+      {/* Why should I care? */}
       <div className="py-20 px-6 bg-white dark:bg-zinc-900">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold tracking-tight mb-4">Why teams are switching to ShukAI</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400">Stop wasting hours on manual sourcing</p>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400">Real time and money saved on procurement</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-10">
@@ -98,15 +98,15 @@ export default function HomePage() {
               <div className="text-5xl mb-6">⏱️</div>
               <h3 className="text-2xl font-semibold mb-4">Save hours every week</h3>
               <p className="text-zinc-600 dark:text-zinc-400">
-                Instead of searching vendors manually, describe what you need and let AI do the heavy lifting.
+                Stop manually searching vendors. AI finds suppliers and quotes in seconds.
               </p>
             </div>
 
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10">
               <div className="text-5xl mb-6">💰</div>
-              <h3 className="text-2xl font-semibold mb-4">Get better prices</h3>
+              <h3 className="text-2xl font-semibold mb-4">Never overpay again</h3>
               <p className="text-zinc-600 dark:text-zinc-400">
-                AI instantly compares real quotes from multiple suppliers so you never overpay.
+                AI instantly compares real pricing from multiple suppliers.
               </p>
             </div>
 
