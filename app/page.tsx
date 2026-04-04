@@ -85,58 +85,74 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why teams use ShukAI */}
-      <div className="bg-white dark:bg-zinc-900 py-20">
-        <div className="max-w-5xl mx-auto px-6">
+      {/* How it works - AI Assistant as the star */}
+      <div className="py-20 px-6 bg-white dark:bg-zinc-900">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold tracking-tight mb-4">Why teams use ShukAI</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400">Save time and money on procurement</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-5xl mb-6">⏱️</div>
-              <h3 className="text-2xl font-semibold mb-3">Cut sourcing time</h3>
-              <p className="text-zinc-600 dark:text-zinc-400">From hours of manual research to minutes with AI</p>
+            <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-5 py-2 rounded-full text-sm font-semibold mb-6">
+              CORE FEATURE
             </div>
-            <div className="text-center">
-              <div className="text-5xl mb-6">💰</div>
-              <h3 className="text-2xl font-semibold mb-3">Better pricing</h3>
-              <p className="text-zinc-600 dark:text-zinc-400">Compare real vendor quotes instantly</p>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl mb-6">📋</div>
-              <h3 className="text-2xl font-semibold mb-3">Everything in one place</h3>
-              <p className="text-zinc-600 dark:text-zinc-400">Requests, quotes, orders, and saved items</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* How it works */}
-      <div className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold tracking-tight mb-4">How it works</h2>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400">Three simple steps</p>
+            <h2 className="text-4xl font-bold tracking-tight mb-4">Your AI Procurement Agent</h2>
+            <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
+              The fastest way to source products
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-10">
             <div className="text-center">
               <div className="text-6xl mb-6">1️⃣</div>
               <h3 className="text-2xl font-semibold mb-3">Tell us what you need</h3>
-              <p className="text-zinc-600">Type your items — gloves, tape, boxes, etc.</p>
+              <p className="text-zinc-600">Type items like "50 nitrile gloves" or "20 rolls of packing tape"</p>
             </div>
             <div className="text-center">
               <div className="text-6xl mb-6">2️⃣</div>
-              <h3 className="text-2xl font-semibold mb-3">AI finds options</h3>
-              <p className="text-zinc-600">ShukAI searches suppliers and returns best quotes</p>
+              <h3 className="text-2xl font-semibold mb-3">AI finds the best options</h3>
+              <p className="text-zinc-600">ShukAI searches vendors and returns realistic quotes with reasons</p>
             </div>
             <div className="text-center">
               <div className="text-6xl mb-6">3️⃣</div>
-              <h3 className="text-2xl font-semibold mb-3">Compare & order</h3>
-              <p className="text-zinc-600">Review, add to requests, and place orders</p>
+              <h3 className="text-2xl font-semibold mb-3">Add to requests & order</h3>
+              <p className="text-zinc-600">Save the best options and turn them into purchase requests</p>
             </div>
+          </div>
+
+          <div className="text-center mt-16">
+            <Link
+              href="/assistant"
+              className="inline-block px-12 py-5 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black text-lg transition"
+            >
+              Try the AI Assistant Now
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Workspace */}
+      <div className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold tracking-tight">Your full procurement workspace</h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mt-4">Everything you need in one place</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { label: "Requests", href: "/requests", description: "Create and manage purchasing requests." },
+              { label: "Quotes", href: "/quotes", description: "Review and compare vendor quotes." },
+              { label: "Orders", href: "/orders", description: "Track approved and active orders." },
+              { label: "Vendors", href: "/vendors", description: "Browse trusted suppliers." },
+              { label: "Saved Items", href: "/saved-items", description: "Your shortlisted products." },
+            ].map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all hover:shadow-xl"
+              >
+                <div className="font-semibold text-2xl mb-3 group-hover:text-blue-600 transition">{tab.label}</div>
+                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">{tab.description}</p>
+                <div className="mt-8 text-blue-600 font-medium group-hover:underline">Open →</div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
