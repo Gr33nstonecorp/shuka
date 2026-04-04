@@ -85,7 +85,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Why should I care? */}
+      {/* Why teams use ShukAI */}
       <div className="py-20 px-6 bg-white dark:bg-zinc-900">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
