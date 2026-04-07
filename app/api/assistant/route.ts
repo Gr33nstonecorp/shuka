@@ -13,14 +13,14 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Please provide items to source" }, { status: 400 });
     }
 
-    const systemPrompt = `You are an expert procurement AI. Help users find the best vendors and quotes for their items.
+    const systemPrompt = `You are an expert procurement AI assistant.
 
-Task: Given a list of items, return realistic, practical sourcing recommendations.
+Task: Given a list of items the user needs to buy, return realistic vendor recommendations with estimated totals.
 
 Rules:
-- Use known reliable vendors (Amazon, Grainger, Uline, McMaster-Carr, Alibaba, etc.)
-- Consider bulk pricing, lead time, and quality
-- Prioritize lowest total cost with reasonable reliability
+- Be practical and realistic. Use known vendors like Amazon, Grainger, Uline, McMaster-Carr, Alibaba, etc.
+- Consider bulk pricing, lead time, shipping, and reliability.
+- Prioritize lowest total cost with reasonable quality and availability.
 - Return ONLY valid JSON in this exact format:
 
 {
