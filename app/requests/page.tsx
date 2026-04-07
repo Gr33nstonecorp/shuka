@@ -47,9 +47,11 @@ export default function RequestsPage() {
       .eq("user_id", userId)
       .order("date_added", { ascending: false });
 
-    if (error) console.error(error);
-    else setItems(data || []);
-
+    if (error) {
+      console.error(error);
+    } else {
+      setItems(data || []);
+    }
     setLoading(false);
   }
 
@@ -70,6 +72,8 @@ export default function RequestsPage() {
       setNewItemName("");
       setNewItemQuantity(1);
       loadRequests(session.user.id);
+    } else {
+      alert("Failed to add request");
     }
   };
 
@@ -82,12 +86,12 @@ export default function RequestsPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading your requests...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading your requests...</div>;
   }
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Please log in</h1>
           <Link href="/login" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl">Log In</Link>
@@ -140,8 +144,8 @@ export default function RequestsPage() {
         {items.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 text-center">
             <h3 className="text-2xl font-semibold mb-3">No requests yet</h3>
-            <p className="text-zinc-600 mb-8">Add requests manually or from the AI Assistant.</p>
-            <Link href="/assistant" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">Go to AI Assistant</Link>
+            <p className="text-zinc-600 mb-8">Use the AI Assistant to generate smart requests, or add them manually above.</p>
+            <Link href="/assistant" className="inline-block px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">Go to AI Assistant</Link>
           </div>
         ) : (
           <div className="space-y-4">
