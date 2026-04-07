@@ -10,7 +10,6 @@ type ProfileRow = {
   plan: string | null;
   subscription_status: string | null;
   current_period_end: string | null;
-  trial_end?: string | null;   // Make sure this column exists in your profiles table
 };
 
 type AssistantResult = {
@@ -53,7 +52,7 @@ export default function AssistantPage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("id, email, plan, subscription_status, current_period_end, trial_end")
+        .select("id, email, plan, subscription_status, current_period_end")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -65,25 +64,7 @@ export default function AssistantPage() {
     }
   }
 
-  // Improved access check - includes trial period
-  const hasAccess = () => {
-    if (!profile) return false;
-
-    // Check paid plan
-    if (profile.plan && profile.subscription_status === "active") {
-      return true;
-    }
-
-    // Check trial
-    if (profile.trial_end) {
-      const trialEnd = new Date(profile.trial_end);
-      if (trialEnd > new Date()) {
-        return true;
-      }
-    }
-
-    return false;
-  };
+  const hasAccess = profile?.plan && profile.subscription_status === "active";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,8 +72,8 @@ export default function AssistantPage() {
     setMessage("");
     setResults([]);
 
-    if (!hasAccess()) {
-      setMessage("Free trial or paid subscription required for AI Assistant.");
+    if (!hasAccess) {
+      setMessage("Active paid subscription required for AI Assistant.");
       setRunning(false);
       return;
     }
@@ -135,39 +116,42 @@ export default function AssistantPage() {
     }
   };
 
-  const addToRequest = (index: number, result: AssistantResult) => {
+  const addToRequest = async (index: number, result: AssistantResult) => {
     if (!result.item) return;
 
-    const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
-    const newRequest = {
-      id: Date.now(),
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("Please log in again.");
+      return;
+    }
+
+    const { error } = await supabase.from("requests").insert({
+      user_id: session.user.id,
       name: result.item,
       quantity: Number(result.quantity || 1),
-      dateAdded: new Date().toISOString(),
-    };
+      status: "pending",
+    });
 
-    localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
-    setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" added to Requests!`);
+    if (error) {
+      alert("Failed to add to requests");
+    } else {
+      setAddedItems([...addedItems, index]);
+      alert(`✅ "${result.item}" added to your Requests!`);
+    }
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading assistant...</div>;
   }
 
-  if (!hasAccess()) {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold mb-4">Free Trial or Subscription Required</h1>
-          <p className="text-zinc-600 mb-8">
-            The AI Assistant is available during your free trial or with a paid plan.
-          </p>
-          <Link
-            href="/pricing"
-            className="inline-block px-8 py-4 bg-zinc-900 text-white font-semibold rounded-2xl hover:bg-black"
-          >
-            View Pricing & Continue Trial
+          <h1 className="text-3xl font-bold mb-4">Access Required</h1>
+          <p className="text-zinc-600 mb-8">Active paid subscription required for AI Assistant.</p>
+          <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
+            View Pricing & Upgrade
           </Link>
         </div>
       </div>
