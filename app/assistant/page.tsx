@@ -40,7 +40,7 @@ export default function AssistantPage() {
     setMessage("");
     setResults([]);
 
-    // Mock realistic results for demo (replace with real API later)
+    // Mock realistic results for immediate demo
     setTimeout(() => {
       setResults([
         { item: "Nitrile Gloves", quantity: 50, best_quote: { vendor_name: "Global Supplies", total: 245.50, reason: "Best bulk price with fast shipping" } },
@@ -50,7 +50,9 @@ export default function AssistantPage() {
     }, 1200);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading assistant...</div>;
+  }
 
   if (!hasAccess) {
     return (
