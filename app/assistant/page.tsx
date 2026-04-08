@@ -64,7 +64,15 @@ export default function AssistantPage() {
     }
   }
 
-  const hasAccess = profile?.plan && profile.subscription_status === "active";
+  // Improved access check with free trial support
+  const now = new Date();
+  const hasActiveSubscription = profile?.subscription_status === "active" && 
+    new Date(profile.current_period_end || 0) > now;
+
+  const hasActiveTrial = profile?.plan === "starter" && 
+    new Date(profile.current_period_end || 0) > now;
+
+  const hasAccess = hasActiveSubscription || hasActiveTrial;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +142,9 @@ export default function AssistantPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
-          <p className="text-zinc-600 mb-8">Active paid subscription required for AI Assistant.</p>
+          <p className="text-zinc-600 mb-8">
+            Active paid subscription or 7-day free trial required for AI Assistant.
+          </p>
           <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
             View Pricing & Upgrade
           </Link>
@@ -158,7 +168,6 @@ export default function AssistantPage() {
           </p>
         </div>
 
-        {/* Input Card */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -185,7 +194,6 @@ export default function AssistantPage() {
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
-        {/* Results */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold mb-8">Recommended Options</h2>
