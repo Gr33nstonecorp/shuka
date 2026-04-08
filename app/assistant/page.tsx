@@ -50,12 +50,13 @@ export default function AssistantPage() {
         return;
       }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("id, email, plan, subscription_status, current_period_end")
         .eq("id", session.user.id)
         .maybeSingle();
 
+      if (error) console.error("Profile load error:", error);
       setProfile(data as ProfileRow | null);
     } catch (err) {
       console.error(err);
@@ -64,15 +65,14 @@ export default function AssistantPage() {
     }
   }
 
-  // Improved access check with free trial support
+  // Improved trial + subscription check
   const now = new Date();
-  const hasActiveSubscription = profile?.subscription_status === "active" && 
-    new Date(profile.current_period_end || 0) > now;
+  const trialOrSubscriptionEnd = new Date(profile?.current_period_end || 0);
 
-  const hasActiveTrial = profile?.plan === "starter" && 
-    new Date(profile.current_period_end || 0) > now;
+  const hasActiveSubscription = profile?.subscription_status === "active" && trialOrSubscriptionEnd > now;
+  const hasActiveTrial = profile?.plan === "starter" && trialOrSubscriptionEnd > now;
 
-  const hasAccess = hasActiveSubscription || hasActiveTrial;
+  const hasAccess = hasActiveSubscription || hasActiveTrial || profile?.plan === "premium";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +143,9 @@ export default function AssistantPage() {
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
           <p className="text-zinc-600 mb-8">
-            Active paid subscription or 7-day free trial required for AI Assistant.
+            {profile?.plan === "starter" 
+              ? "Your 7-day free trial has ended or is not active yet." 
+              : "Active paid subscription required for AI Assistant."}
           </p>
           <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
             View Pricing & Upgrade
@@ -153,6 +155,7 @@ export default function AssistantPage() {
     );
   }
 
+  // Rest of the UI (input + results) remains the same as previous version
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
