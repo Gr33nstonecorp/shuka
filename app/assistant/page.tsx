@@ -64,76 +64,27 @@ export default function AssistantPage() {
     }
   }
 
-  // Permanent trial + subscription logic
-  const now = new Date();
-  const endDate = new Date(profile?.current_period_end || 0);
+  // TEMPORARY BYPASS FOR TESTING - REMOVE LATER
+  const hasAccess = true;
 
-  const isTrialActive = profile?.plan === "starter" && endDate > now;
-  const isPaidActive = profile?.subscription_status === "active" && endDate > now;
-  const hasAccess = isTrialActive || isPaidActive || profile?.plan === "premium";
+  // Real logic (commented for now)
+  // const now = new Date();
+  // const endDate = new Date(profile?.current_period_end || 0);
+  // const isTrialActive = profile?.plan === "starter" && endDate > now;
+  // const isPaidActive = profile?.subscription_status === "active" && endDate > now;
+  // const hasAccess = isTrialActive || isPaidActive || profile?.plan === "premium";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) {
-      setMessage("Please enter at least one item.");
-      return;
-    }
-
-    setRunning(true);
-    setMessage("");
-    setResults([]);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setMessage("Please log in again.");
-        setRunning(false);
-        return;
-      }
-
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ input }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setMessage(data.error || "AI request failed.");
-      } else {
-        setResults(data.results || []);
-      }
-    } catch (error) {
-      setMessage("AI request failed. Please try again.");
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  const addToRequest = (index: number, result: AssistantResult) => {
-    if (!result.item) return;
-    const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
-    const newRequest = {
-      id: Date.now(),
-      name: result.item,
-      quantity: Number(result.quantity || 1),
-      dateAdded: new Date().toISOString(),
-    };
-    localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
-    setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" added to your Requests!`);
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading assistant...</div>;
+  }
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
           <p className="text-zinc-600 mb-8">
-            {isTrialActive ? "Your free trial has ended." : "Active paid subscription or 7-day free trial required."}
+            Active paid subscription or 7-day free trial required for AI Assistant.
           </p>
           <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
             View Pricing & Upgrade
@@ -143,6 +94,7 @@ export default function AssistantPage() {
     );
   }
 
+  // Full AI Assistant UI
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
@@ -156,9 +108,10 @@ export default function AssistantPage() {
           <p className="text-xl text-zinc-600 dark:text-zinc-400">
             Describe what you need. Get real vendor options instantly.
           </p>
+          <p className="text-green-600 mt-4">✅ Access granted (bypass active for testing)</p>
         </div>
 
-        {/* Input */}
+        {/* Input Card */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -172,6 +125,7 @@ export default function AssistantPage() {
                 className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono focus:outline-none focus:border-blue-500"
               />
             </div>
+
             <button
               type="submit"
               disabled={running}
@@ -180,10 +134,11 @@ export default function AssistantPage() {
               {running ? "Searching vendors..." : "Run AI Sourcing"}
             </button>
           </form>
+
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
-        {/* Results */}
+        {/* Results Section */}
         {results.length > 0 && (
           <div>
             <h2 className="text-3xl font-bold mb-8">Recommended Options</h2>
@@ -202,7 +157,9 @@ export default function AssistantPage() {
                         </div>
                         <div>
                           <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                          <div className="font-bold text-2xl mt-1">${Number(result.best_quote.total || 0).toFixed(2)}</div>
+                          <div className="font-bold text-2xl mt-1">
+                            ${Number(result.best_quote.total || 0).toFixed(2)}
+                          </div>
                         </div>
                       </div>
 
@@ -237,4 +194,61 @@ export default function AssistantPage() {
       </div>
     </main>
   );
+
+  // handleSubmit and addToRequest functions (add these before the final return)
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim()) {
+      setMessage("Please enter at least one item.");
+      return;
+    }
+
+    setRunning(true);
+    setMessage("");
+    setResults([]);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage("Please log in again.");
+        setRunning(false);
+        return;
+      }
+
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ input }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setMessage(data.error || "AI request failed.");
+      } else {
+        setResults(data.results || []);
+      }
+    } catch (error) {
+      setMessage("AI request failed. Please try again.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function addToRequest(index: number, result: AssistantResult) {
+    if (!result.item) return;
+    const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
+    const newRequest = {
+      id: Date.now(),
+      name: result.item,
+      quantity: Number(result.quantity || 1),
+      dateAdded: new Date().toISOString(),
+    };
+    localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
+    setAddedItems([...addedItems, index]);
+    alert(`✅ "${result.item}" added to your Requests!`);
+  }
 }
