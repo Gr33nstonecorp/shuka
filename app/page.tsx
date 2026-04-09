@@ -1,4 +1,18 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
 export default function HomePage() {
+  const [demoQuery, setDemoQuery] = useState("");
+
+  const handleDemoSubmit = () => {
+    if (demoQuery.trim()) {
+      alert(`🔍 In the real version: ShukAI would now search vendors for "${demoQuery}" and show the best quotes instantly.`);
+      // In future: redirect to /assistant with the query pre-filled
+    }
+  };
+
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Hero Section */}
@@ -16,22 +30,22 @@ export default function HomePage() {
             Stop spending hours sourcing manually. Tell ShukAI what you need — it finds the best suppliers, prices, and options in seconds.
           </p>
 
-          {/* AI Demo Input - The "Wow" Moment */}
+          {/* AI Demo Input */}
           <div className="max-w-2xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-16">
             <div className="text-zinc-500 text-sm font-medium mb-4">Try the AI right now (demo)</div>
             <div className="relative">
               <input
                 type="text"
                 placeholder="50 nitrile gloves, 20 heavy duty packing tape..."
-                className="w-full p-6 pr-32 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 text-lg focus:outline-none focus:border-blue-600"
+                value={demoQuery}
+                onChange={(e) => setDemoQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                    alert("🔍 In the real version: ShukAI would now search vendors and show the best quotes instantly.");
-                  }
+                  if (e.key === "Enter") handleDemoSubmit();
                 }}
+                className="w-full p-6 pr-32 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 text-lg focus:outline-none focus:border-blue-600"
               />
               <button
-                onClick={() => alert("🔍 In the real version: This would open the full AI Assistant with your query pre-filled.")}
+                onClick={handleDemoSubmit}
                 className="absolute right-3 top-1/2 -translate-y-1/2 px-8 py-3 bg-zinc-900 hover:bg-black text-white font-semibold rounded-2xl transition"
               >
                 Ask AI
