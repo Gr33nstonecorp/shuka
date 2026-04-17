@@ -19,11 +19,11 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* Clean Footer - Appears on every page */}
+        {/* Clean Footer */}
         <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-auto">
           <div className="max-w-5xl mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="font-bold text-xl tracking-tight">ShukAI</div>
+              <div className="font-bold text-xl tracking-tighter">ShukAI</div>
 
               <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-600 dark:text-zinc-400">
                 <Link 
@@ -46,9 +46,9 @@ export default function RootLayout({
                 </Link>
                 <Link 
                   href="/pricing" 
-                  className="hover:text-zinc-900 dark:hover:text-white transition"
+                  className="hover:text-zinc-900 dark:hover:text-white transition font-medium text-blue-600"
                 >
-                  Pricing
+                  Support Us
                 </Link>
               </div>
 
