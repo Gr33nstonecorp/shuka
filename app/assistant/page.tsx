@@ -64,7 +64,7 @@ export default function AssistantPage() {
     }
   }
 
-  // Proper 7-day trial + paid subscription logic
+  // Proper 7-day free trial + paid subscription logic
   const now = new Date();
   const endDate = profile?.current_period_end ? new Date(profile.current_period_end) : new Date(0);
 
@@ -108,6 +108,7 @@ export default function AssistantPage() {
         setResults(data.results || []);
       }
     } catch (error) {
+      console.error(error);
       setMessage("AI request failed. Please try again.");
     } finally {
       setRunning(false);
@@ -116,6 +117,7 @@ export default function AssistantPage() {
 
   const addToRequest = (index: number, result: AssistantResult) => {
     if (!result.item) return;
+
     const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
     const newRequest = {
       id: Date.now(),
@@ -123,6 +125,7 @@ export default function AssistantPage() {
       quantity: Number(result.quantity || 1),
       dateAdded: new Date().toISOString(),
     };
+
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
     setAddedItems([...addedItems, index]);
     alert(`✅ "${result.item}" added to your Requests!`);
