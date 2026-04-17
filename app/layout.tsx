@@ -30,6 +30,7 @@ export default async function RootLayout({
               ShukAI
             </Link>
 
+            {/* Main Tabs - Always visible */}
             <div className="hidden md:flex gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
               <Link href="/requests" className="hover:text-zinc-900 dark:hover:text-white transition">Requests</Link>
@@ -39,11 +40,12 @@ export default async function RootLayout({
               <Link href="/saved-items" className="hover:text-zinc-900 dark:hover:text-white transition">Saved Items</Link>
             </div>
 
+            {/* Auth Section */}
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-3 text-sm">
                   <span className="px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
-                    {user.email?.split("@")[0]}
+                    {user.email}
                   </span>
                   <form action="/auth/signout" method="post">
                     <button 
@@ -73,7 +75,7 @@ export default async function RootLayout({
           </div>
         </nav>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <main className="flex-1">
           {children}
         </main>
