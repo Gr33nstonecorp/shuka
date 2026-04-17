@@ -14,12 +14,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
-        {/* Persistent Top Navigation - Always Visible */}
+        {/* Persistent Top Navigation */}
         <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
-            <Link href="/assistant" className="font-bold text-2xl tracking-tighter flex items-center gap-2">
-              ShukAI
-            </Link>
+            <Link href="/assistant" className="font-bold text-2xl tracking-tighter">ShukAI</Link>
 
             <div className="flex gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
@@ -31,6 +29,12 @@ export default function RootLayout({
             </div>
 
             <div className="flex items-center gap-4">
+              <Link 
+                href="/login" 
+                className="text-sm font-medium px-5 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              >
+                Log in
+              </Link>
               <Link 
                 href="/pricing" 
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 transition"
