@@ -13,22 +13,51 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-        <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-50">
-          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <Link href="/" className="font-bold text-2xl tracking-tighter">ShukAI</Link>
-            <div className="flex gap-8 text-sm font-medium">
-              <Link href="/assistant" className="hover:text-blue-600">AI Assistant</Link>
-              <Link href="/requests" className="hover:text-blue-600">Requests</Link>
-              <Link href="/quotes" className="hover:text-blue-600">Quotes</Link>
-              <Link href="/orders" className="hover:text-blue-600">Orders</Link>
-              <Link href="/vendors" className="hover:text-blue-600">Vendors</Link>
-              <Link href="/saved-items" className="hover:text-blue-600">Saved Items</Link>
+      <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
+        {/* Main Content Area */}
+        <main className="flex-1">
+          {children}
+        </main>
+
+        {/* Clean Footer - Appears on every page */}
+        <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-auto">
+          <div className="max-w-5xl mx-auto px-6 py-10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="font-bold text-xl tracking-tight">ShukAI</div>
+
+              <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-600 dark:text-zinc-400">
+                <Link 
+                  href="/terms" 
+                  className="hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  Terms
+                </Link>
+                <Link 
+                  href="/privacy" 
+                  className="hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  Privacy Policy
+                </Link>
+                <Link 
+                  href="/msa" 
+                  className="hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  User Agreement
+                </Link>
+                <Link 
+                  href="/pricing" 
+                  className="hover:text-zinc-900 dark:hover:text-white transition"
+                >
+                  Pricing
+                </Link>
+              </div>
+
+              <div className="text-xs text-zinc-500 text-center md:text-right">
+                © {new Date().getFullYear()} ShukAI. All rights reserved.
+              </div>
             </div>
-            <Link href="/pricing" className="text-blue-600 font-medium">Pricing</Link>
           </div>
-        </nav>
-        {children}
+        </footer>
       </body>
     </html>
   );
