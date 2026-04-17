@@ -5,13 +5,14 @@ import { useState } from "react";
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
+  const [showNav, setShowNav] = useState(false);
 
   const plans = [
     {
       name: "Starter",
       price: 0,
       period: "",
-      description: "Perfect for individuals and small teams getting started",
+      description: "Perfect for individuals and small teams",
       features: [
         "Unlimited manual purchase requests",
         "Basic vendor browsing",
@@ -38,21 +39,43 @@ export default function PricingPage() {
         "Priority support",
       ],
       cta: "Make a Donation ($9/mo)",
-      href: "#", // We'll connect Stripe later if needed
+      href: "#",
       popular: true,
     },
   ];
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-16 px-6">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12 px-6">
       <div className="max-w-5xl mx-auto">
+        {/* Simple Top Nav with Dropdown for mobile */}
+        <div className="flex justify-between items-center mb-12">
+          <Link href="/" className="font-bold text-2xl tracking-tighter">ShukAI</Link>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowNav(!showNav)}
+              className="md:hidden px-4 py-2 border rounded-xl"
+            >
+              Menu
+            </button>
+            <div className="hidden md:flex gap-8 text-sm font-medium">
+              <Link href="/assistant">AI Assistant</Link>
+              <Link href="/requests">Requests</Link>
+              <Link href="/quotes">Quotes</Link>
+              <Link href="/orders">Orders</Link>
+              <Link href="/vendors">Vendors</Link>
+            </div>
+          </div>
+        </div>
+
         <div className="text-center mb-16">
           <h1 className="text-5xl font-black tracking-tighter mb-6">Pricing</h1>
-          <p className="text-2xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-2xl text-zinc-600 dark:text-zinc-400">
             ShukAI is free to use.<br />Optional donation helps us improve faster.
           </p>
         </div>
 
+        {/* Billing Toggle */}
         <div className="flex justify-center mb-12">
           <div className="bg-zinc-200 dark:bg-zinc-800 rounded-full p-1 flex">
             <button
@@ -118,7 +141,7 @@ export default function PricingPage() {
 
         <div className="text-center mt-16 text-sm text-zinc-500">
           ShukAI is currently free for everyone.<br />
-          The $9/month donation is optional and helps us improve the AI faster.
+          The $9/month is an optional donation to support faster AI improvements.
         </div>
       </div>
     </main>
