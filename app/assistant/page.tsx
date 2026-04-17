@@ -4,14 +4,6 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-type ProfileRow = {
-  id: string;
-  email: string | null;
-  plan: string | null;
-  subscription_status: string | null;
-  current_period_end: string | null;
-};
-
 type AssistantResult = {
   item?: string;
   quantity?: number | string;
@@ -29,43 +21,12 @@ export default function AssistantPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [input, setInput] = useState("");
   const [results, setResults] = useState<AssistantResult[]>([]);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [addedItems, setAddedItems] = useState<number[]>([]);
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  async function loadProfile() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, email, plan, subscription_status, current_period_end")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      setProfile(data as ProfileRow | null);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Completely free during beta
-  const hasAccess = true;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,17 +86,10 @@ export default function AssistantPage() {
     alert(`✅ "${result.item}" added to your Requests!`);
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading assistant...</div>;
-  }
-
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-            FREE during Beta
-          </div>
           <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
             AI Assistant
           </h1>
