@@ -8,7 +8,6 @@ export default function HomePage() {
 
   const handleDemoSubmit = () => {
     if (demoQuery.trim()) {
-      // Navigate to assistant with pre-filled query
       window.location.href = `/assistant?query=${encodeURIComponent(demoQuery.trim())}`;
     }
   };
@@ -18,10 +17,6 @@ export default function HomePage() {
       {/* Hero */}
       <div className="pt-28 pb-24 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-6 py-2 rounded-full text-sm font-semibold mb-8">
-            AI Procurement Platform
-          </div>
-
           <h1 className="text-6xl lg:text-7xl font-black tracking-tighter leading-none mb-10">
             AI that finds,<br />compares, and buys<br />vendors for you.
           </h1>
@@ -30,7 +25,7 @@ export default function HomePage() {
             Stop spending hours sourcing manually. Tell ShukAI what you need — it finds the best suppliers, prices, and options in seconds.
           </p>
 
-          {/* Working AI Demo Input */}
+          {/* Working Demo Input */}
           <div className="max-w-2xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-16">
             <div className="text-zinc-500 text-sm font-medium mb-4">Try it now</div>
             <div className="relative">
@@ -102,7 +97,7 @@ export default function HomePage() {
           <a href="/assistant" className="inline-block px-12 py-5 bg-zinc-900 hover:bg-black text-white text-xl font-semibold rounded-3xl transition">
             Start Sourcing Now
           </a>
-          <p className="text-sm text-zinc-500 mt-6">Completely free during early stage</p>
+          <p className="text-sm text-zinc-500 mt-6">Completely free • No credit card required</p>
         </div>
       </div>
     </main>
