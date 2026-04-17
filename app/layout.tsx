@@ -23,15 +23,16 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
-        {/* Persistent Top Navigation - Tabs always visible */}
+        {/* Modern Persistent Navigation */}
         <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            {/* Logo */}
             <Link href="/assistant" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
               ShukAI
             </Link>
 
-            {/* Main Tabs - Always visible */}
-            <div className="hidden md:flex gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            {/* Main Tabs - Always visible, smaller font */}
+            <div className="hidden md:flex gap-7 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
               <Link href="/requests" className="hover:text-zinc-900 dark:hover:text-white transition">Requests</Link>
               <Link href="/quotes" className="hover:text-zinc-900 dark:hover:text-white transition">Quotes</Link>
@@ -40,7 +41,7 @@ export default async function RootLayout({
               <Link href="/saved-items" className="hover:text-zinc-900 dark:hover:text-white transition">Saved Items</Link>
             </div>
 
-            {/* Auth Section */}
+            {/* Auth Section - Clean & Clear */}
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-3 text-sm">
@@ -75,12 +76,12 @@ export default async function RootLayout({
           </div>
         </nav>
 
-        {/* Main Content Area */}
+        {/* Main Content */}
         <main className="flex-1">
           {children}
         </main>
 
-        {/* Footer */}
+        {/* Clean Footer */}
         <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-auto">
           <div className="max-w-6xl mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
