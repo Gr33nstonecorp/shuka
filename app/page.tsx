@@ -8,8 +8,8 @@ export default function HomePage() {
 
   const handleDemoSubmit = () => {
     if (demoQuery.trim()) {
-      alert(`🔍 In the real version: ShukAI would now search vendors for "${demoQuery}" and show the best quotes instantly.`);
-      // In future: redirect to /assistant with the query pre-filled
+      // Navigate to assistant with the query pre-filled
+      window.location.href = `/assistant?query=${encodeURIComponent(demoQuery.trim())}`;
     }
   };
 
@@ -30,9 +30,9 @@ export default function HomePage() {
             Stop spending hours sourcing manually. Tell ShukAI what you need — it finds the best suppliers, prices, and options in seconds.
           </p>
 
-          {/* AI Demo Input */}
+          {/* Connected AI Demo Input */}
           <div className="max-w-2xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-16">
-            <div className="text-zinc-500 text-sm font-medium mb-4">Try the AI right now (demo)</div>
+            <div className="text-zinc-500 text-sm font-medium mb-4">Try the AI right now</div>
             <div className="relative">
               <input
                 type="text"
