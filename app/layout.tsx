@@ -23,7 +23,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
-        {/* Clean Persistent Navigation */}
+        {/* Persistent Top Navigation - Tabs always visible */}
         <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <Link href="/assistant" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
@@ -43,7 +43,7 @@ export default async function RootLayout({
               {user ? (
                 <div className="flex items-center gap-3 text-sm">
                   <span className="px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
-                    {user.email}
+                    {user.email?.split("@")[0]}
                   </span>
                   <form action="/auth/signout" method="post">
                     <button 
