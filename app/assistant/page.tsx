@@ -24,7 +24,6 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [results, setResults] = useState<AssistantResult[]>([]);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [addedItems, setAddedItems] = useState<number[]>([]);
 
