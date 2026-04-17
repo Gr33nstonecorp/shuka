@@ -14,19 +14,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!process.env.OPENAI_API_KEY) {
+      console.error("Missing OPENAI_API_KEY");
       return Response.json({ error: "AI service is not configured" }, { status: 500 });
     }
 
-    const systemPrompt = `You are an expert procurement AI assistant.
+    const systemPrompt = `You are an expert procurement AI. 
+Given a list of items, return realistic vendor recommendations.
 
-Task: Given a list of items the user needs to buy, return realistic vendor recommendations with estimated totals.
-
-Rules:
-- Use known reliable vendors (Amazon, Grainger, Uline, McMaster-Carr, Alibaba, etc.)
-- Consider bulk pricing, lead time, and quality
-- Prioritize lowest total cost with reasonable reliability
-- Return ONLY valid JSON in this exact format:
-
+Return ONLY valid JSON in this exact format:
 {
   "results": [
     {
@@ -35,8 +30,8 @@ Rules:
       "best_quote": {
         "vendor_name": "string",
         "total": number,
-        "reason": "short clear reason why this is the best option",
-        "product_url": "https://example.com/product"
+        "reason": "short reason",
+        "product_url": "https://example.com"
       }
     }
   ]
@@ -55,12 +50,10 @@ Rules:
     const content = completion.choices[0]?.message?.content || "{}";
     const parsed = JSON.parse(content);
 
-    return Response.json({
-      results: parsed.results || [],
-    });
+    return Response.json({ results: parsed.results || [] });
 
   } catch (err: any) {
-    console.error("Assistant API error:", err);
+    console.error("Assistant API error:", err.message);
     return Response.json({ 
       error: "Failed to generate sourcing results. Please try again." 
     }, { status: 500 });
