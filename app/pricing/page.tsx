@@ -1,147 +1,79 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
 export default function PricingPage() {
-  const [isYearly, setIsYearly] = useState(false);
-  const [showNav, setShowNav] = useState(false);
-
-  const plans = [
-    {
-      name: "Starter",
-      price: 0,
-      period: "",
-      description: "Perfect for individuals and small teams",
-      features: [
-        "Unlimited manual purchase requests",
-        "Basic vendor browsing",
-        "Saved items",
-        "Workspace overview",
-        "Email support",
-        "Limited AI sourcing (10 requests/day)",
-      ],
-      cta: "Get Started Free",
-      href: "/assistant",
-      popular: false,
-    },
-    {
-      name: "Premium",
-      price: isYearly ? 89 : 9,
-      period: isYearly ? "/year" : "/month",
-      description: "Optional donation for faster improvements",
-      features: [
-        "Everything in Starter",
-        "Unlimited AI Sourcing",
-        "Priority AI responses",
-        "Export quotes & orders",
-        "Advanced vendor matching",
-        "Priority support",
-      ],
-      cta: "Make a Donation ($9/mo)",
-      href: "#",
-      popular: true,
-    },
-  ];
-
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12 px-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Simple Top Nav with Dropdown for mobile */}
-        <div className="flex justify-between items-center mb-12">
+      <div className="max-w-4xl mx-auto">
+        {/* Clean Top Navigation - No Menu Button */}
+        <nav className="flex justify-between items-center mb-12 border-b pb-6">
           <Link href="/" className="font-bold text-2xl tracking-tighter">ShukAI</Link>
           
-          <div className="relative">
-            <button 
-              onClick={() => setShowNav(!showNav)}
-              className="md:hidden px-4 py-2 border rounded-xl"
-            >
-              Menu
-            </button>
-            <div className="hidden md:flex gap-8 text-sm font-medium">
-              <Link href="/assistant">AI Assistant</Link>
-              <Link href="/requests">Requests</Link>
-              <Link href="/quotes">Quotes</Link>
-              <Link href="/orders">Orders</Link>
-              <Link href="/vendors">Vendors</Link>
-            </div>
+          <div className="flex gap-8 text-sm font-medium">
+            <Link href="/assistant" className="hover:text-blue-600">AI Assistant</Link>
+            <Link href="/requests" className="hover:text-blue-600">Requests</Link>
+            <Link href="/quotes" className="hover:text-blue-600">Quotes</Link>
+            <Link href="/orders" className="hover:text-blue-600">Orders</Link>
+            <Link href="/vendors" className="hover:text-blue-600">Vendors</Link>
+            <Link href="/saved-items" className="hover:text-blue-600">Saved Items</Link>
           </div>
-        </div>
+        </nav>
 
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black tracking-tighter mb-6">Pricing</h1>
+          <h1 className="text-5xl font-black tracking-tighter mb-4">Support ShukAI</h1>
           <p className="text-2xl text-zinc-600 dark:text-zinc-400">
-            ShukAI is free to use.<br />Optional donation helps us improve faster.
+            ShukAI is completely free to use.<br />
+            Optional donation helps us improve faster.
           </p>
         </div>
 
-        {/* Billing Toggle */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-zinc-200 dark:bg-zinc-800 rounded-full p-1 flex">
-            <button
-              onClick={() => setIsYearly(false)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition ${!isYearly ? "bg-white dark:bg-zinc-900 shadow" : ""}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsYearly(true)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition ${isYearly ? "bg-white dark:bg-zinc-900 shadow" : ""}`}
-            >
-              Yearly <span className="text-green-600">(Save ~20%)</span>
-            </button>
+        {/* Single Donation Card */}
+        <div className="max-w-md mx-auto bg-white dark:bg-zinc-900 border border-blue-600 rounded-3xl p-12 text-center">
+          <div className="inline-block bg-blue-600 text-white text-xs font-semibold px-6 py-1.5 rounded-full mb-6">
+            OPTIONAL DONATION
           </div>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`bg-white dark:bg-zinc-900 border rounded-3xl p-10 relative ${
-                plan.popular ? "border-blue-600 scale-105" : "border-zinc-200 dark:border-zinc-800"
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-6 py-1 rounded-full">
-                  SUPPORT DEVELOPMENT
-                </div>
-              )}
+          <div className="mb-8">
+            <div className="text-7xl font-black mb-2">$5</div>
+            <div className="text-2xl text-zinc-500">/month</div>
+          </div>
 
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold mb-2">{plan.name}</h3>
-                <div className="flex items-baseline">
-                  <span className="text-5xl font-black">${plan.price}</span>
-                  <span className="text-xl text-zinc-500 ml-2">{plan.period}</span>
-                </div>
-                <p className="text-zinc-600 dark:text-zinc-400 mt-4">{plan.description}</p>
-              </div>
+          <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-10">
+            Suggested monthly donation<br />for faster AI improvements
+          </p>
 
-              <ul className="space-y-4 mb-10">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-green-600 mt-1">✓</span>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+          <ul className="space-y-4 text-left mb-12 max-w-xs mx-auto">
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 mt-1">✓</span>
+              <span>Unlimited AI Sourcing</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 mt-1">✓</span>
+              <span>Priority AI responses</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 mt-1">✓</span>
+              <span>Export features</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 mt-1">✓</span>
+              <span>Help support development</span>
+            </li>
+          </ul>
 
-              <Link
-                href={plan.href}
-                className={`block text-center py-4 rounded-2xl font-semibold transition ${
-                  plan.popular
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-zinc-900 text-white hover:bg-black"
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition text-lg">
+            Make a $5 Monthly Donation
+          </button>
+
+          <p className="text-xs text-zinc-500 mt-8">
+            You can cancel anytime. This is completely optional.
+          </p>
         </div>
 
         <div className="text-center mt-16 text-sm text-zinc-500">
-          ShukAI is currently free for everyone.<br />
-          The $9/month is an optional donation to support faster AI improvements.
+          ShukAI core features remain free for everyone.<br />
+          Thank you for supporting the project!
         </div>
       </div>
     </main>
