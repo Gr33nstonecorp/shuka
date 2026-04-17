@@ -64,7 +64,7 @@ export default function AssistantPage() {
     }
   }
 
-  // Proper 7-day free trial + paid subscription logic
+  // Real 7-day trial + paid logic
   const now = new Date();
   const endDate = profile?.current_period_end ? new Date(profile.current_period_end) : new Date(0);
 
@@ -108,7 +108,6 @@ export default function AssistantPage() {
         setResults(data.results || []);
       }
     } catch (error) {
-      console.error(error);
       setMessage("AI request failed. Please try again.");
     } finally {
       setRunning(false);
@@ -131,9 +130,7 @@ export default function AssistantPage() {
     alert(`✅ "${result.item}" added to your Requests!`);
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading assistant...</div>;
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
 
   if (!hasAccess) {
     return (
@@ -141,7 +138,7 @@ export default function AssistantPage() {
         <div className="max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Access Required</h1>
           <p className="text-zinc-600 mb-8">
-            Active paid subscription or 7-day free trial required for AI Assistant.
+            {isTrialActive ? "Your free trial has ended." : "Active paid subscription or 7-day free trial required for AI Assistant."}
           </p>
           <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
             View Pricing & Upgrade
@@ -188,7 +185,6 @@ export default function AssistantPage() {
               {running ? "Searching vendors..." : "Run AI Sourcing"}
             </button>
           </form>
-
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
