@@ -20,7 +20,7 @@ export default function OrdersPage() {
 
   const requestRefund = (id: number, name: string) => {
     if (confirm(`Request refund for "${name}"?`)) {
-      alert(`Refund requested for "${name}". AI will process within 48 hours.`);
+      alert(`Refund requested for "${name}". The AI will process it within 48 hours.`);
     }
   };
 
@@ -32,7 +32,7 @@ export default function OrdersPage() {
         {orders.length === 0 ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold mb-3">No orders yet</h2>
-            <p className="text-zinc-600">Finalize purchases from your basket to see orders here.</p>
+            <p className="text-zinc-600">Finalize purchases from your basket to see them here.</p>
           </div>
         ) : (
           <div className="space-y-6">
