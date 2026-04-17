@@ -23,16 +23,15 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
-        {/* Modern Persistent Navigation */}
-        <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
+        {/* Persistent Navigation - Tabs always visible, smaller & cleaner font */}
+        <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50 shadow-sm">
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            {/* Logo */}
-            <Link href="/assistant" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
+            <Link href="/assistant" className="font-semibold text-2xl tracking-tighter hover:text-blue-600 transition">
               ShukAI
             </Link>
 
-            {/* Main Tabs - Always visible, smaller font */}
-            <div className="hidden md:flex gap-7 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            {/* Main Tabs - Always shown on desktop, smaller font for clean look */}
+            <div className="hidden md:flex items-center gap-7 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
               <Link href="/requests" className="hover:text-zinc-900 dark:hover:text-white transition">Requests</Link>
               <Link href="/quotes" className="hover:text-zinc-900 dark:hover:text-white transition">Quotes</Link>
@@ -41,7 +40,7 @@ export default async function RootLayout({
               <Link href="/saved-items" className="hover:text-zinc-900 dark:hover:text-white transition">Saved Items</Link>
             </div>
 
-            {/* Auth Section - Clean & Clear */}
+            {/* Auth Section - Clear feedback */}
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-3 text-sm">
