@@ -8,18 +8,18 @@ export default function HomePage() {
 
   const handleDemoSubmit = () => {
     if (demoQuery.trim()) {
-      // Navigate to assistant with the query pre-filled
+      // Navigate to assistant with pre-filled query
       window.location.href = `/assistant?query=${encodeURIComponent(demoQuery.trim())}`;
     }
   };
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="pt-28 pb-24 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-6 py-2 rounded-full text-sm font-semibold mb-8">
-            AI Procurement Platform • Beta
+            AI Procurement Platform
           </div>
 
           <h1 className="text-6xl lg:text-7xl font-black tracking-tighter leading-none mb-10">
@@ -30,9 +30,9 @@ export default function HomePage() {
             Stop spending hours sourcing manually. Tell ShukAI what you need — it finds the best suppliers, prices, and options in seconds.
           </p>
 
-          {/* Connected AI Demo Input */}
+          {/* Working AI Demo Input */}
           <div className="max-w-2xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-16">
-            <div className="text-zinc-500 text-sm font-medium mb-4">Try the AI right now</div>
+            <div className="text-zinc-500 text-sm font-medium mb-4">Try it now</div>
             <div className="relative">
               <input
                 type="text"
@@ -59,13 +59,13 @@ export default function HomePage() {
               href="/assistant" 
               className="px-10 py-4 bg-zinc-900 text-white rounded-2xl font-semibold text-lg hover:bg-black transition"
             >
-              Open Full AI Assistant
+              Open AI Assistant
             </a>
             <a 
               href="/pricing" 
               className="px-10 py-4 border border-zinc-300 dark:border-zinc-700 rounded-2xl font-semibold text-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
-              See Pricing & Trial
+              See Pricing
             </a>
           </div>
         </div>
@@ -74,8 +74,7 @@ export default function HomePage() {
       {/* How it works */}
       <div className="bg-white dark:bg-zinc-900 py-20">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-16">Simple. Fast. Powerful.</h2>
-          
+          <h2 className="text-4xl font-bold text-center mb-16">How it works</h2>
           <div className="grid md:grid-cols-3 gap-12">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-2xl flex items-center justify-center text-3xl mb-6">📝</div>
@@ -101,9 +100,9 @@ export default function HomePage() {
         <div className="max-w-md mx-auto">
           <p className="text-2xl font-medium mb-8">Ready to let AI handle your sourcing?</p>
           <a href="/assistant" className="inline-block px-12 py-5 bg-zinc-900 hover:bg-black text-white text-xl font-semibold rounded-3xl transition">
-            Start Free Trial
+            Start Sourcing Now
           </a>
-          <p className="text-sm text-zinc-500 mt-6">No credit card required • Cancel anytime</p>
+          <p className="text-sm text-zinc-500 mt-6">Completely free during early stage</p>
         </div>
       </div>
     </main>
