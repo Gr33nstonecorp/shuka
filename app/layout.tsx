@@ -12,7 +12,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side session check for clean UI (no flicker)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -24,10 +23,10 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
-        {/* Persistent Top Navigation - Clean & Organized */}
+        {/* Clean Persistent Navigation */}
         <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <Link href="/assistant" className="font-bold text-2xl tracking-tighter flex items-center gap-2 hover:text-blue-600 transition">
+            <Link href="/assistant" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
               ShukAI
             </Link>
 
@@ -42,14 +41,14 @@ export default async function RootLayout({
 
             <div className="flex items-center gap-4">
               {user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-zinc-600 dark:text-zinc-400 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                     {user.email}
                   </span>
                   <form action="/auth/signout" method="post">
                     <button 
                       type="submit"
-                      className="text-sm font-medium px-5 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-950 transition"
+                      className="px-5 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-950 transition font-medium"
                     >
                       Log out
                     </button>
@@ -58,7 +57,7 @@ export default async function RootLayout({
               ) : (
                 <Link 
                   href="/login" 
-                  className="text-sm font-medium px-5 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="px-5 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition font-medium"
                 >
                   Log in
                 </Link>
@@ -79,7 +78,7 @@ export default async function RootLayout({
           {children}
         </main>
 
-        {/* Clean Footer */}
+        {/* Footer */}
         <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-auto">
           <div className="max-w-6xl mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
