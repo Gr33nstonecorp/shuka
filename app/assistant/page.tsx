@@ -64,13 +64,8 @@ export default function AssistantPage() {
     }
   }
 
-  // Real 7-day trial + paid logic
-  const now = new Date();
-  const endDate = profile?.current_period_end ? new Date(profile.current_period_end) : new Date(0);
-
-  const isTrialActive = profile?.plan === "starter" && endDate > now;
-  const isPaidActive = profile?.subscription_status === "active" && endDate > now;
-  const hasAccess = isTrialActive || isPaidActive || profile?.plan === "premium";
+  // Completely free during beta
+  const hasAccess = true;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,30 +125,16 @@ export default function AssistantPage() {
     alert(`✅ "${result.item}" added to your Requests!`);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
-
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold mb-4">Access Required</h1>
-          <p className="text-zinc-600 mb-8">
-            {isTrialActive ? "Your free trial has ended." : "Active paid subscription or 7-day free trial required for AI Assistant."}
-          </p>
-          <Link href="/pricing" className="px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
-            View Pricing & Upgrade
-          </Link>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-xl">Loading assistant...</div>;
   }
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
-            AI Sourcing Engine
+          <div className="inline-flex bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 text-sm font-semibold px-5 py-2 rounded-full mb-6">
+            FREE during Beta
           </div>
           <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
             AI Assistant
@@ -185,6 +166,7 @@ export default function AssistantPage() {
               {running ? "Searching vendors..." : "Run AI Sourcing"}
             </button>
           </form>
+
           {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
         </div>
 
