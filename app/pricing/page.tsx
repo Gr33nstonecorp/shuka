@@ -11,9 +11,9 @@ export default function PricingPage() {
       name: "Starter",
       price: 0,
       period: "",
-      description: "Perfect for individuals getting started",
+      description: "Perfect for individuals and small teams getting started",
       features: [
-        "Manual purchase requests",
+        "Unlimited manual purchase requests",
         "Basic vendor browsing",
         "Saved items",
         "Workspace overview",
@@ -28,17 +28,17 @@ export default function PricingPage() {
       name: "Premium",
       price: isYearly ? 89 : 9,
       period: isYearly ? "/year" : "/month",
-      description: "Full AI power for faster sourcing",
+      description: "Full AI power for serious users",
       features: [
         "Everything in Starter",
         "Unlimited AI Sourcing",
         "Priority AI responses",
         "Export quotes & orders",
         "Advanced vendor matching",
-        "Priority email support",
+        "Priority support",
       ],
       cta: "Upgrade to Premium",
-      href: "#", // We'll connect Stripe later
+      href: "#", // Connect Stripe later
       popular: true,
     },
   ];
@@ -49,7 +49,7 @@ export default function PricingPage() {
         <div className="text-center mb-16">
           <h1 className="text-5xl font-black tracking-tighter mb-6">Simple Pricing</h1>
           <p className="text-2xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Start free. Upgrade only when you need unlimited AI power.
+            Start completely free. Upgrade only when you need unlimited AI power.
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export default function PricingPage() {
               onClick={() => setIsYearly(true)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition ${isYearly ? "bg-white dark:bg-zinc-900 shadow" : ""}`}
             >
-              Yearly <span className="text-green-600">(Save 20%)</span>
+              Yearly <span className="text-green-600">(Save ~20%)</span>
             </button>
           </div>
         </div>
