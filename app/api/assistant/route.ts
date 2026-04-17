@@ -13,14 +13,18 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Please provide items to source" }, { status: 400 });
     }
 
+    if (!process.env.OPENAI_API_KEY) {
+      return Response.json({ error: "AI service is not configured" }, { status: 500 });
+    }
+
     const systemPrompt = `You are an expert procurement AI assistant.
 
 Task: Given a list of items the user needs to buy, return realistic vendor recommendations with estimated totals.
 
 Rules:
-- Be practical and realistic. Use known vendors like Amazon, Grainger, Uline, McMaster-Carr, Alibaba, etc.
-- Consider bulk pricing, lead time, shipping, and reliability.
-- Prioritize lowest total cost with reasonable quality and availability.
+- Use known reliable vendors (Amazon, Grainger, Uline, McMaster-Carr, Alibaba, etc.)
+- Consider bulk pricing, lead time, and quality
+- Prioritize lowest total cost with reasonable reliability
 - Return ONLY valid JSON in this exact format:
 
 {
@@ -31,7 +35,7 @@ Rules:
       "best_quote": {
         "vendor_name": "string",
         "total": number,
-        "reason": "short clear reason why this is the best option (price, availability, reliability)",
+        "reason": "short clear reason why this is the best option",
         "product_url": "https://example.com/product"
       }
     }
@@ -54,8 +58,11 @@ Rules:
     return Response.json({
       results: parsed.results || [],
     });
-  } catch (err) {
+
+  } catch (err: any) {
     console.error("Assistant API error:", err);
-    return Response.json({ error: "Failed to generate sourcing results. Please try again." }, { status: 500 });
+    return Response.json({ 
+      error: "Failed to generate sourcing results. Please try again." 
+    }, { status: 500 });
   }
 }
