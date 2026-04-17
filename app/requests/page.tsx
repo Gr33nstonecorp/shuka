@@ -27,7 +27,6 @@ export default function RequestsPage() {
   const finalizePurchase = () => {
     if (requests.length === 0) return;
     
-    // Move to orders
     const orders = JSON.parse(localStorage.getItem("shukai_orders") || "[]");
     const newOrders = requests.map(req => ({
       id: Date.now() + req.id,
@@ -55,7 +54,7 @@ export default function RequestsPage() {
         {requests.length === 0 ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold mb-3">Basket is empty</h2>
-            <p className="text-zinc-600 mb-8">Use the AI Assistant to add items.</p>
+            <p className="text-zinc-600 mb-8">Use the AI Assistant to add items to your basket.</p>
             <Link href="/assistant" className="inline-block px-8 py-4 bg-zinc-900 text-white rounded-2xl hover:bg-black">
               Go to AI Assistant
             </Link>
@@ -71,7 +70,7 @@ export default function RequestsPage() {
                   </div>
                   <button 
                     onClick={() => removeRequest(req.id)} 
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 font-medium"
                   >
                     Remove
                   </button>
