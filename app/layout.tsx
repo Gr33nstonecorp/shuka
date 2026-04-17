@@ -30,7 +30,7 @@ export default async function RootLayout({
               ShukAI
             </Link>
 
-            <div className="flex gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            <div className="hidden md:flex gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
               <Link href="/assistant" className="hover:text-zinc-900 dark:hover:text-white transition">AI Assistant</Link>
               <Link href="/requests" className="hover:text-zinc-900 dark:hover:text-white transition">Requests</Link>
               <Link href="/quotes" className="hover:text-zinc-900 dark:hover:text-white transition">Quotes</Link>
@@ -42,7 +42,7 @@ export default async function RootLayout({
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-zinc-600 dark:text-zinc-400 px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                  <span className="px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
                     {user.email}
                   </span>
                   <form action="/auth/signout" method="post">
