@@ -1,33 +1,39 @@
+"use client";
+
 import "./globals.css";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { useState, useEffect } from "react";
 
 export const metadata = {
   title: "ShukAI",
   description: "AI procurement platform for modern teams",
 };
 
-// Force fresh rendering to break cache
-export const dynamic = 'force-dynamic';
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const [user, setUser] = useState<any>(null);
+  const [showMenu, setShowMenu] = useState(false);
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+  }, []);
 
   return (
     <html lang="en">
       <body className="min-h-screen bg-black text-white flex flex-col">
         
-        {/* Bold Black + Yellow Navigation - Tabs forced visible */}
+        {/* Bold Black + Yellow Navigation with Dropdown */}
         <nav className="bg-black border-b-4 border-yellow-400 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
             
@@ -35,21 +41,30 @@ export default async function RootLayout({
               SHUKAI
             </Link>
 
-            {/* Tabs - Always visible */}
-            <div className="hidden md:flex gap-8 text-sm font-semibold uppercase tracking-widest">
-              <Link href="/assistant" className="hover:text-yellow-400 transition">AI Assistant</Link>
-              <Link href="/requests" className="hover:text-yellow-400 transition">Requests</Link>
-              <Link href="/quotes" className="hover:text-yellow-400 transition">Quotes</Link>
-              <Link href="/orders" className="hover:text-yellow-400 transition">Orders</Link>
-              <Link href="/vendors" className="hover:text-yellow-400 transition">Vendors</Link>
-              <Link href="/saved-items" className="hover:text-yellow-400 transition">Saved Items</Link>
+            {/* Dropdown Menu for Tabs */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="md:hidden px-5 py-2 border border-yellow-400 text-yellow-400 rounded-xl font-medium"
+              >
+                Menu
+              </button>
+
+              <div className={`md:flex gap-8 text-sm font-semibold uppercase tracking-widest ${showMenu ? 'block' : 'hidden'} md:block absolute md:relative right-0 mt-2 md:mt-0 bg-black border border-yellow-400 md:border-none rounded-xl p-6 md:p-0 shadow-xl md:shadow-none z-50`}>
+                <Link href="/assistant" className="block md:inline py-2 hover:text-yellow-400 transition">AI Assistant</Link>
+                <Link href="/requests" className="block md:inline py-2 hover:text-yellow-400 transition">Requests</Link>
+                <Link href="/quotes" className="block md:inline py-2 hover:text-yellow-400 transition">Quotes</Link>
+                <Link href="/orders" className="block md:inline py-2 hover:text-yellow-400 transition">Orders</Link>
+                <Link href="/vendors" className="block md:inline py-2 hover:text-yellow-400 transition">Vendors</Link>
+                <Link href="/saved-items" className="block md:inline py-2 hover:text-yellow-400 transition">Saved Items</Link>
+              </div>
             </div>
 
-            {/* Login / Logout */}
+            {/* Auth Section */}
             <div className="flex items-center gap-4">
               {user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs px-4 py-2 bg-yellow-400 text-black font-medium rounded-full">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="px-4 py-1.5 bg-yellow-400 text-black font-medium rounded-full text-xs">
                     {user.email}
                   </span>
                   <form action="/auth/signout" method="post">
