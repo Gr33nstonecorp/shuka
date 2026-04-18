@@ -1,12 +1,3 @@
-import "./globals.css";
-import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-export const metadata = {
-  title: "ShukAI",
-  description: "AI procurement platform for modern teams",
-};
-
 export default async function RootLayout({
   children,
 }: {
@@ -23,6 +14,8 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col">
+        
+        {/* Navigation - Tabs forced visible */}
         <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <Link href="/assistant" className="font-bold text-2xl tracking-tighter hover:text-blue-600 transition">
