@@ -7,6 +7,27 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return Response.json(
+        { error: "Missing NEXT_PUBLIC_SUPABASE_URL" },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return Response.json(
+        { error: "Missing SUPABASE_SERVICE_ROLE_KEY" },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return Response.json(
+        { error: "Missing STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
+    }
+
     if (!process.env.STRIPE_ARCADE_PRICE_ID) {
       return Response.json(
         { error: "Missing STRIPE_ARCADE_PRICE_ID" },
@@ -17,26 +38,33 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const email = typeof body?.email === "string" ? body.email.trim() : "";
     const playerName =
-      typeof body?.playerName === "string" ? body.playerName.trim() : "Player";
+      typeof body?.playerName === "string" && body.playerName.trim()
+        ? body.playerName.trim()
+        : "Player";
 
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     const { data: sessionRow, error: insertError } = await supabase
       .from("arcade_sessions")
       .insert({
         email: email || null,
-        player_name: playerName || "Player",
+        player_name: playerName,
         status: "pending",
       })
       .select("id")
       .single();
 
     if (insertError || !sessionRow) {
+      console.error("Arcade session insert error:", insertError);
       return Response.json(
-        { error: "Could not create arcade session." },
+        {
+          error:
+            insertError?.message ||
+            "Could not create arcade session row in Supabase.",
+        },
         { status: 500 }
       );
     }
@@ -58,7 +86,7 @@ export async function POST(req: Request) {
         type: "arcade",
         arcade_session_id: sessionRow.id,
         email: email || "",
-        player_name: playerName || "Player",
+        player_name: playerName,
       },
     });
 
@@ -70,17 +98,24 @@ export async function POST(req: Request) {
       .eq("id", sessionRow.id);
 
     if (updateError) {
+      console.error("Arcade session update error:", updateError);
       return Response.json(
-        { error: "Could not update arcade session." },
+        {
+          error:
+            updateError.message ||
+            "Could not save Stripe checkout session to Supabase.",
+        },
         { status: 500 }
       );
     }
 
     return Response.json({ url: checkoutSession.url });
   } catch (error: any) {
-    console.error("Arcade checkout error:", error);
+    console.error("Arcade checkout fatal error:", error);
     return Response.json(
-      { error: error.message || "Could not start arcade checkout." },
+      {
+        error: error?.message || "Could not start arcade checkout.",
+      },
       { status: 500 }
     );
   }
