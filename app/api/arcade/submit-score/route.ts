@@ -5,20 +5,16 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
-    const sessionId =
-      typeof body?.sessionId === "string" ? body.sessionId.trim() : "";
+    const sessionId = typeof body?.sessionId === "string" ? body.sessionId.trim() : "";
     const playerName =
-      typeof body?.playerName === "string" ? body.playerName.trim() : "Player";
+      typeof body?.playerName === "string" && body.playerName.trim()
+        ? body.playerName.trim()
+        : "Player";
     const score =
-      typeof body?.score === "number"
-        ? Math.max(0, Math.floor(body.score))
-        : 0;
+      typeof body?.score === "number" ? Math.max(0, Math.floor(body.score)) : 0;
 
     if (!sessionId) {
-      return Response.json(
-        { error: "Missing sessionId" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Missing sessionId" }, { status: 400 });
     }
 
     const supabase = createClient(
@@ -33,24 +29,15 @@ export async function POST(req: Request) {
       .single();
 
     if (sessionError || !sessionRow) {
-      return Response.json(
-        { error: "Arcade session not found." },
-        { status: 404 }
-      );
+      return Response.json({ error: "Arcade session not found." }, { status: 404 });
     }
 
     if (sessionRow.status !== "paid") {
-      return Response.json(
-        { error: "This arcade session is not paid." },
-        { status: 403 }
-      );
+      return Response.json({ error: "This arcade session is not paid." }, { status: 403 });
     }
 
     if (sessionRow.used_at) {
-      return Response.json(
-        { error: "This arcade session has already been used." },
-        { status: 403 }
-      );
+      return Response.json({ error: "This arcade session was already used." }, { status: 403 });
     }
 
     const { error: scoreError } = await supabase.from("arcade_scores").insert({
@@ -60,10 +47,7 @@ export async function POST(req: Request) {
     });
 
     if (scoreError) {
-      return Response.json(
-        { error: "Could not save score." },
-        { status: 500 }
-      );
+      return Response.json({ error: "Could not save score." }, { status: 500 });
     }
 
     const { error: updateError } = await supabase
@@ -75,20 +59,14 @@ export async function POST(req: Request) {
       .eq("id", sessionId);
 
     if (updateError) {
-      return Response.json(
-        { error: "Score saved, but session update failed." },
-        { status: 500 }
-      );
+      return Response.json({ error: "Score saved, but session update failed." }, { status: 500 });
     }
 
-    return Response.json({
-      success: true,
-      message: "Score submitted successfully.",
-    });
+    return Response.json({ success: true });
   } catch (error: any) {
-    console.error("Arcade submit score error:", error);
+    console.error("Submit score error:", error);
     return Response.json(
-      { error: error.message || "Could not submit score." },
+      { error: error?.message || "Could not submit score." },
       { status: 500 }
     );
   }
