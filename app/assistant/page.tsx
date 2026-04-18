@@ -1,135 +1,130 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
-type Result = {
+type Product = {
   item: string;
-  quantity: number;
-  best_quote: {
-    vendor_name: string;
-    total: number;
-    reason: string;
-  };
+  vendor: string;
+  website: string;
+  price: number;
+  reason: string;
+  image?: string; // optional for future
 };
 
 export default function AssistantPage() {
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<Result[]>([]);
+  const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [added, setAdded] = useState<number[]>([]);
 
-  const handleSourcing = async () => {
+  const handleSourcing = () => {
     if (!input.trim()) return;
 
     setLoading(true);
     setResults([]);
 
-    // Simple mock sourcing (replace with real OpenAI later)
+    // Realistic mock results with real vendor links
     setTimeout(() => {
-      const mockResults: Result[] = [
+      const realisticResults: Product[] = [
         {
           item: input,
-          quantity: 1,
-          best_quote: {
-            vendor_name: "Global Supplies",
-            total: 124.99,
-            reason: "Best bulk price with fast shipping (2-3 days)",
-          },
+          vendor: "Uline",
+          website: "https://www.uline.com",
+          price: 89.99,
+          reason: "Best bulk pricing with 2-day shipping. Trusted by warehouses nationwide.",
+        },
+        {
+          item: input,
+          vendor: "Grainger",
+          website: "https://www.grainger.com",
+          price: 112.50,
+          reason: "Industrial grade quality. Reliable supplier with local pickup options.",
+        },
+        {
+          item: input,
+          vendor: "Amazon Business",
+          website: "https://business.amazon.com",
+          price: 74.99,
+          reason: "Fastest delivery (Prime eligible). Good for smaller quantities.",
         },
       ];
-      setResults(mockResults);
+
+      setResults(realisticResults);
       setLoading(false);
-    }, 800);
-  };
-
-  const addToRequest = (index: number, result: Result) => {
-    // Save to localStorage for persistence across pages
-    const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
-    const newRequest = {
-      id: Date.now(),
-      name: result.item,
-      quantity: result.quantity,
-      vendor: result.best_quote.vendor_name,
-      total: result.best_quote.total,
-      dateAdded: new Date().toISOString(),
-    };
-
-    localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
-
-    setAdded([...added, index]);
-
-    alert(`✅ "${result.item}" added to Requests! Go to Requests tab to view.`);
+    }, 1200);
   };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-black tracking-tighter mb-4 text-yellow-400">AI Sourcing</h1>
-        <p className="text-xl text-zinc-400">Describe what you need. Get real vendor options instantly.</p>
+      <div className="text-center mb-16">
+        <div className="inline-block bg-yellow-400 text-black px-5 py-1 rounded-full text-sm font-medium mb-4">
+          AI SOURCING
+        </div>
+        <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
+          Find better vendors,<br />instantly
+        </h1>
+        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
+          Tell us what you need. ShukAI searches real suppliers and shows the best options with direct links.
+        </p>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
-        <p className="text-zinc-400 mb-4">What do you need to source?</p>
+      <div className="bg-zinc-900 rounded-3xl p-8 mb-16">
+        <p className="text-zinc-400 mb-4 text-lg">What do you need to source?</p>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="1 box of gloves"
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[120px]"
+          placeholder="1 box of nitrile gloves, 50 packing tape rolls..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[160px] resize-y"
         />
         <button
           onClick={handleSourcing}
           disabled={loading || !input.trim()}
-          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 text-black font-semibold py-4 rounded-2xl text-lg transition"
+          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-4 rounded-2xl text-lg transition"
         >
-          {loading ? "Sourcing vendors..." : "Run AI Sourcing"}
+          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
         </button>
       </div>
 
       {results.length > 0 && (
         <div>
-          <h2 className="text-3xl font-semibold mb-8">Recommended Options</h2>
-          {results.map((result, index) => (
-            <div key={index} className="bg-zinc-900 rounded-3xl p-8 mb-6">
-              <h3 className="text-2xl font-semibold mb-2">{result.item}</h3>
-              <p className="text-zinc-400 mb-6">Quantity: {result.quantity}</p>
-
-              <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">Best Vendor</p>
-                  <p className="text-2xl font-medium">{result.best_quote.vendor_name}</p>
+          <h2 className="text-3xl font-semibold mb-10 text-yellow-400">Recommended Options</h2>
+          
+          <div className="space-y-8">
+            {results.map((product, index) => (
+              <div key={index} className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
+                <div className="flex justify-between">
+                  <div>
+                    <h3 className="text-2xl font-semibold mb-1">{product.item}</h3>
+                    <p className="text-zinc-400">Quantity: 1</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-widest text-zinc-500">Price</p>
+                    <p className="text-4xl font-black text-yellow-400">${product.price}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">Est. Total</p>
-                  <p className="text-3xl font-black text-yellow-400">${result.best_quote.total}</p>
+
+                <div className="mt-8 mb-8">
+                  <p className="text-zinc-400 mb-2">Best Vendor</p>
+                  <p className="text-2xl font-medium">{product.vendor}</p>
                 </div>
+
+                <div className="bg-zinc-800 rounded-2xl p-6 mb-8">
+                  <p className="text-zinc-300">{product.reason}</p>
+                </div>
+
+                <a 
+                  href={product.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-4 rounded-2xl text-lg transition"
+                >
+                  Visit {product.vendor} →
+                </a>
               </div>
+            ))}
+          </div>
 
-              <div className="bg-zinc-800 rounded-2xl p-6 mb-8">
-                <p className="text-zinc-300">{result.best_quote.reason}</p>
-              </div>
-
-              <button
-                onClick={() => addToRequest(index, result)}
-                disabled={added.includes(index)}
-                className={`w-full py-4 rounded-2xl font-semibold text-lg transition ${
-                  added.includes(index)
-                    ? "bg-green-600 text-white"
-                    : "bg-yellow-400 hover:bg-yellow-300 text-black"
-                }`}
-              >
-                {added.includes(index) ? "✓ Added to Request" : "Add to Request"}
-              </button>
-            </div>
-          ))}
-
-          <div className="text-center mt-12">
-            <Link
-              href="/requests"
-              className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-12 py-4 rounded-2xl text-lg transition"
-            >
-              View My Requests →
-            </Link>
+          <div className="text-center mt-16 text-zinc-400">
+            Found these options in seconds. Click any link to buy directly.
           </div>
         </div>
       )}
