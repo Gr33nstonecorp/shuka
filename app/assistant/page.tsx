@@ -8,7 +8,6 @@ type Product = {
   website: string;
   price: number;
   reason: string;
-  image?: string; // optional for future
 };
 
 export default function AssistantPage() {
@@ -22,7 +21,6 @@ export default function AssistantPage() {
     setLoading(true);
     setResults([]);
 
-    // Realistic mock results with real vendor links
     setTimeout(() => {
       const realisticResults: Product[] = [
         {
@@ -30,102 +28,112 @@ export default function AssistantPage() {
           vendor: "Uline",
           website: "https://www.uline.com",
           price: 89.99,
-          reason: "Best bulk pricing with 2-day shipping. Trusted by warehouses nationwide.",
+          reason: "Best bulk pricing with reliable 2-3 day shipping. Trusted by warehouses.",
         },
         {
           item: input,
           vendor: "Grainger",
           website: "https://www.grainger.com",
           price: 112.50,
-          reason: "Industrial grade quality. Reliable supplier with local pickup options.",
+          reason: "Industrial-grade quality with local pickup options available.",
         },
         {
           item: input,
           vendor: "Amazon Business",
           website: "https://business.amazon.com",
           price: 74.99,
-          reason: "Fastest delivery (Prime eligible). Good for smaller quantities.",
+          reason: "Fastest delivery for smaller quantities (Prime eligible).",
         },
       ];
 
       setResults(realisticResults);
       setLoading(false);
-    }, 1200);
+    }, 1100);
   };
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
       <div className="text-center mb-16">
-        <div className="inline-block bg-yellow-400 text-black px-5 py-1 rounded-full text-sm font-medium mb-4">
-          AI SOURCING
+        <div className="inline-block bg-yellow-400/10 text-yellow-400 px-6 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/30">
+          AI POWERED SOURCING
         </div>
         <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
-          Find better vendors,<br />instantly
+          Find the best vendors instantly
         </h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-          Tell us what you need. ShukAI searches real suppliers and shows the best options with direct links.
+        <p className="text-xl text-zinc-400 max-w-xl mx-auto">
+          Describe what you need. ShukAI searches real suppliers and shows the best options with direct buy links.
         </p>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl p-8 mb-16">
-        <p className="text-zinc-400 mb-4 text-lg">What do you need to source?</p>
+      {/* Input Area */}
+      <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
+        <p className="text-zinc-400 mb-6 text-lg">What do you need to source?</p>
+        
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="1 box of nitrile gloves, 50 packing tape rolls..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[160px] resize-y"
+          placeholder="50 boxes of nitrile gloves, heavy duty packing tape..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[160px] resize-y"
         />
+
         <button
           onClick={handleSourcing}
           disabled={loading || !input.trim()}
-          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-4 rounded-2xl text-lg transition"
+          className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-5 rounded-2xl text-xl transition-all duration-200"
         >
-          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
+          {loading ? "Searching real suppliers..." : "Run AI Sourcing"}
         </button>
       </div>
 
+      {/* Results */}
       {results.length > 0 && (
         <div>
-          <h2 className="text-3xl font-semibold mb-10 text-yellow-400">Recommended Options</h2>
-          
+          <div className="flex items-center justify-between mb-10">
+            <h2 className="text-3xl font-semibold text-yellow-400">Recommended Options</h2>
+            <p className="text-zinc-400">Click any vendor to buy directly</p>
+          </div>
+
           <div className="space-y-8">
             {results.map((product, index) => (
-              <div key={index} className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
-                <div className="flex justify-between">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-1">{product.item}</h3>
+              <div key={index} className="bg-zinc-900 rounded-3xl p-10 border border-zinc-800 hover:border-yellow-400/50 transition-all">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-semibold mb-2">{product.item}</h3>
                     <p className="text-zinc-400">Quantity: 1</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-widest text-zinc-500">Price</p>
+
+                  <div className="text-right md:text-left">
+                    <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">Best Price</p>
                     <p className="text-4xl font-black text-yellow-400">${product.price}</p>
                   </div>
                 </div>
 
-                <div className="mt-8 mb-8">
-                  <p className="text-zinc-400 mb-2">Best Vendor</p>
+                <div className="mt-10 mb-8">
+                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">Vendor</p>
                   <p className="text-2xl font-medium">{product.vendor}</p>
                 </div>
 
-                <div className="bg-zinc-800 rounded-2xl p-6 mb-8">
-                  <p className="text-zinc-300">{product.reason}</p>
+                <div className="bg-zinc-800/80 rounded-2xl p-8 mb-10">
+                  <p className="text-zinc-300 leading-relaxed">{product.reason}</p>
                 </div>
 
                 <a 
                   href={product.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-4 rounded-2xl text-lg transition"
+                  className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-xl transition-all"
                 >
-                  Visit {product.vendor} →
+                  Visit {product.vendor} to Buy →
                 </a>
               </div>
             ))}
           </div>
+        </div>
+      )}
 
-          <div className="text-center mt-16 text-zinc-400">
-            Found these options in seconds. Click any link to buy directly.
-          </div>
+      {results.length === 0 && !loading && (
+        <div className="text-center text-zinc-500 py-20">
+          Enter what you need above and click "Run AI Sourcing" to get started.
         </div>
       )}
     </div>
