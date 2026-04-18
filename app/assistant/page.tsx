@@ -5,7 +5,7 @@ import { useState } from "react";
 type Product = {
   item: string;
   vendor: string;
-  website: string;        // Real, working product page
+  website: string;        // Real, relevant product URL
   price: number;
   reason: string;
 };
@@ -21,7 +21,6 @@ export default function AssistantPage() {
     setLoading(true);
     setResults([]);
 
-    // Realistic results with actual working links
     setTimeout(() => {
       const realisticResults: Product[] = [
         {
@@ -29,7 +28,7 @@ export default function AssistantPage() {
           vendor: "Uline",
           website: "https://www.uline.com/Product/Detail/S-18000/Nitrile-Gloves-Powder-Free",
           price: 94.99,
-          reason: "Best bulk pricing for nitrile gloves. Trusted by warehouses. 2-3 day shipping.",
+          reason: "Best bulk pricing for nitrile gloves. Trusted by warehouses. Fast 2-3 day shipping.",
         },
         {
           item: input,
