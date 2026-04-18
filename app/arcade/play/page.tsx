@@ -55,6 +55,15 @@ type Particle = {
   color: string;
 };
 
+type FlashText = {
+  id: number;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  life: number;
+};
+
 type GameData = {
   playerX: number;
   playerY: number;
@@ -65,6 +74,7 @@ type GameData = {
   obstacles: Obstacle[];
   coins: Coin[];
   particles: Particle[];
+  flashes: FlashText[];
   frame: number;
   running: boolean;
   score: number;
@@ -75,6 +85,8 @@ type GameData = {
   nextId: number;
   animTick: number;
   animFrame: number;
+  lives: number;
+  invulnerableUntil: number;
 };
 
 const CANVAS_W = 420;
@@ -85,6 +97,8 @@ const BASE_OBSTACLE_SPEED = 3.2;
 const BASE_SPAWN_INTERVAL = 34;
 const BASE_COIN_INTERVAL = 80;
 const RUN_FRAMES = 4;
+const STARTING_LIVES = 3;
+const INVULN_FRAMES = 80;
 
 export default function ArcadePlayPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -97,6 +111,7 @@ export default function ArcadePlayPage() {
   const [playerName, setPlayerName] = useState("Player");
   const [score, setScore] = useState(0);
   const [coinsCollected, setCoinsCollected] = useState(0);
+  const [lives, setLives] = useState(STARTING_LIVES);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [leaderboard, setLeaderboard] = useState<ScoreRow[]>([]);
@@ -111,6 +126,7 @@ export default function ArcadePlayPage() {
     obstacles: [],
     coins: [],
     particles: [],
+    flashes: [],
     frame: 0,
     running: false,
     score: 0,
@@ -121,6 +137,8 @@ export default function ArcadePlayPage() {
     nextId: 1,
     animTick: 0,
     animFrame: 0,
+    lives: STARTING_LIVES,
+    invulnerableUntil: 0,
   });
 
   const params = useMemo(() => {
@@ -137,6 +155,7 @@ export default function ArcadePlayPage() {
     };
     img.onerror = () => {
       spriteLoadedRef.current = false;
+      console.error("Sprite failed to load from /player-sprite.png");
     };
   }, []);
 
@@ -237,6 +256,7 @@ export default function ArcadePlayPage() {
       obstacles: [],
       coins: [],
       particles: [],
+      flashes: [],
       frame: 0,
       running: true,
       score: 0,
@@ -247,10 +267,13 @@ export default function ArcadePlayPage() {
       nextId: 1,
       animTick: 0,
       animFrame: 0,
+      lives: STARTING_LIVES,
+      invulnerableUntil: 0,
     };
 
     setScore(0);
     setCoinsCollected(0);
+    setLives(STARTING_LIVES);
     setMessage("");
   }
 
@@ -361,6 +384,30 @@ export default function ArcadePlayPage() {
     }
   }
 
+  function addDamageBurst(g: GameData, x: number, y: number) {
+    for (let i = 0; i < 14; i++) {
+      g.particles.push({
+        x,
+        y,
+        size: 4 + Math.random() * 5,
+        life: 20,
+        maxLife: 20,
+        vx: -3 + Math.random() * 6,
+        vy: -3 + Math.random() * 6,
+        color: Math.random() > 0.5 ? "#FF6A00" : "#FF3D00",
+      });
+    }
+
+    g.flashes.push({
+      id: g.nextId++,
+      x,
+      y,
+      text: "-1 LIFE",
+      color: "#ff5a5f",
+      life: 40,
+    });
+  }
+
   function updateParticles(g: GameData) {
     g.particles.forEach((p) => {
       p.x += p.vx;
@@ -368,6 +415,12 @@ export default function ArcadePlayPage() {
       p.life -= 1;
     });
     g.particles = g.particles.filter((p) => p.life > 0);
+
+    g.flashes.forEach((f) => {
+      f.y -= 0.8;
+      f.life -= 1;
+    });
+    g.flashes = g.flashes.filter((f) => f.life > 0);
   }
 
   function drawParticles(ctx: CanvasRenderingContext2D, g: GameData) {
@@ -376,6 +429,14 @@ export default function ArcadePlayPage() {
       ctx.globalAlpha = alpha;
       ctx.fillStyle = p.color;
       ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
+    ctx.globalAlpha = 1;
+
+    g.flashes.forEach((f) => {
+      ctx.globalAlpha = f.life / 40;
+      ctx.fillStyle = f.color;
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(f.text, f.x, f.y);
     });
     ctx.globalAlpha = 1;
   }
@@ -483,9 +544,29 @@ export default function ArcadePlayPage() {
     ctx.restore();
   }
 
+  function drawHearts(ctx: CanvasRenderingContext2D, livesLeft: number) {
+    const startX = CANVAS_W - 105;
+    const y = 58;
+
+    for (let i = 0; i < STARTING_LIVES; i++) {
+      const x = startX + i * 28;
+      const filled = i < livesLeft;
+
+      ctx.fillStyle = filled ? "#ff5a5f" : "#4b5563";
+
+      ctx.beginPath();
+      ctx.arc(x + 6, y, 6, 0, Math.PI * 2);
+      ctx.arc(x + 16, y, 6, 0, Math.PI * 2);
+      ctx.lineTo(x + 11, y + 18);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
   function drawPlayer(ctx: CanvasRenderingContext2D, g: GameData) {
     const img = spriteRef.current;
     const running = g.moveLeft || g.moveRight || g.running;
+
     if (running) {
       g.animTick += 1;
       if (g.animTick % 6 === 0) {
@@ -496,6 +577,11 @@ export default function ArcadePlayPage() {
     const bounce = running ? Math.sin(g.animTick * 0.35) * 2 : 0;
     const scaleY = 1 + Math.abs(Math.sin(g.animTick * 0.3)) * 0.03;
     const scaleX = 1 - Math.abs(Math.sin(g.animTick * 0.3)) * 0.02;
+
+    const invulnerable = g.frame < g.invulnerableUntil;
+    const blinkOff = invulnerable && Math.floor(g.frame / 5) % 2 === 0;
+
+    if (blinkOff) return;
 
     ctx.save();
     ctx.translate(g.playerX + g.playerW / 2, g.playerY + g.playerH / 2 + bounce);
@@ -539,7 +625,9 @@ export default function ArcadePlayPage() {
 
     ctx.fillStyle = "#9ca3af";
     ctx.font = "bold 16px sans-serif";
-    ctx.fillText(`Level: ${g.difficulty.toFixed(1)}`, CANVAS_W - 95, 34);
+    ctx.fillText(`Level: ${g.difficulty.toFixed(1)}`, CANVAS_W - 88, 34);
+
+    drawHearts(ctx, g.lives);
   }
 
   function tickGame(ctx: CanvasRenderingContext2D) {
@@ -593,16 +681,31 @@ export default function ArcadePlayPage() {
     const pw = g.playerW - 20;
     const ph = g.playerH - 12;
 
-    for (const o of g.obstacles) {
-      const inset = o.hitboxInset;
-      const ox = o.x + inset;
-      const oy = o.y + inset;
-      const ow = o.w - inset * 2;
-      const oh = o.h - inset * 2;
+    const invulnerable = g.frame < g.invulnerableUntil;
 
-      if (rectsHit(px, py, pw, ph, ox, oy, ow, oh)) {
-        finishGame(g.score);
-        return;
+    if (!invulnerable) {
+      for (const o of g.obstacles) {
+        const inset = o.hitboxInset;
+        const ox = o.x + inset;
+        const oy = o.y + inset;
+        const ow = o.w - inset * 2;
+        const oh = o.h - inset * 2;
+
+        if (rectsHit(px, py, pw, ph, ox, oy, ow, oh)) {
+          g.lives -= 1;
+          setLives(g.lives);
+          g.invulnerableUntil = g.frame + INVULN_FRAMES;
+          addDamageBurst(g, g.playerX + g.playerW / 2, g.playerY + g.playerH / 2);
+
+          g.obstacles = g.obstacles.filter((item) => item.id !== o.id);
+
+          if (g.lives <= 0) {
+            finishGame(g.score);
+            return;
+          }
+
+          break;
+        }
       }
     }
 
@@ -672,7 +775,7 @@ export default function ArcadePlayPage() {
         </h1>
 
         <p className="text-zinc-400">
-          Player: {playerName} • Score: {score} • Coins: {coinsCollected}
+          Player: {playerName} • Score: {score} • Coins: {coinsCollected} • Lives: {lives}
         </p>
       </div>
 
@@ -799,6 +902,7 @@ export default function ArcadePlayPage() {
 
             <div className="mt-6 bg-zinc-800 rounded-2xl p-4 text-sm text-zinc-400">
               <div className="text-white font-semibold mb-2">Scoring</div>
+              <div>• 3 lives per paid run</div>
               <div>• +1 per frame survived</div>
               <div>• +25 per coin</div>
               <div>• Difficulty increases over time</div>
