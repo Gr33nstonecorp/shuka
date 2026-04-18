@@ -1,39 +1,33 @@
-"use client";
-
 import "./globals.css";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { useState, useEffect } from "react";
 
 export const metadata = {
   title: "ShukAI",
   description: "AI procurement platform for modern teams",
 };
 
-export default function RootLayout({
+// Force fresh rendering to break cache
+export const dynamic = 'force-dynamic';
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<any>(null);
-  const [showMenu, setShowMenu] = useState(false);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user || null);
-    });
-  }, []);
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   return (
     <html lang="en">
       <body className="min-h-screen bg-black text-white flex flex-col">
         
-        {/* Bold Black + Yellow Navigation with Dropdown */}
+        {/* Black + Yellow Navigation with Dropdown */}
         <nav className="bg-black border-b-4 border-yellow-400 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
             
@@ -41,16 +35,19 @@ export default function RootLayout({
               SHUKAI
             </Link>
 
-            {/* Dropdown Menu for Tabs */}
+            {/* Dropdown for mobile + tabs for desktop */}
             <div className="relative">
               <button 
-                onClick={() => setShowMenu(!showMenu)}
+                onClick={() => {
+                  const menu = document.getElementById('mobile-menu');
+                  if (menu) menu.classList.toggle('hidden');
+                }}
                 className="md:hidden px-5 py-2 border border-yellow-400 text-yellow-400 rounded-xl font-medium"
               >
                 Menu
               </button>
 
-              <div className={`md:flex gap-8 text-sm font-semibold uppercase tracking-widest ${showMenu ? 'block' : 'hidden'} md:block absolute md:relative right-0 mt-2 md:mt-0 bg-black border border-yellow-400 md:border-none rounded-xl p-6 md:p-0 shadow-xl md:shadow-none z-50`}>
+              <div id="mobile-menu" className="hidden md:flex gap-8 text-sm font-semibold uppercase tracking-widest absolute md:relative right-0 mt-2 md:mt-0 bg-black border border-yellow-400 md:border-none rounded-xl p-6 md:p-0 shadow-xl md:shadow-none z-50">
                 <Link href="/assistant" className="block md:inline py-2 hover:text-yellow-400 transition">AI Assistant</Link>
                 <Link href="/requests" className="block md:inline py-2 hover:text-yellow-400 transition">Requests</Link>
                 <Link href="/quotes" className="block md:inline py-2 hover:text-yellow-400 transition">Quotes</Link>
