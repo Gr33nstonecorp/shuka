@@ -84,7 +84,6 @@ type GameData = {
   coinTimer: number;
   nextId: number;
   animTick: number;
-  animFrame: number;
   lives: number;
   invulnerableUntil: number;
 };
@@ -96,7 +95,6 @@ const PLAYER_SPEED = 7;
 const BASE_OBSTACLE_SPEED = 3.2;
 const BASE_SPAWN_INTERVAL = 34;
 const BASE_COIN_INTERVAL = 80;
-const RUN_FRAMES = 4;
 const STARTING_LIVES = 3;
 const INVULN_FRAMES = 80;
 
@@ -136,7 +134,6 @@ export default function ArcadePlayPage() {
     coinTimer: 0,
     nextId: 1,
     animTick: 0,
-    animFrame: 0,
     lives: STARTING_LIVES,
     invulnerableUntil: 0,
   });
@@ -152,10 +149,11 @@ export default function ArcadePlayPage() {
     img.onload = () => {
       spriteRef.current = img;
       spriteLoadedRef.current = true;
+      console.log("player sprite loaded");
     };
     img.onerror = () => {
       spriteLoadedRef.current = false;
-      console.error("Sprite failed to load from /player-sprite.png");
+      console.error("failed to load /player-sprite.png");
     };
   }, []);
 
@@ -233,16 +231,12 @@ export default function ArcadePlayPage() {
 
   async function loadLeaderboard() {
     try {
-      const res = await fetch("/api/arcade/leaderboard", {
-        cache: "no-store",
-      });
+      const res = await fetch("/api/arcade/leaderboard", { cache: "no-store" });
       const data = await res.json();
       if (res.ok && data.scores) {
         setLeaderboard(data.scores);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   function resetGame() {
@@ -266,7 +260,6 @@ export default function ArcadePlayPage() {
       coinTimer: 0,
       nextId: 1,
       animTick: 0,
-      animFrame: 0,
       lives: STARTING_LIVES,
       invulnerableUntil: 0,
     };
@@ -566,38 +559,25 @@ export default function ArcadePlayPage() {
   function drawPlayer(ctx: CanvasRenderingContext2D, g: GameData) {
     const img = spriteRef.current;
     const running = g.moveLeft || g.moveRight || g.running;
-
-    if (running) {
-      g.animTick += 1;
-      if (g.animTick % 6 === 0) {
-        g.animFrame = (g.animFrame + 1) % RUN_FRAMES;
-      }
-    }
-
     const bounce = running ? Math.sin(g.animTick * 0.35) * 2 : 0;
-    const scaleY = 1 + Math.abs(Math.sin(g.animTick * 0.3)) * 0.03;
-    const scaleX = 1 - Math.abs(Math.sin(g.animTick * 0.3)) * 0.02;
+    const tilt = g.moveLeft ? -0.06 : g.moveRight ? 0.06 : 0;
+    const scaleY = 1 + Math.abs(Math.sin(g.animTick * 0.25)) * 0.025;
+    const scaleX = 1 - Math.abs(Math.sin(g.animTick * 0.25)) * 0.02;
+
+    g.animTick += 1;
 
     const invulnerable = g.frame < g.invulnerableUntil;
     const blinkOff = invulnerable && Math.floor(g.frame / 5) % 2 === 0;
-
     if (blinkOff) return;
 
     ctx.save();
     ctx.translate(g.playerX + g.playerW / 2, g.playerY + g.playerH / 2 + bounce);
+    ctx.rotate(tilt);
     ctx.scale(scaleX, scaleY);
 
     if (img && spriteLoadedRef.current) {
-      const frameW = img.width / RUN_FRAMES;
-      const frameH = img.height;
-      const sx = g.animFrame * frameW;
-
       ctx.drawImage(
         img,
-        sx,
-        0,
-        frameW,
-        frameH,
         -g.playerW / 2,
         -g.playerH / 2,
         g.playerW,
@@ -723,13 +703,8 @@ export default function ArcadePlayPage() {
     setScore(g.score);
 
     drawBackground(ctx, g);
-
-    g.coins.forEach((c, i) => {
-      drawCoin(ctx, c, g.frame * 0.15 + i);
-    });
-
+    g.coins.forEach((c, i) => drawCoin(ctx, c, g.frame * 0.15 + i));
     g.obstacles.forEach((o) => drawObstacle(ctx, o));
-
     drawParticles(ctx, g);
     drawPlayer(ctx, g);
     drawHud(ctx, g);
