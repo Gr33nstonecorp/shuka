@@ -1,13 +1,4 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { hasActivePaidPlan } from "@/lib/subscription";
-
-type ProfileRow = {
-  id: string;
-  plan: string | null;
-  subscription_status: string | null;
-  current_period_end: string | null;
-};
 
 type ParsedItem = {
   item: string;
@@ -133,54 +124,6 @@ async function fetchGoogleShopping(query: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get("authorization");
-    const accessToken = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : null;
-
-    if (!accessToken) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const supabaseUserClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseUserClient.auth.getUser(accessToken);
-
-    if (authError || !user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("id, plan, subscription_status, current_period_end")
-      .eq("id", user.id)
-      .single<ProfileRow>();
-
-    if (profileError) {
-      return Response.json(
-        { error: "Profile lookup failed" },
-        { status: 500 }
-      );
-    }
-
-    if (!hasActivePaidPlan(profile)) {
-      return Response.json(
-        { error: "Active paid subscription required" },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json().catch(() => null);
     const rawInput = typeof body?.input === "string" ? body.input : "";
     const items = parseInput(rawInput);
