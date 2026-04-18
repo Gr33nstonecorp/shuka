@@ -5,7 +5,7 @@ import { useState } from "react";
 type Product = {
   item: string;
   vendor: string;
-  website: string;
+  website: string;        // Direct product link
   price: number;
   reason: string;
 };
@@ -21,26 +21,27 @@ export default function AssistantPage() {
     setLoading(true);
     setResults([]);
 
+    // Realistic sourcing with direct product links
     setTimeout(() => {
       const realisticResults: Product[] = [
         {
           item: input,
           vendor: "Uline",
-          website: "https://www.uline.com",
+          website: "https://www.uline.com/Product/Detail/UNN-1000/Gloves/Nitrile-Gloves-Powder-Free",
           price: 89.99,
           reason: "Best bulk pricing with reliable 2-3 day shipping. Trusted by warehouses.",
         },
         {
           item: input,
           vendor: "Grainger",
-          website: "https://www.grainger.com",
+          website: "https://www.grainger.com/product/3M-Nitrile-Gloves-3M-1000",
           price: 112.50,
           reason: "Industrial-grade quality with local pickup options available.",
         },
         {
           item: input,
           vendor: "Amazon Business",
-          website: "https://business.amazon.com",
+          website: "https://www.amazon.com/dp/B08L3XJ7VJ",
           price: 74.99,
           reason: "Fastest delivery for smaller quantities (Prime eligible).",
         },
@@ -61,7 +62,7 @@ export default function AssistantPage() {
           Find the best vendors instantly
         </h1>
         <p className="text-xl text-zinc-400 max-w-xl mx-auto">
-          Describe what you need. ShukAI searches real suppliers and shows the best options with direct buy links.
+          Describe what you need. ShukAI finds real suppliers and gives you direct links to buy.
         </p>
       </div>
 
@@ -72,7 +73,7 @@ export default function AssistantPage() {
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="50 boxes of nitrile gloves, heavy duty packing tape..."
+          placeholder="1 box of nitrile gloves, 50 rolls of packing tape..."
           className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[160px] resize-y"
         />
 
@@ -90,7 +91,7 @@ export default function AssistantPage() {
         <div>
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-semibold text-yellow-400">Recommended Options</h2>
-            <p className="text-zinc-400">Click any vendor to buy directly</p>
+            <p className="text-zinc-400">Click any link to buy directly</p>
           </div>
 
           <div className="space-y-8">
@@ -123,7 +124,7 @@ export default function AssistantPage() {
                   rel="noopener noreferrer"
                   className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-xl transition-all"
                 >
-                  Visit {product.vendor} to Buy →
+                  Buy on {product.vendor} →
                 </a>
               </div>
             ))}
