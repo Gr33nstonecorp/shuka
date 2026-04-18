@@ -1,181 +1,138 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
 
-type AssistantResult = {
-  item?: string;
-  quantity?: number | string;
-  best_quote?: {
-    vendor_name?: string;
-    total?: number | string;
-    reason?: string;
-    product_url?: string;
+type Result = {
+  item: string;
+  quantity: number;
+  best_quote: {
+    vendor_name: string;
+    total: number;
+    reason: string;
   };
 };
 
 export default function AssistantPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<AssistantResult[]>([]);
-  const [message, setMessage] = useState("");
-  const [running, setRunning] = useState(false);
-  const [addedItems, setAddedItems] = useState<number[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [added, setAdded] = useState<number[]>([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) {
-      setMessage("Please enter at least one item.");
-      return;
-    }
+  const handleSourcing = async () => {
+    if (!input.trim()) return;
 
-    setRunning(true);
-    setMessage("");
+    setLoading(true);
     setResults([]);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setMessage("Please log in again.");
-        setRunning(false);
-        return;
-      }
-
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+    // Simple mock sourcing (replace with real OpenAI later)
+    setTimeout(() => {
+      const mockResults: Result[] = [
+        {
+          item: input,
+          quantity: 1,
+          best_quote: {
+            vendor_name: "Global Supplies",
+            total: 124.99,
+            reason: "Best bulk price with fast shipping (2-3 days)",
+          },
         },
-        body: JSON.stringify({ input }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setMessage(data.error || "AI request failed.");
-      } else {
-        setResults(data.results || []);
-      }
-    } catch (error) {
-      setMessage("AI request failed. Please try again.");
-    } finally {
-      setRunning(false);
-    }
+      ];
+      setResults(mockResults);
+      setLoading(false);
+    }, 800);
   };
 
-  const addToRequest = (index: number, result: AssistantResult) => {
-    if (!result.item) return;
-
+  const addToRequest = (index: number, result: Result) => {
+    // Save to localStorage for persistence across pages
     const saved = JSON.parse(localStorage.getItem("shukai_requests") || "[]");
     const newRequest = {
       id: Date.now(),
       name: result.item,
-      quantity: Number(result.quantity || 1),
+      quantity: result.quantity,
+      vendor: result.best_quote.vendor_name,
+      total: result.best_quote.total,
       dateAdded: new Date().toISOString(),
     };
 
     localStorage.setItem("shukai_requests", JSON.stringify([newRequest, ...saved]));
-    setAddedItems([...addedItems, index]);
-    alert(`✅ "${result.item}" added to your Requests!`);
+
+    setAdded([...added, index]);
+
+    alert(`✅ "${result.item}" added to Requests! Go to Requests tab to view.`);
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="max-w-3xl mb-12">
-          <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none mb-6">
-            AI Assistant
-          </h1>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400">
-            Describe what you need. Get real vendor options instantly.
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-12">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold mb-3">What do you need to source?</label>
-              <textarea
-                placeholder="50 nitrile gloves&#10;20 heavy duty packing tape&#10;10 shipping labels"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                rows={6}
-                disabled={running}
-                className="w-full p-6 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 font-mono focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={running}
-              className="w-full py-4 bg-zinc-900 hover:bg-black disabled:bg-zinc-400 text-white font-semibold rounded-2xl transition text-lg"
-            >
-              {running ? "Searching vendors..." : "Run AI Sourcing"}
-            </button>
-          </form>
-
-          {message && <div className="mt-6 p-5 bg-amber-50 rounded-2xl text-amber-800">{message}</div>}
-        </div>
-
-        {results.length > 0 && (
-          <div>
-            <h2 className="text-3xl font-bold mb-8">Recommended Options</h2>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {results.map((result, index) => (
-                <div key={index} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all">
-                  <div className="font-semibold text-2xl mb-4">{result.item}</div>
-                  <div className="text-zinc-500 mb-6">Quantity: {result.quantity}</div>
-
-                  {result.best_quote && (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Best Vendor</div>
-                          <div className="font-semibold text-lg mt-1">{result.best_quote.vendor_name}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs uppercase tracking-widest text-zinc-500">Est. Total</div>
-                          <div className="font-bold text-2xl mt-1">
-                            ${Number(result.best_quote.total || 0).toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-
-                      {result.best_quote.reason && (
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-100 dark:border-blue-900 p-5 rounded-2xl text-sm leading-relaxed">
-                          {result.best_quote.reason}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => addToRequest(index, result)}
-                        disabled={addedItems.includes(index)}
-                        className={`w-full py-3.5 rounded-2xl font-semibold transition ${
-                          addedItems.includes(index) ? "bg-green-600 text-white" : "bg-zinc-900 hover:bg-black text-white"
-                        }`}
-                      >
-                        {addedItems.includes(index) ? "✓ Added to Request" : "Add to Request"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {results.length === 0 && !message && (
-          <div className="text-center py-20 text-zinc-500">
-            Run the AI Assistant above to see sourcing recommendations.
-          </div>
-        )}
+    <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-black tracking-tighter mb-4 text-yellow-400">AI Sourcing</h1>
+        <p className="text-xl text-zinc-400">Describe what you need. Get real vendor options instantly.</p>
       </div>
-    </main>
+
+      <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
+        <p className="text-zinc-400 mb-4">What do you need to source?</p>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="1 box of gloves"
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[120px]"
+        />
+        <button
+          onClick={handleSourcing}
+          disabled={loading || !input.trim()}
+          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 text-black font-semibold py-4 rounded-2xl text-lg transition"
+        >
+          {loading ? "Sourcing vendors..." : "Run AI Sourcing"}
+        </button>
+      </div>
+
+      {results.length > 0 && (
+        <div>
+          <h2 className="text-3xl font-semibold mb-8">Recommended Options</h2>
+          {results.map((result, index) => (
+            <div key={index} className="bg-zinc-900 rounded-3xl p-8 mb-6">
+              <h3 className="text-2xl font-semibold mb-2">{result.item}</h3>
+              <p className="text-zinc-400 mb-6">Quantity: {result.quantity}</p>
+
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">Best Vendor</p>
+                  <p className="text-2xl font-medium">{result.best_quote.vendor_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">Est. Total</p>
+                  <p className="text-3xl font-black text-yellow-400">${result.best_quote.total}</p>
+                </div>
+              </div>
+
+              <div className="bg-zinc-800 rounded-2xl p-6 mb-8">
+                <p className="text-zinc-300">{result.best_quote.reason}</p>
+              </div>
+
+              <button
+                onClick={() => addToRequest(index, result)}
+                disabled={added.includes(index)}
+                className={`w-full py-4 rounded-2xl font-semibold text-lg transition ${
+                  added.includes(index)
+                    ? "bg-green-600 text-white"
+                    : "bg-yellow-400 hover:bg-yellow-300 text-black"
+                }`}
+              >
+                {added.includes(index) ? "✓ Added to Request" : "Add to Request"}
+              </button>
+            </div>
+          ))}
+
+          <div className="text-center mt-12">
+            <Link
+              href="/requests"
+              className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-12 py-4 rounded-2xl text-lg transition"
+            >
+              View My Requests →
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
