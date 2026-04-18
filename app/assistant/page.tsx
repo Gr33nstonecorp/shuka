@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
 
 type Product = {
   item: string;
@@ -31,15 +30,6 @@ function parseQuantityMap(input: string) {
 }
 
 export default function AssistantPage() {
-  const supabase = useMemo(
-    () =>
-      createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      ),
-    []
-  );
-
   const [input, setInput] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,23 +48,10 @@ export default function AssistantPage() {
     setError("");
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const accessToken = session?.access_token;
-
-      if (!accessToken) {
-        setError("You must be logged in to use AI sourcing.");
-        setLoading(false);
-        return;
-      }
-
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ input }),
       });
