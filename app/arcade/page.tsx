@@ -1,320 +1,159 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-type SessionResponse = {
-  session?: {
-    id: string;
-    player_name: string | null;
-    status: string;
-  };
-  canPlay?: boolean;
-  error?: string;
+type ScoreRow = {
+  id: string;
+  player_name: string | null;
+  score: number;
+  created_at: string;
 };
 
-type GameState = "loading" | "ready" | "playing" | "gameover" | "blocked";
-
-export default function ArcadePlayPage() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const [gameState, setGameState] = useState<GameState>("loading");
-  const [sessionId, setSessionId] = useState("");
-  const [playerName, setPlayerName] = useState("Player");
-  const [score, setScore] = useState(0);
+export default function ArcadePage() {
+  const [email, setEmail] = useState("");
+  const [playerName, setPlayerName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [scores, setScores] = useState<ScoreRow[]>([]);
   const [message, setMessage] = useState("");
 
-  const gameData = useRef({
-    playerX: 180,
-    playerY: 520,
-    playerW: 60,
-    playerH: 60,
-    moveLeft: false,
-    moveRight: false,
-    obstacles: [] as Array<{ x: number; y: number; w: number; h: number; speed: number }>,
-    frame: 0,
-    running: false,
-    score: 0
-  });
+  useEffect(() => {
+    loadLeaderboard();
 
-  const params = useMemo(() => {
-    if (typeof window === "undefined") return new URLSearchParams();
-    return new URLSearchParams(window.location.search);
+    const url = new URL(window.location.href);
+    const checkout = url.searchParams.get("checkout");
+    if (checkout === "cancel") {
+      setMessage("Checkout canceled.");
+    }
   }, []);
 
-  useEffect(() => {
-    const id = params.get("session_id") || "";
-    setSessionId(id);
-
-    if (!id) {
-      setGameState("blocked");
-      setMessage("Missing arcade session.");
-      return;
-    }
-
-    loadSession(id);
-
-    return () => {
-      stopLoop();
-    };
-  }, [params]);
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" || e.key === "a") gameData.current.moveLeft = true;
-      if (e.key === "ArrowRight" || e.key === "d") gameData.current.moveRight = true;
-    }
-
-    function onKeyUp(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" || e.key === "a") gameData.current.moveLeft = false;
-      if (e.key === "ArrowRight" || e.key === "d") gameData.current.moveRight = false;
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, []);
-
-  async function loadSession(id: string) {
+  async function loadLeaderboard() {
     try {
-      const res = await fetch(`/api/arcade/session?session_id=${encodeURIComponent(id)}`);
-      const data: SessionResponse = await res.json();
-
-      if (!res.ok || !data.session) {
-        setGameState("blocked");
-        setMessage(data.error || "Could not load arcade session.");
-        return;
+      const res = await fetch("/api/arcade/leaderboard");
+      const data = await res.json();
+      if (res.ok && data.scores) {
+        setScores(data.scores);
       }
-
-      setPlayerName(data.session.player_name || "Player");
-
-      if (!data.canPlay) {
-        setGameState("blocked");
-        setMessage("This paid play has already been used or was not paid.");
-        return;
-      }
-
-      setGameState("ready");
-    } catch {
-      setGameState("blocked");
-      setMessage("Network error while loading session.");
-    }
+    } catch {}
   }
 
-  function startGame() {
-    gameData.current = {
-      playerX: 180,
-      playerY: 520,
-      playerW: 60,
-      playerH: 60,
-      moveLeft: false,
-      moveRight: false,
-      obstacles: [],
-      frame: 0,
-      running: true,
-      score: 0
-    };
-
-    setScore(0);
-    setGameState("playing");
-    loop();
-  }
-
-  function stopLoop() {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-    gameData.current.running = false;
-  }
-
-  async function finishGame(finalScore: number) {
-    stopLoop();
-    setScore(finalScore);
-    setGameState("gameover");
+  async function handleCheckout() {
+    setLoading(true);
+    setMessage("");
 
     try {
-      await fetch("/api/arcade/submit-score", {
+      const res = await fetch("/api/arcade/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          sessionId,
-          playerName,
-          score: finalScore
+          email,
+          playerName: playerName || "Player"
         })
       });
-    } catch {}
-  }
 
-  function loop() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+      const data = await res.json();
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const g = gameData.current;
-
-    const tick = () => {
-      if (!g.running) return;
-
-      g.frame += 1;
-
-      if (g.moveLeft) g.playerX -= 6;
-      if (g.moveRight) g.playerX += 6;
-
-      if (g.playerX < 0) g.playerX = 0;
-      if (g.playerX + g.playerW > width) g.playerX = width - g.playerW;
-
-      if (g.frame % 28 === 0) {
-        const w = 40 + Math.floor(Math.random() * 60);
-        const h = 40 + Math.floor(Math.random() * 60);
-        const x = Math.floor(Math.random() * (width - w));
-        const speed = 3 + Math.random() * 4;
-
-        g.obstacles.push({
-          x,
-          y: -h,
-          w,
-          h,
-          speed
-        });
+      if (!res.ok || !data.url) {
+        setMessage(data.error || "Could not start checkout.");
+        setLoading(false);
+        return;
       }
 
-      g.obstacles.forEach((o) => {
-        o.y += o.speed;
-      });
-
-      g.obstacles = g.obstacles.filter((o) => o.y < height + 100);
-
-      for (const o of g.obstacles) {
-        const hit =
-          g.playerX < o.x + o.w &&
-          g.playerX + g.playerW > o.x &&
-          g.playerY < o.y + o.h &&
-          g.playerY + g.playerH > o.y;
-
-        if (hit) {
-          finishGame(g.score);
-          return;
-        }
-      }
-
-      g.score += 1;
-      setScore(g.score);
-
-      ctx.clearRect(0, 0, width, height);
-
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.fillStyle = "#27272a";
-      for (let i = 0; i < height; i += 60) {
-        ctx.fillRect(width / 2 - 4, i, 8, 30);
-      }
-
-      ctx.fillStyle = "#facc15";
-      ctx.fillRect(g.playerX, g.playerY, g.playerW, g.playerH);
-
-      ctx.fillStyle = "#f59e0b";
-      g.obstacles.forEach((o) => {
-        ctx.fillRect(o.x, o.y, o.w, o.h);
-      });
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 24px sans-serif";
-      ctx.fillText(`Score: ${g.score}`, 20, 36);
-
-      animationRef.current = requestAnimationFrame(tick);
-    };
-
-    animationRef.current = requestAnimationFrame(tick);
+      window.location.href = data.url;
+    } catch {
+      setMessage("Network error. Please try again.");
+      setLoading(false);
+    }
   }
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="text-center mb-8">
-        <div className="text-yellow-400 text-sm font-medium tracking-wider mb-3">
-          BOX RUNNER
+      <div className="text-center mb-14">
+        <div className="inline-block bg-yellow-400/10 text-yellow-400 px-6 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/30">
+          SHUKAI ARCADE
         </div>
-        <h1 className="text-4xl font-black tracking-tighter text-white mb-2">
-          Dodge the falling boxes
+        <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
+          Box Runner
         </h1>
-        <p className="text-zinc-400">
-          Player: {playerName} • Score: {score}
+        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
+          Dodge falling warehouse boxes, survive as long as you can, and post your score.
         </p>
       </div>
 
-      {gameState === "loading" && (
-        <div className="text-center text-zinc-400 py-16">Loading arcade session...</div>
-      )}
-
-      {gameState === "blocked" && (
-        <div className="bg-zinc-900 rounded-3xl p-10 text-center">
-          <div className="text-red-400 text-xl font-semibold mb-4">{message}</div>
-          <a
-            href="/arcade"
-            className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-6 py-3 rounded-2xl"
-          >
-            Back to Arcade
-          </a>
-        </div>
-      )}
-
-      {(gameState === "ready" || gameState === "playing" || gameState === "gameover") && (
+      <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-zinc-900 rounded-3xl p-8">
-          <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
-            <div className="text-zinc-400">
-              Use <span className="text-white font-semibold">← →</span> or <span className="text-white font-semibold">A / D</span>
+          <h2 className="text-2xl font-bold mb-6 text-white">Play for $1</h2>
+
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Player name"
+              className="w-full bg-black border border-zinc-700 rounded-2xl px-5 py-4 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
+            />
+
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email (optional)"
+              className="w-full bg-black border border-zinc-700 rounded-2xl px-5 py-4 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
+            />
+
+            <div className="bg-zinc-800 rounded-2xl p-5 text-zinc-300">
+              <div className="font-semibold text-white mb-2">How it works</div>
+              <ul className="space-y-2 text-sm">
+                <li>• Pay $1 to unlock one play</li>
+                <li>• Survive as long as possible</li>
+                <li>• Score is submitted once per paid run</li>
+              </ul>
             </div>
 
-            {gameState === "ready" && (
-              <button
-                onClick={startGame}
-                className="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-6 py-3 rounded-2xl"
-              >
-                Start Run
-              </button>
-            )}
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-4 rounded-2xl text-lg transition-all"
+            >
+              {loading ? "Starting checkout..." : "Play Box Runner for $1"}
+            </button>
 
-            {gameState === "gameover" && (
-              <a
-                href="/arcade"
-                className="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-6 py-3 rounded-2xl"
-              >
-                Back to Arcade
-              </a>
+            {message && (
+              <div className="text-red-400 text-sm text-center">{message}</div>
             )}
           </div>
+        </div>
 
-          <div className="flex justify-center">
-            <canvas
-              ref={canvasRef}
-              width={420}
-              height={600}
-              className="rounded-2xl border border-zinc-700 bg-black max-w-full"
-            />
-          </div>
+        <div className="bg-zinc-900 rounded-3xl p-8">
+          <h2 className="text-2xl font-bold mb-6 text-white">Leaderboard</h2>
 
-          {gameState === "gameover" && (
-            <div className="text-center mt-8">
-              <div className="text-3xl font-black text-yellow-400 mb-2">
-                Final Score: {score}
-              </div>
-              <div className="text-zinc-400">
-                Your paid run has been submitted to the leaderboard.
-              </div>
+          {scores.length === 0 ? (
+            <div className="text-zinc-500">No scores yet.</div>
+          ) : (
+            <div className="space-y-3">
+              {scores.map((score, index) => (
+                <div
+                  key={score.id}
+                  className="flex items-center justify-between bg-zinc-800 rounded-2xl px-5 py-4"
+                >
+                  <div>
+                    <div className="text-white font-semibold">
+                      #{index + 1} {score.player_name || "Player"}
+                    </div>
+                    <div className="text-zinc-500 text-sm">
+                      {new Date(score.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-yellow-400 text-2xl font-black">
+                    {score.score}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
