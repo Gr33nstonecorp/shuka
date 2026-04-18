@@ -23,7 +23,6 @@ export default function RootLayout({
               SHUKAI
             </Link>
 
-            {/* Main Tabs */}
             <div className="hidden md:flex gap-8 text-sm font-semibold uppercase tracking-widest">
               <Link href="/assistant" className="hover:text-yellow-400 transition">AI Assistant</Link>
               <Link href="/requests" className="hover:text-yellow-400 transition">Requests</Link>
@@ -33,7 +32,6 @@ export default function RootLayout({
               <Link href="/saved-items" className="hover:text-yellow-400 transition">Saved Items</Link>
             </div>
 
-            {/* Arcade Button */}
             <Link 
               href="/arcade" 
               className="px-6 py-2 bg-yellow-400 text-black font-semibold rounded-xl hover:bg-yellow-300 transition"
@@ -43,12 +41,10 @@ export default function RootLayout({
           </div>
         </nav>
 
-        {/* Main Content */}
         <main className="flex-1">
           {children}
         </main>
 
-        {/* Footer */}
         <footer className="bg-black border-t-4 border-yellow-400 mt-auto py-12">
           <div className="max-w-6xl mx-auto px-6 text-center md:text-left">
             <div className="font-black text-2xl text-yellow-400 mb-4">SHUKAI</div>
