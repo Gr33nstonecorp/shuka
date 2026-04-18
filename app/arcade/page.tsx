@@ -28,12 +28,17 @@ export default function ArcadePage() {
 
   async function loadLeaderboard() {
     try {
-      const res = await fetch("/api/arcade/leaderboard");
+      const res = await fetch("/api/arcade/leaderboard", {
+        cache: "no-store",
+      });
       const data = await res.json();
+
       if (res.ok && data.scores) {
         setScores(data.scores);
       }
-    } catch {}
+    } catch {
+      // ignore for now
+    }
   }
 
   async function handleCheckout() {
@@ -44,12 +49,12 @@ export default function ArcadePage() {
       const res = await fetch("/api/arcade/create-checkout-session", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
-          playerName: playerName || "Player"
-        })
+          playerName: playerName || "Player",
+        }),
       });
 
       const data = await res.json();
@@ -73,9 +78,11 @@ export default function ArcadePage() {
         <div className="inline-block bg-yellow-400/10 text-yellow-400 px-6 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/30">
           SHUKAI ARCADE
         </div>
+
         <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
           Box Runner
         </h1>
+
         <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
           Dodge falling warehouse boxes, survive as long as you can, and post your score.
         </p>
@@ -107,7 +114,7 @@ export default function ArcadePage() {
               <ul className="space-y-2 text-sm">
                 <li>• Pay $1 to unlock one play</li>
                 <li>• Survive as long as possible</li>
-                <li>• Score is submitted once per paid run</li>
+                <li>• Your score is submitted once per paid run</li>
               </ul>
             </div>
 
@@ -145,6 +152,7 @@ export default function ArcadePage() {
                       {new Date(score.created_at).toLocaleString()}
                     </div>
                   </div>
+
                   <div className="text-yellow-400 text-2xl font-black">
                     {score.score}
                   </div>
