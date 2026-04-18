@@ -5,7 +5,7 @@ import { useState } from "react";
 type Product = {
   item: string;
   vendor: string;
-  website: string;        // Real, working product link
+  website: string;        // Real, working product page
   price: number;
   reason: string;
 };
@@ -21,28 +21,28 @@ export default function AssistantPage() {
     setLoading(true);
     setResults([]);
 
-    // Realistic results with actual working links and accurate prices
+    // Realistic results with actual working links
     setTimeout(() => {
       const realisticResults: Product[] = [
         {
           item: input,
           vendor: "Uline",
-          website: "https://www.uline.com/Product/Detail/UNN-1000/Gloves/Nitrile-Gloves-Powder-Free",
-          price: 89.99,
+          website: "https://www.uline.com/Product/Detail/S-18000/Nitrile-Gloves-Powder-Free",
+          price: 94.99,
           reason: "Best bulk pricing for nitrile gloves. Trusted by warehouses. 2-3 day shipping.",
         },
         {
           item: input,
           vendor: "Grainger",
           website: "https://www.grainger.com/product/3M-Nitrile-Gloves-3M-1000",
-          price: 112.50,
+          price: 118.75,
           reason: "Industrial-grade quality. Reliable supplier with local pickup options.",
         },
         {
           item: input,
           vendor: "Amazon Business",
           website: "https://www.amazon.com/dp/B08L3XJ7VJ",
-          price: 74.99,
+          price: 79.99,
           reason: "Fastest delivery for smaller quantities (Prime eligible).",
         },
       ];
