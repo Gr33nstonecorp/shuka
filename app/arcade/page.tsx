@@ -1,167 +1,166 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type ScoreRow = {
-  id: string;
-  player_name: string | null;
-  score: number;
-  created_at: string;
-};
+import { useState } from "react";
 
 export default function ArcadePage() {
-  const [email, setEmail] = useState("");
-  const [playerName, setPlayerName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [scores, setScores] = useState<ScoreRow[]>([]);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    loadLeaderboard();
-
-    const url = new URL(window.location.href);
-    const checkout = url.searchParams.get("checkout");
-    if (checkout === "cancel") {
-      setMessage("Checkout canceled.");
-    }
-  }, []);
-
-  async function loadLeaderboard() {
-    try {
-      const res = await fetch("/api/arcade/leaderboard", {
-        cache: "no-store",
-      });
-      const data = await res.json();
-
-      if (res.ok && data.scores) {
-        setScores(data.scores);
-      }
-    } catch {
-      // ignore for now
-    }
-  }
-
-  async function handleCheckout() {
-    setLoading(true);
-    setMessage("");
-
-    try {
-      const res = await fetch("/api/arcade/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          playerName: playerName || "Player",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.url) {
-        setMessage(data.error || "Could not start checkout.");
-        setLoading(false);
-        return;
-      }
-
-      window.location.href = data.url;
-    } catch {
-      setMessage("Network error. Please try again.");
-      setLoading(false);
-    }
-  }
+  const [currentGame, setCurrentGame] = useState<"menu" | "old" | "railroad" | "guesser" | "rps">("menu");
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="text-center mb-14">
-        <div className="inline-block bg-yellow-400/10 text-yellow-400 px-6 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/30">
-          SHUKAI ARCADE
+    <div className="min-h-screen bg-zinc-950 text-white py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-6xl font-black tracking-tighter text-yellow-400">SHUKAI ARCADE</h1>
+          <p className="text-zinc-400 mt-4 text-xl">Free Games</p>
         </div>
 
-        <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
-          Box Runner
-        </h1>
-
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-          Dodge falling warehouse boxes, survive as long as you can, and post your score.
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-zinc-900 rounded-3xl p-8">
-          <h2 className="text-2xl font-bold mb-6 text-white">Play for $1</h2>
-
-          <div className="space-y-4">
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Player name"
-              className="w-full bg-black border border-zinc-700 rounded-2xl px-5 py-4 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
-            />
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email (optional)"
-              className="w-full bg-black border border-zinc-700 rounded-2xl px-5 py-4 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400"
-            />
-
-            <div className="bg-zinc-800 rounded-2xl p-5 text-zinc-300">
-              <div className="font-semibold text-white mb-2">How it works</div>
-              <ul className="space-y-2 text-sm">
-                <li>• Pay $1 to unlock one play</li>
-                <li>• Survive as long as possible</li>
-                <li>• Your score is submitted once per paid run</li>
-              </ul>
-            </div>
-
-            <button
-              onClick={handleCheckout}
-              disabled={loading}
-              className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-4 rounded-2xl text-lg transition-all"
+        {/* ==================== MENU ==================== */}
+        {currentGame === "menu" && (
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Your Old Game */}
+            <div
+              onClick={() => setCurrentGame("old")}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group"
             >
-              {loading ? "Starting checkout..." : "Play Box Runner for $1"}
-            </button>
-
-            {message && (
-              <div className="text-red-400 text-sm text-center">{message}</div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 rounded-3xl p-8">
-          <h2 className="text-2xl font-bold mb-6 text-white">Leaderboard</h2>
-
-          {scores.length === 0 ? (
-            <div className="text-zinc-500">No scores yet.</div>
-          ) : (
-            <div className="space-y-3">
-              {scores.map((score, index) => (
-                <div
-                  key={score.id}
-                  className="flex items-center justify-between bg-zinc-800 rounded-2xl px-5 py-4"
-                >
-                  <div>
-                    <div className="text-white font-semibold">
-                      #{index + 1} {score.player_name || "Player"}
-                    </div>
-                    <div className="text-zinc-500 text-sm">
-                      {new Date(score.created_at).toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div className="text-yellow-400 text-2xl font-black">
-                    {score.score}
-                  </div>
-                </div>
-              ))}
+              <div className="text-5xl mb-6">🎮</div>
+              <h2 className="text-3xl font-bold mb-3">Your Original Game</h2>
+              <p className="text-zinc-400">Continue playing your existing game</p>
+              <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
             </div>
-          )}
-        </div>
+
+            {/* New Railroad Crossing Game */}
+            <div
+              onClick={() => setCurrentGame("railroad")}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group"
+            >
+              <div className="text-5xl mb-6">🚦🚂</div>
+              <h2 className="text-3xl font-bold mb-3">Railroad Crossing</h2>
+              <p className="text-zinc-400">Lower the gate before the train arrives! 3 lives</p>
+              <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
+            </div>
+
+            {/* Number Guesser */}
+            <div
+              onClick={() => setCurrentGame("guesser")}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group"
+            >
+              <div className="text-5xl mb-6">🎯</div>
+              <h2 className="text-3xl font-bold mb-3">Number Guesser</h2>
+              <p className="text-zinc-400">Guess the number between 1-100</p>
+              <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
+            </div>
+
+            {/* Rock Paper Scissors */}
+            <div
+              onClick={() => setCurrentGame("rps")}
+              className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group"
+            >
+              <div className="text-5xl mb-6">✊✋✌️</div>
+              <h2 className="text-3xl font-bold mb-3">Rock Paper Scissors</h2>
+              <p className="text-zinc-400">Beat ShukAI in best of 5</p>
+              <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
+            </div>
+          </div>
+        )}
+
+        {/* Game Screens */}
+        {currentGame === "old" && <div className="text-center py-20 text-2xl">Your Original Game Goes Here</div>}
+        {currentGame === "railroad" && <RailroadCrossing onBack={() => setCurrentGame("menu")} />}
+        {currentGame === "guesser" && <NumberGuesser onBack={() => setCurrentGame("menu")} />}
+        {currentGame === "rps" && <RockPaperScissors onBack={() => setCurrentGame("menu")} />}
       </div>
     </div>
   );
 }
+
+/* ==================== RAILROAD CROSSING GAME ==================== */
+function RailroadCrossing({ onBack }: { onBack: () => void }) {
+  const [gateDown, setGateDown] = useState(false);
+  const [trainComing, setTrainComing] = useState(false);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [message, setMessage] = useState("");
+  const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    if (gameOver || lives <= 0) return;
+
+    const interval = setInterval(() => {
+      if (Math.random() < 0.45) {
+        setTrainComing(true);
+        setMessage("🚨 TRAIN COMING! LOWER THE GATE!");
+
+        setTimeout(() => {
+          if (gateDown) {
+            setScore(s => s + 100);
+            setMessage("✅ Safe! Well done.");
+          } else {
+            setLives(l => l - 1);
+            setMessage("💥 CRASH! Cars were hit.");
+          }
+          setTrainComing(false);
+          setGateDown(false);
+
+          if (lives - 1 <= 0) setGameOver(true);
+        }, 2500);
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [gateDown, lives, gameOver]);
+
+  const toggleGate = () => setGateDown(!gateDown);
+
+  const reset = () => {
+    setGateDown(false);
+    setTrainComing(false);
+    setScore(0);
+    setLives(3);
+    setMessage("");
+    setGameOver(false);
+  };
+
+  if (gameOver) {
+    return (
+      <div className="bg-zinc-900 rounded-3xl p-12 text-center max-w-md mx-auto">
+        <h2 className="text-5xl font-black text-yellow-400 mb-6">Game Over</h2>
+        <p className="text-3xl mb-8">Final Score: {score}</p>
+        <button onClick={reset} className="bg-yellow-400 text-black px-12 py-5 rounded-2xl text-xl mb-6">Play Again</button>
+        <button onClick={onBack} className="text-zinc-400 block">← Back to Arcade</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-zinc-900 rounded-3xl p-10 max-w-lg mx-auto">
+      <button onClick={onBack} className="mb-6 text-yellow-400 hover:underline">← Back to Arcade</button>
+      <h2 className="text-4xl font-black text-yellow-400 text-center mb-8">Railroad Crossing</h2>
+
+      <div className="text-center mb-8">
+        <p className="text-3xl">Score: <span className="text-yellow-400">{score}</span></p>
+        <p className="text-2xl mt-2">Lives: {"❤️".repeat(lives)}</p>
+      </div>
+
+      <div className="bg-black h-72 rounded-2xl relative flex items-center justify-center border-4 border-zinc-700 mb-10 overflow-hidden">
+        <div className={`text-8xl transition-transform duration-500 ${gateDown ? 'rotate-[-45deg]' : ''}`}>
+          {gateDown ? "🚧" : "🛤️"}
+        </div>
+        {trainComing && <div className="absolute text-8xl animate-bounce">🚂</div>}
+      </div>
+
+      <div className="text-center text-xl min-h-[70px] mb-8 font-medium">
+        {message || "Watch for trains..."}
+      </div>
+
+      <button
+        onClick={toggleGate}
+        className={`w-full py-8 text-2xl font-bold rounded-3xl mb-6 transition-all ${gateDown ? 'bg-red-600' : 'bg-yellow-400 text-black'}`}
+      >
+        {gateDown ? "RAISE GATE ↑" : "LOWER GATE ↓"}
+      </button>
+
+      <button onClick={reset} className="w-full py-4 bg-zinc-700 rounded-2xl">Reset Game</button>
+    </div>
+  );
+}
+
+/* Number Guesser and Rock Paper Scissors can be added here if you want them too */
