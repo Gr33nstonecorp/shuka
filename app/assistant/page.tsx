@@ -20,7 +20,7 @@ export default function AssistantPage() {
 
   const handleSourcing = () => {
     if (!input.trim()) {
-      setError("Please describe what you need to source.");
+      setError("Please enter what you need to source.");
       return;
     }
 
@@ -37,7 +37,7 @@ export default function AssistantPage() {
         tempResults = [
           { item: input, vendor: "Uline", website: "https://www.uline.com/Product/Detail/S-18000/Nitrile-Gloves-Powder-Free", price: 94.99, reason: "Premium industrial nitrile gloves", delivery: "2-3 business days" },
           { item: input, vendor: "Grainger", website: "https://www.grainger.com/product/3M-Nitrile-Gloves-3M-1000", price: 118.75, reason: "3M branded - excellent quality", delivery: "Same day pickup" },
-          { item: input, vendor: "Amazon Business", website: "https://www.amazon.com/dp/B08L3XJ7VJ", price: 79.99, reason: "Fast delivery option", delivery: "Next day" },
+          { item: input, vendor: "Amazon Business", website: "https://www.amazon.com/dp/B08L3XJ7VJ", price: 79.99, reason: "Fast delivery", delivery: "Next day" },
         ];
       } else if (lower.includes("tape") || lower.includes("packing")) {
         tempResults = [
@@ -52,121 +52,106 @@ export default function AssistantPage() {
 
       setResults(tempResults);
       setLoading(false);
-    }, 900);
+    }, 800);
   };
 
   const generateReport = () => {
     if (results.length === 0) return;
     setShowReport(true);
-    // Scroll to report
-    setTimeout(() => {
-      document.getElementById("report-section")?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="text-center mb-12">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-yellow-400">Warehouse Sourcing</h1>
-        <p className="text-lg text-zinc-400 mt-3">Free AI Sourcing + Official Report</p>
+        <h1 className="text-4xl font-black tracking-tighter text-yellow-400">AI Sourcing</h1>
+        <p className="text-zinc-400 mt-2">Free results + Official Report</p>
       </div>
 
-      {/* Input */}
-      <div className="bg-zinc-900 rounded-3xl p-8 sm:p-10 mb-12">
+      <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="50 boxes of nitrile gloves, 200 rolls of packing tape..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-base sm:text-lg min-h-[140px]"
+          placeholder="50 boxes of nitrile gloves..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-base min-h-[140px]"
         />
         <button
           onClick={handleSourcing}
           disabled={loading || !input.trim()}
-          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
+          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching..." : "Run AI Sourcing"}
+          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
         </button>
       </div>
 
       {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
-      {/* Results */}
+      {/* Results Section */}
       {results.length > 0 && (
-        <div className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
+        <div className="space-y-12">
+          <h2 className="text-2xl font-semibold text-center">Supplier Options</h2>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <div className="grid gap-6">
             {results.map((p, i) => (
-              <div key={i} className="bg-zinc-900 rounded-3xl p-8 text-center border border-zinc-800">
-                <h3 className="font-medium text-lg">{p.vendor}</h3>
-                <p className="text-4xl font-black text-yellow-400 mt-3">${p.price}</p>
-                <a href={p.website} target="_blank" rel="noopener noreferrer" className="mt-8 block bg-black hover:bg-zinc-800 text-yellow-400 py-4 rounded-2xl text-sm">
-                  Buy on {p.vendor}
+              <div key={i} className="bg-zinc-900 rounded-3xl p-8">
+                <h3 className="font-medium">{p.vendor}</h3>
+                <p className="text-4xl font-black text-yellow-400 mt-2">${p.price}</p>
+                <a href={p.website} target="_blank" className="mt-6 block text-center bg-black text-yellow-400 py-4 rounded-2xl">
+                  Buy on {p.vendor} →
                 </a>
               </div>
             ))}
           </div>
 
-          {/* Generate Report Button - Very Visible on Mobile */}
-          <div className="text-center">
-            <button
-              onClick={generateReport}
-              className="w-full max-w-md mx-auto bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-6 rounded-3xl text-2xl shadow-xl"
-            >
-              Generate Official Report
-            </button>
-          </div>
+          {/* Big Visible Button */}
+          <button
+            onClick={generateReport}
+            className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
+          >
+            Generate Official Report
+          </button>
         </div>
       )}
 
-      {/* OFFICIAL REPORT - Inline (Better for Mobile) */}
-      {showReport && results.length > 0 && (
-        <div id="report-section" className="bg-white text-black rounded-3xl shadow-2xl p-8 sm:p-12 mb-20">
-          <div className="bg-black text-white -mx-8 -mt-8 p-8 rounded-t-3xl mb-10">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
-                <div className="text-sm tracking-widest">WAREHOUSE PROCUREMENT</div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold">OFFICIAL REPORT</div>
-                <div className="font-mono">#{Math.floor(100000 + Math.random() * 900000)}</div>
-              </div>
+      {/* Report Section - Inline */}
+      {showReport && (
+        <div className="mt-16 bg-white text-black rounded-3xl p-8 shadow-2xl">
+          <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10">
+            <div className="text-center">
+              <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
+              <div className="text-sm">OFFICIAL WAREHOUSE REPORT</div>
             </div>
           </div>
 
-          <p className="text-2xl sm:text-3xl font-semibold mb-10">{input}</p>
+          <p className="text-2xl font-semibold mb-8">{input}</p>
 
-          <table className="w-full mb-12 text-left border-collapse">
+          <table className="w-full mb-12">
             <thead>
               <tr className="border-b-2 border-black">
-                <th className="py-4 font-semibold">SUPPLIER</th>
-                <th className="py-4 font-semibold">PRICE</th>
-                <th className="py-4 font-semibold">DELIVERY</th>
-                <th className="py-4 font-semibold">NOTES</th>
+                <th className="text-left py-4">Supplier</th>
+                <th className="text-left py-4">Price</th>
+                <th className="text-left py-4">Delivery</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody>
               {results.map((p, i) => (
                 <tr key={i} className="border-b">
-                  <td className="py-6 font-medium">{p.vendor}</td>
-                  <td className="py-6 font-mono font-semibold">${p.price}</td>
-                  <td className="py-6">{p.delivery}</td>
-                  <td className="py-6 text-sm text-zinc-600">{p.reason}</td>
+                  <td className="py-5 font-medium">{p.vendor}</td>
+                  <td className="py-5 font-semibold">${p.price}</td>
+                  <td className="py-5">{p.delivery}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-8 text-center">
-            <div className="uppercase text-xs tracking-widest text-yellow-700 mb-3">RECOMMENDED SUPPLIER</div>
-            <div className="text-4xl font-bold">{results[0].vendor}</div>
-            <div className="text-6xl font-black text-yellow-600 mt-2">${results[0].price}</div>
+          <div className="text-center bg-yellow-50 p-8 rounded-2xl">
+            <div className="text-yellow-700 text-sm">RECOMMENDED</div>
+            <div className="text-5xl font-black text-yellow-600 mt-2">{results[0].vendor}</div>
+            <div className="text-6xl font-black mt-1">${results[0].price}</div>
           </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row gap-4">
-            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl font-medium">Print / Save as PDF</button>
-            <button onClick={() => setShowReport(false)} className="flex-1 py-4 border border-black rounded-2xl">Close Report</button>
+          <div className="flex gap-4 mt-12">
+            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / PDF</button>
+            <button onClick={() => setShowReport(false)} className="flex-1 py-4 border border-black rounded-2xl">Close</button>
           </div>
         </div>
       )}
