@@ -253,7 +253,13 @@ function RailroadGame({ onBack }: { onBack: () => void }) {
           }
         }
       `}</style>
-      /* ==================== DUCKLING FOLLOW ==================== */
+    </div>
+  );
+}
+
+/* ===================================================== */
+/* ================== DUCK GAME ======================== */
+/* ===================================================== */
 function DucklingFollow({ onBack }: { onBack: () => void }) {
   const [duckY, setDuckY] = useState(0);
   const [velocity, setVelocity] = useState(0);
@@ -451,9 +457,3 @@ function DucklingFollow({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
-    
-  );
-}
-
-  );
-} 
