@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export default function ArcadePage() {
-  const [currentGame, setCurrentGame] = useState<"menu" | "old" | "railroad" | "duckling">("menu");
+  const [currentGame, setCurrentGame] = useState<"menu" | "railroad" | "duckling">("menu");
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white py-12 px-4">
@@ -15,34 +15,22 @@ export default function ArcadePage() {
 
         {currentGame === "menu" && (
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Your Original Game */}
-            <div onClick={() => setCurrentGame("old")} className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group">
-              <div className="text-5xl mb-6">🎮</div>
-              <h2 className="text-3xl font-bold mb-3">Your Original Game</h2>
-              <p className="text-zinc-400">Continue playing your existing game</p>
-              <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
-            </div>
-
-            {/* Railroad Crossing - Revamped */}
             <div onClick={() => setCurrentGame("railroad")} className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group">
               <div className="text-5xl mb-6">🚦🚂</div>
               <h2 className="text-3xl font-bold mb-3">Railroad Crossing</h2>
-              <p className="text-zinc-400">Lower the gate before the train arrives! (Improved)</p>
+              <p className="text-zinc-400">Lower the gate before the train arrives!</p>
               <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
             </div>
 
-            {/* Duckling Follow Game */}
             <div onClick={() => setCurrentGame("duckling")} className="bg-zinc-900 hover:bg-zinc-800 border border-yellow-400/30 rounded-3xl p-10 cursor-pointer transition group">
-              <div className="text-5xl mb-6">🦆</div>
+              <div className="text-5xl mb-6">🦆🐥</div>
               <h2 className="text-3xl font-bold mb-3">Duckling Follow</h2>
-              <p className="text-zinc-400">Follow Mama Duck! Tap to flap and stay close</p>
+              <p className="text-zinc-400">Jump over obstacles to follow Mama Duck</p>
               <div className="mt-8 text-yellow-400 font-medium group-hover:underline">Play Now →</div>
             </div>
           </div>
         )}
 
-        {/* Game Screens */}
-        {currentGame === "old" && <div className="text-center py-20 text-3xl">Your Original Game Goes Here</div>}
         {currentGame === "railroad" && <RailroadCrossing onBack={() => setCurrentGame("menu")} />}
         {currentGame === "duckling" && <DucklingFollow onBack={() => setCurrentGame("menu")} />}
       </div>
@@ -50,10 +38,11 @@ export default function ArcadePage() {
   );
 }
 
-/* ==================== RAILROAD CROSSING (Improved) ==================== */
+/* ==================== RAILROAD CROSSING ==================== */
 function RailroadCrossing({ onBack }: { onBack: () => void }) {
   const [gateDown, setGateDown] = useState(false);
   const [trainComing, setTrainComing] = useState(false);
+  const [carsPassed, setCarsPassed] = useState(0);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [message, setMessage] = useState("");
@@ -63,14 +52,14 @@ function RailroadCrossing({ onBack }: { onBack: () => void }) {
     if (gameOver || lives <= 0) return;
 
     const interval = setInterval(() => {
-      if (Math.random() < 0.5) {
+      if (Math.random() < 0.6) {
         setTrainComing(true);
-        setMessage("🚨 TRAIN COMING! LOWER THE GATE!");
+        setMessage("🚨 TRAIN COMING! LOWER GATE!");
 
         setTimeout(() => {
           if (gateDown) {
-            setScore(s => s + 150);
-            setMessage("✅ Perfect! Safe crossing.");
+            setScore(s => s + 200);
+            setMessage("✅ Safe crossing!");
           } else {
             setLives(l => l - 1);
             setMessage("💥 CRASH! Cars hit by train.");
@@ -80,8 +69,11 @@ function RailroadCrossing({ onBack }: { onBack: () => void }) {
 
           if (lives - 1 <= 0) setGameOver(true);
         }, 2200);
+      } else {
+        setCarsPassed(c => c + 1);
+        setScore(s => s + 10);
       }
-    }, 2800);
+    }, 2500);
 
     return () => clearInterval(interval);
   }, [gateDown, lives, gameOver]);
@@ -91,6 +83,7 @@ function RailroadCrossing({ onBack }: { onBack: () => void }) {
   const reset = () => {
     setGateDown(false);
     setTrainComing(false);
+    setCarsPassed(0);
     setScore(0);
     setLives(3);
     setMessage("");
@@ -109,29 +102,34 @@ function RailroadCrossing({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-3xl p-10 max-w-lg mx-auto">
+    <div className="bg-zinc-900 rounded-3xl p-8 max-w-lg mx-auto">
       <button onClick={onBack} className="mb-6 text-yellow-400 hover:underline">← Back</button>
-      <h2 className="text-4xl font-black text-yellow-400 text-center mb-8">Railroad Crossing</h2>
+      <h2 className="text-4xl font-black text-yellow-400 text-center mb-6">Railroad Crossing</h2>
 
-      <div className="text-center mb-8">
-        <p className="text-3xl">Score: <span className="text-yellow-400">{score}</span></p>
-        <p className="text-2xl mt-2">Lives: {"❤️".repeat(lives)}</p>
+      <div className="text-center mb-6">
+        <p>Score: <span className="text-yellow-400 font-bold">{score}</span> | Lives: {"❤️".repeat(lives)}</p>
       </div>
 
-      <div className="bg-black h-72 rounded-2xl relative flex items-center justify-center border-4 border-zinc-700 mb-10 overflow-hidden">
-        <div className={`text-8xl transition-transform duration-500 ${gateDown ? 'rotate-[-45deg]' : ''}`}>
-          {gateDown ? "🚧" : "🛤️"}
-        </div>
-        {trainComing && <div className="absolute text-8xl animate-bounce">🚂</div>}
+      {/* Visual Crossing */}
+      <div className="bg-black h-80 rounded-2xl relative overflow-hidden border-4 border-zinc-700 mb-8">
+        {/* Road */}
+        <div className="absolute bottom-12 w-full h-20 bg-zinc-700" />
+        {/* Cars */}
+        <div className={`absolute bottom-16 text-4xl transition-all duration-700 ${trainComing ? 'opacity-30' : ''}`} style={{ left: '20%' }}>🚗</div>
+        <div className={`absolute bottom-16 text-4xl transition-all duration-700 ${trainComing ? 'opacity-30' : ''}`} style={{ left: '60%' }}>🚙</div>
+
+        {/* Gate */}
+        <div className={`absolute left-1/2 top-20 w-3 h-52 bg-red-600 transition-all duration-700 origin-top ${gateDown ? 'rotate-[-45deg]' : ''}`} />
+
+        {/* Train */}
+        {trainComing && <div className="absolute top-28 text-7xl animate-[train_2s_linear_forwards] left-[-100px]">🚂</div>}
       </div>
 
-      <div className="text-center text-xl min-h-[70px] mb-8 font-medium">
-        {message || "Watch for trains..."}
-      </div>
+      <div className="text-center text-xl mb-8 min-h-[60px]">{message || "Wait for train..."}</div>
 
       <button
         onClick={toggleGate}
-        className={`w-full py-8 text-2xl font-bold rounded-3xl mb-6 transition-all ${gateDown ? 'bg-red-600' : 'bg-yellow-400 text-black'}`}
+        className={`w-full py-8 text-2xl font-bold rounded-3xl mb-6 ${gateDown ? 'bg-red-600' : 'bg-yellow-400 text-black'}`}
       >
         {gateDown ? "RAISE GATE ↑" : "LOWER GATE ↓"}
       </button>
@@ -141,39 +139,53 @@ function RailroadCrossing({ onBack }: { onBack: () => void }) {
   );
 }
 
-/* ==================== DUCKLING FOLLOW GAME ==================== */
+/* ==================== DUCKLING FOLLOW ==================== */
 function DucklingFollow({ onBack }: { onBack: () => void }) {
-  const [position, setPosition] = useState(50); // 0 = too far, 100 = perfect
+  const [ducklingPos, setDucklingPos] = useState(40);
   const [score, setScore] = useState(0);
+  const [speed, setSpeed] = useState(1);
   const [gameOver, setGameOver] = useState(false);
-  const [flapping, setFlapping] = useState(false);
+  const [obstacles, setObstacles] = useState<number[]>([]);
 
   useEffect(() => {
     if (gameOver) return;
 
-    const interval = setInterval(() => {
-      setPosition(p => Math.max(0, p - 3)); // Mama duck moves forward
+    const gameLoop = setInterval(() => {
+      setDucklingPos(p => Math.max(10, p - 0.8));
 
-      if (position < 20) {
-        setGameOver(true);
-      } else {
-        setScore(s => s + 1);
+      // Spawn obstacles
+      if (Math.random() < 0.15) {
+        setObstacles(prev => [...prev, 100]);
       }
-    }, 150);
 
-    return () => clearInterval(interval);
-  }, [position, gameOver]);
+      // Move obstacles
+      setObstacles(prev => prev.map(pos => pos - speed).filter(pos => pos > -10));
 
-  const flap = () => {
+      // Collision
+      const collision = obstacles.some(pos => pos < 55 && pos > 25 && ducklingPos < 60);
+      if (collision) {
+        setGameOver(true);
+      }
+
+      setScore(s => s + 1);
+
+      // Increase difficulty
+      if (score % 80 === 0 && speed < 4) setSpeed(s => s + 0.3);
+    }, 60);
+
+    return () => clearInterval(gameLoop);
+  }, [ducklingPos, obstacles, score, speed, gameOver]);
+
+  const jump = () => {
     if (gameOver) return;
-    setFlapping(true);
-    setPosition(p => Math.min(100, p + 18));
-    setTimeout(() => setFlapping(false), 200);
+    setDucklingPos(p => Math.min(85, p + 35));
   };
 
   const reset = () => {
-    setPosition(50);
+    setDucklingPos(40);
     setScore(0);
+    setSpeed(1);
+    setObstacles([]);
     setGameOver(false);
   };
 
@@ -181,7 +193,7 @@ function DucklingFollow({ onBack }: { onBack: () => void }) {
     return (
       <div className="bg-zinc-900 rounded-3xl p-12 text-center max-w-md mx-auto">
         <h2 className="text-5xl font-black text-yellow-400 mb-6">Game Over</h2>
-        <p className="text-3xl mb-8">Final Score: {score}</p>
+        <p className="text-3xl mb-8">Score: {score}</p>
         <button onClick={reset} className="bg-yellow-400 text-black px-12 py-5 rounded-2xl text-xl mb-6">Play Again</button>
         <button onClick={onBack} className="text-zinc-400 block">← Back to Arcade</button>
       </div>
@@ -189,28 +201,33 @@ function DucklingFollow({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="bg-zinc-900 rounded-3xl p-10 max-w-md mx-auto text-center">
+    <div className="bg-zinc-900 rounded-3xl p-8 max-w-md mx-auto">
       <button onClick={onBack} className="mb-6 text-yellow-400 hover:underline">← Back</button>
-      <h2 className="text-4xl font-black text-yellow-400 mb-8">Duckling Follow</h2>
+      <h2 className="text-4xl font-black text-yellow-400 text-center mb-6">Duckling Follow</h2>
 
-      <p className="text-2xl mb-4">Score: {score}</p>
+      <p className="text-center text-2xl mb-6">Score: {score}</p>
 
-      <div className="bg-black h-80 rounded-3xl relative overflow-hidden border-4 border-yellow-400/30 mb-8">
-        <div className="absolute top-1/3 left-8 text-6xl transition-all duration-200" style={{ left: `${position}%` }}>
-          🦆
-        </div>
-        <div className="absolute top-1/3 left-1/2 text-7xl">🦆</div>
-        <div className="absolute bottom-10 w-full h-2 bg-yellow-400/30" />
+      <div className="bg-gradient-to-b from-sky-900 to-emerald-900 h-96 rounded-3xl relative overflow-hidden border-4 border-yellow-400/30">
+        {/* Mama Duck */}
+        <div className="absolute top-1/3 left-8 text-6xl transition-all">🦆</div>
+
+        {/* Duckling */}
+        <div className="absolute text-5xl transition-all duration-200" style={{ left: `${ducklingPos}%`, top: '45%' }}>🐥</div>
+
+        {/* Obstacles */}
+        {obstacles.map((pos, i) => (
+          <div key={i} className="absolute text-4xl" style={{ left: `${pos}%`, top: '65%' }}>🌳</div>
+        ))}
       </div>
 
       <button
-        onClick={flap}
-        className="w-full py-8 bg-yellow-400 text-black text-2xl font-bold rounded-3xl active:scale-95 transition"
+        onClick={jump}
+        className="w-full mt-8 py-8 bg-yellow-400 text-black text-2xl font-bold rounded-3xl active:scale-95"
       >
-        TAP TO FLAP WINGS 🪶
+        TAP TO FLAP / JUMP 🪶
       </button>
 
-      <p className="text-zinc-400 mt-6">Stay close to Mama Duck!</p>
+      <p className="text-center text-zinc-400 mt-6">Stay close to Mama Duck and jump over logs!</p>
     </div>
   );
 }
