@@ -253,208 +253,207 @@ function RailroadGame({ onBack }: { onBack: () => void }) {
           }
         }
       `}</style>
-    </div>
-  );
-}
-
-/* ===================================================== */
-/* ================== DUCK GAME ======================== */
-/* ===================================================== */
-
-function DuckGame({ onBack }: { onBack: () => void }) {
-  const [playerY, setPlayerY] = useState(0);
+      /* ==================== DUCKLING FOLLOW ==================== */
+function DucklingFollow({ onBack }: { onBack: () => void }) {
+  const [duckY, setDuckY] = useState(0);
   const [velocity, setVelocity] = useState(0);
-  const [obstacles, setObstacles] = useState<
-    { x: number; height: number }[]
-  >([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
 
-  const gravity = 0.7;
+  const [obstacles, setObstacles] = useState<
+    { x: number; width: number; height: number }[]
+  >([]);
 
+  /* ================= GAME LOOP ================= */
   useEffect(() => {
     if (gameOver) return;
 
-    const gameLoop = setInterval(() => {
-      setVelocity((v) => v + gravity);
+    const loop = setInterval(() => {
+      /* Gravity */
+      setVelocity(v => v + 0.7);
 
-      setPlayerY((y) => {
-        const newY = y + velocity;
+      setDuckY(y => {
+        let newY = y + velocity;
 
-        if (newY > 250) {
-          return 250;
-        }
-
-        if (newY < 0) {
-          return 0;
-        }
+        if (newY > 0) newY = 0;
+        if (newY < -220) newY = -220;
 
         return newY;
       });
 
-      setObstacles((prev) =>
-        prev
-          .map((o) => ({ ...o, x: o.x - 7 }))
-          .filter((o) => o.x > -50)
-      );
-
+      /* Spawn obstacles */
       if (Math.random() < 0.03) {
-        setObstacles((prev) => [
+        setObstacles(prev => [
           ...prev,
           {
-            x: 1000,
-            height: Math.random() * 120 + 60,
+            x: 100,
+            width: 60,
+            height: 60,
           },
         ]);
       }
 
-      setScore((s) => s + 1);
-    }, 30);
+      /* Move obstacles */
+      setObstacles(prev =>
+        prev
+          .map(ob => ({
+            ...ob,
+            x: ob.x - 1.6,
+          }))
+          .filter(ob => ob.x > -20)
+      );
 
-    return () => clearInterval(gameLoop);
-  }, [velocity, gameOver]);
+      /* Collision Detection */
+      obstacles.forEach(ob => {
+        const duckLeft = 18;
+        const duckRight = 18 + 55;
 
-  useEffect(() => {
-    obstacles.forEach((obs) => {
-      const playerX = 140;
+        const obstacleLeft = ob.x;
+        const obstacleRight = ob.x + 14;
 
-      if (
-        obs.x < playerX + 60 &&
-        obs.x + 50 > playerX &&
-        playerY > 250 - obs.height
-      ) {
-        setLives((l) => l - 1);
+        const duckBottom = 320 + duckY;
+        const duckTop = duckBottom - 55;
 
-        setObstacles((prev) =>
-          prev.filter((o) => o !== obs)
-        );
-      }
-    });
-  }, [obstacles, playerY]);
+        const obstacleTop = 320 - ob.height;
 
-  useEffect(() => {
-    if (lives <= 0) {
-      setGameOver(true);
-    }
-  }, [lives]);
+        const hitX =
+          duckRight > obstacleLeft &&
+          duckLeft < obstacleRight;
 
+        const hitY =
+          duckBottom > obstacleTop;
+
+        if (hitX && hitY) {
+          setLives(l => {
+            if (l <= 1) {
+              setGameOver(true);
+              return 0;
+            }
+
+            return l - 1;
+          });
+
+          setDuckY(-120);
+
+          setObstacles([]);
+        }
+      });
+
+      setScore(s => s + 1);
+    }, 16);
+
+    return () => clearInterval(loop);
+  }, [velocity, obstacles, gameOver]);
+
+  /* ================= CONTROLS ================= */
   const flap = () => {
     if (gameOver) return;
 
     setVelocity(-10);
   };
 
-  const resetGame = () => {
-    setPlayerY(0);
+  /* ================= RESET ================= */
+  const reset = () => {
+    setDuckY(0);
     setVelocity(0);
-    setObstacles([]);
     setScore(0);
     setLives(3);
+    setObstacles([]);
     setGameOver(false);
   };
 
+  /* ================= GAME OVER ================= */
   if (gameOver) {
     return (
-      <div className="bg-zinc-900 rounded-3xl p-12 text-center max-w-lg mx-auto">
-        <h2 className="text-5xl font-black text-red-500 mb-6">
+      <div className="bg-zinc-900 rounded-3xl p-10 text-center max-w-md mx-auto">
+        <h2 className="text-5xl font-black text-yellow-400 mb-4">
           GAME OVER
         </h2>
 
         <p className="text-3xl mb-8">
-          Score:{" "}
-          <span className="text-yellow-400 font-black">
-            {score}
-          </span>
+          Score: {score}
         </p>
 
         <button
-          onClick={resetGame}
-          className="bg-yellow-400 text-black px-10 py-5 rounded-2xl font-black text-xl"
+          onClick={reset}
+          className="bg-yellow-400 text-black px-10 py-5 rounded-2xl text-xl font-bold"
         >
-          Play Again
-        </button>
-
-        <button
-          onClick={onBack}
-          className="block mx-auto mt-6 text-zinc-400"
-        >
-          ← Back to Arcade
+          PLAY AGAIN
         </button>
       </div>
     );
   }
 
   return (
-    <div className="bg-zinc-900 rounded-3xl p-8 max-w-3xl mx-auto">
+    <div className="bg-zinc-900 rounded-3xl p-6 max-w-md mx-auto">
       <button
         onClick={onBack}
-        className="mb-6 text-yellow-400 hover:underline"
+        className="mb-5 text-yellow-400"
       >
         ← Back
       </button>
 
-      <h2 className="text-5xl font-black text-yellow-400 text-center mb-6">
-        Duckling Escape
+      <h2 className="text-4xl font-black text-center text-yellow-400 mb-4">
+        Duckling Follow
       </h2>
 
-      <div className="flex justify-between text-2xl mb-6">
-        <div>
-          Score:{" "}
-          <span className="text-yellow-400 font-black">
-            {score}
-          </span>
-        </div>
-
+      <div className="flex justify-between mb-4 text-lg">
+        <div>Score: {score}</div>
         <div>{"❤️".repeat(lives)}</div>
       </div>
 
-      <div
-        onClick={flap}
-        className="relative h-[500px] bg-gradient-to-b from-sky-700 to-emerald-700 rounded-3xl overflow-hidden border-4 border-yellow-400/30 cursor-pointer"
-      >
-        {/* GROUND */}
-        <div className="absolute bottom-0 w-full h-24 bg-green-900" />
+      {/* GAME AREA */}
+      <div className="relative h-[420px] overflow-hidden rounded-3xl border-4 border-yellow-400/30 bg-gradient-to-b from-sky-700 to-emerald-900">
 
-        {/* MAMA DUCK */}
-        <div className="absolute top-12 left-12 text-7xl">
+        {/* Ground */}
+        <div className="absolute bottom-0 w-full h-20 bg-emerald-950" />
+
+        {/* Mama Duck */}
+        <div className="absolute left-5 bottom-20 text-6xl">
           🦆
         </div>
 
-        {/* PLAYER */}
+        {/* Duckling */}
         <div
-          className="absolute text-6xl transition-transform"
+          className="absolute left-20 text-5xl transition-transform duration-75"
           style={{
-            left: 140,
-            top: 120 + playerY,
+            bottom: `${90 - duckY}px`,
           }}
         >
           🐥
         </div>
 
-        {/* OBSTACLES */}
-        {obstacles.map((obs, i) => (
+        {/* Obstacles */}
+        {obstacles.map((ob, i) => (
           <div
             key={i}
-            className="absolute bottom-24 w-14 bg-amber-800 rounded-t-xl border-4 border-amber-950"
+            className="absolute bottom-20 flex items-end justify-center"
             style={{
-              left: obs.x,
-              height: obs.height,
+              left: `${ob.x}%`,
+              width: `${ob.width}px`,
+              height: `${ob.height}px`,
             }}
-          />
+          >
+            <div className="text-5xl">
+              🌳
+            </div>
+          </div>
         ))}
       </div>
 
       <button
         onClick={flap}
-        className="w-full mt-8 py-6 rounded-3xl bg-yellow-400 text-black text-2xl font-black active:scale-95"
+        className="w-full mt-6 py-7 rounded-3xl bg-yellow-400 text-black text-2xl font-black active:scale-95"
       >
         TAP TO FLAP 🪶
       </button>
-
-      <p className="text-center text-zinc-400 mt-6">
-        Tap repeatedly to stay airborne and dodge logs.
-      </p>
     </div>
   );
 }
+    
+  );
+}
+
+  );
+} 
