@@ -174,6 +174,7 @@ export default function AssistantPage() {
     </div>
   );
 
+  // Make Donation Function (defined once)
   function makeDonation() {
     fetch("/api/create-donation-checkout", { method: "POST" })
       .then(res => res.json())
