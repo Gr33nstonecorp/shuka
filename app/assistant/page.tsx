@@ -36,6 +36,8 @@ export default function AssistantPage() {
         body: JSON.stringify({ product_name: input }),
       });
 
+      if (!res.ok) throw new Error("Server error");
+
       const data = await res.json();
 
       if (data.error) {
@@ -43,10 +45,10 @@ export default function AssistantPage() {
       } else if (data.results && Array.isArray(data.results)) {
         setResults(data.results);
       } else {
-        setError("Failed to fetch results.");
+        setError("No results returned from server.");
       }
     } catch (err) {
-      setError("Failed to fetch results. Please try again.");
+      setError("Failed to fetch results. Check your backend API.");
     } finally {
       setLoading(false);
     }
@@ -61,13 +63,9 @@ export default function AssistantPage() {
     try {
       const res = await fetch("/api/create-donation-checkout", { method: "POST" });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Could not open donation page.");
-      }
+      if (data.url) window.location.href = data.url;
     } catch (err) {
-      alert("Could not open donation page. Please try again.");
+      alert("Could not open donation page.");
     }
   };
 
@@ -94,7 +92,7 @@ export default function AssistantPage() {
         </button>
       </div>
 
-      {error && <div className="text-red-400 text-center py-8">{error}</div>}
+      {error && <div className="text-red-400 text-center py-8 font-medium">{error}</div>}
 
       {results.length > 0 && (
         <div className="mb-16">
@@ -168,4 +166,13 @@ export default function AssistantPage() {
       </button>
     </div>
   );
+
+  function makeDonation() {
+    fetch("/api/create-donation-checkout", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) window.location.href = data.url;
+      })
+      .catch(() => alert("Could not open donation page."));
+  }
 }
