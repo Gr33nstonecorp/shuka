@@ -7,8 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: NextRequest) {
   try {
-    const { amount } = await req.json();
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -17,9 +15,9 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             product_data: {
               name: "Support ShukAI",
-              description: "Thank you for supporting development!",
+              description: "Monthly donation for faster AI improvements",
             },
-            unit_amount: amount || 100, // $1.00 default
+            unit_amount: 500, // $5.00
           },
           quantity: 1,
         },
@@ -32,6 +30,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to create donation session" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create donation" }, { status: 500 });
   }
 }
