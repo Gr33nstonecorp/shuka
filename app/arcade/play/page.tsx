@@ -6,7 +6,11 @@ type SessionResponse = {
   session?: {
     id: string;
     player_name: string | null;
+    email: string | null;
     status: string;
+    paid_at?: string | null;
+    used_at?: string | null;
+    created_at?: string | null;
   };
   canPlay?: boolean;
   error?: string;
@@ -14,14 +18,24 @@ type SessionResponse = {
 
 type GameState = "loading" | "ready" | "playing" | "gameover" | "blocked";
 
+type Obstacle = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  speed: number;
+};
+
 export default function ArcadePlayPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number | null>(null);
+
   const [gameState, setGameState] = useState<GameState>("loading");
   const [sessionId, setSessionId] = useState("");
   const [playerName, setPlayerName] = useState("Player");
   const [score, setScore] = useState(0);
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const gameData = useRef({
     playerX: 180,
@@ -30,10 +44,10 @@ export default function ArcadePlayPage() {
     playerH: 60,
     moveLeft: false,
     moveRight: false,
-    obstacles: [] as Array<{ x: number; y: number; w: number; h: number; speed: number }>,
+    obstacles: [] as Obstacle[],
     frame: 0,
     running: false,
-    score: 0
+    score: 0,
   });
 
   const params = useMemo(() => {
@@ -60,13 +74,21 @@ export default function ArcadePlayPage() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" || e.key === "a") gameData.current.moveLeft = true;
-      if (e.key === "ArrowRight" || e.key === "d") gameData.current.moveRight = true;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        gameData.current.moveLeft = true;
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        gameData.current.moveRight = true;
+      }
     }
 
     function onKeyUp(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft" || e.key === "a") gameData.current.moveLeft = false;
-      if (e.key === "ArrowRight" || e.key === "d") gameData.current.moveRight = false;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        gameData.current.moveLeft = false;
+      }
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        gameData.current.moveRight = false;
+      }
     }
 
     window.addEventListener("keydown", onKeyDown);
@@ -80,7 +102,9 @@ export default function ArcadePlayPage() {
 
   async function loadSession(id: string) {
     try {
-      const res = await fetch(`/api/arcade/session?session_id=${encodeURIComponent(id)}`);
+      const res = await fetch(`/api/arcade/session?session_id=${encodeURIComponent(id)}`, {
+        cache: "no-store",
+      });
       const data: SessionResponse = await res.json();
 
       if (!res.ok || !data.session) {
@@ -115,7 +139,7 @@ export default function ArcadePlayPage() {
       obstacles: [],
       frame: 0,
       running: true,
-      score: 0
+      score: 0,
     };
 
     setScore(0);
@@ -134,21 +158,34 @@ export default function ArcadePlayPage() {
   async function finishGame(finalScore: number) {
     stopLoop();
     setScore(finalScore);
-    setGameState("gameover");
+    setSubmitting(true);
 
     try {
-      await fetch("/api/arcade/submit-score", {
+      const res = await fetch("/api/arcade/submit-score", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           sessionId,
           playerName,
-          score: finalScore
-        })
+          score: finalScore,
+        }),
       });
-    } catch {}
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setMessage(data.error || "Could not submit score.");
+      } else {
+        setMessage("Your score was submitted.");
+      }
+    } catch {
+      setMessage("Network error while submitting score.");
+    } finally {
+      setSubmitting(false);
+      setGameState("gameover");
+    }
   }
 
   function loop() {
@@ -184,7 +221,7 @@ export default function ArcadePlayPage() {
           y: -h,
           w,
           h,
-          speed
+          speed,
         });
       }
 
@@ -238,22 +275,42 @@ export default function ArcadePlayPage() {
     animationRef.current = requestAnimationFrame(tick);
   }
 
+  function moveLeftStart() {
+    gameData.current.moveLeft = true;
+  }
+
+  function moveLeftEnd() {
+    gameData.current.moveLeft = false;
+  }
+
+  function moveRightStart() {
+    gameData.current.moveRight = true;
+  }
+
+  function moveRightEnd() {
+    gameData.current.moveRight = false;
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
       <div className="text-center mb-8">
         <div className="text-yellow-400 text-sm font-medium tracking-wider mb-3">
           BOX RUNNER
         </div>
+
         <h1 className="text-4xl font-black tracking-tighter text-white mb-2">
           Dodge the falling boxes
         </h1>
+
         <p className="text-zinc-400">
           Player: {playerName} • Score: {score}
         </p>
       </div>
 
       {gameState === "loading" && (
-        <div className="text-center text-zinc-400 py-16">Loading arcade session...</div>
+        <div className="text-center text-zinc-400 py-16">
+          Loading arcade session...
+        </div>
       )}
 
       {gameState === "blocked" && (
@@ -272,7 +329,8 @@ export default function ArcadePlayPage() {
         <div className="bg-zinc-900 rounded-3xl p-8">
           <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
             <div className="text-zinc-400">
-              Use <span className="text-white font-semibold">← →</span> or <span className="text-white font-semibold">A / D</span>
+              Use <span className="text-white font-semibold">← →</span> or{" "}
+              <span className="text-white font-semibold">A / D</span>
             </div>
 
             {gameState === "ready" && (
@@ -303,13 +361,39 @@ export default function ArcadePlayPage() {
             />
           </div>
 
+          {gameState === "playing" && (
+            <div className="grid grid-cols-2 gap-4 mt-6 md:hidden">
+              <button
+                onTouchStart={moveLeftStart}
+                onTouchEnd={moveLeftEnd}
+                onMouseDown={moveLeftStart}
+                onMouseUp={moveLeftEnd}
+                onMouseLeave={moveLeftEnd}
+                className="bg-zinc-800 text-white font-semibold py-4 rounded-2xl"
+              >
+                ← Left
+              </button>
+
+              <button
+                onTouchStart={moveRightStart}
+                onTouchEnd={moveRightEnd}
+                onMouseDown={moveRightStart}
+                onMouseUp={moveRightEnd}
+                onMouseLeave={moveRightEnd}
+                className="bg-zinc-800 text-white font-semibold py-4 rounded-2xl"
+              >
+                Right →
+              </button>
+            </div>
+          )}
+
           {gameState === "gameover" && (
             <div className="text-center mt-8">
               <div className="text-3xl font-black text-yellow-400 mb-2">
                 Final Score: {score}
               </div>
               <div className="text-zinc-400">
-                Your paid run has been submitted to the leaderboard.
+                {submitting ? "Submitting score..." : message || "Your paid run has been submitted."}
               </div>
             </div>
           )}
