@@ -18,7 +18,7 @@ export default function AssistantPage() {
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
 
-  const handleSourcing = () => {
+  const handleSourcing = async () => {
     if (!input.trim()) {
       setError("Please describe what you need.");
       return;
@@ -29,30 +29,27 @@ export default function AssistantPage() {
     setResults([]);
     setShowReport(false);
 
-    setTimeout(() => {
-      const lower = input.toLowerCase();
-      let tempResults: Product[] = [];
+    try {
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_name: input, quantity: 1 }),
+      });
 
-      if (lower.includes("glove") || lower.includes("nitrile")) {
-        tempResults = [
-          { item: input, vendor: "Uline", website: "https://www.uline.com/Product/Detail/S-18000/Nitrile-Gloves-Powder-Free", price: 94.99, reason: "Premium industrial nitrile gloves", delivery: "2-3 business days" },
-          { item: input, vendor: "Grainger", website: "https://www.grainger.com/product/3M-Nitrile-Gloves-3M-1000", price: 118.75, reason: "3M branded - excellent quality", delivery: "Same day pickup" },
-          { item: input, vendor: "Amazon Business", website: "https://www.amazon.com/dp/B08L3XJ7VJ", price: 79.99, reason: "Fast delivery", delivery: "Next day" },
-        ];
-      } else if (lower.includes("tape") || lower.includes("packing")) {
-        tempResults = [
-          { item: input, vendor: "Uline", website: "https://www.uline.com/Product/Detail/S-18000/Packing-Tape", price: 42.50, reason: "Heavy duty packaging tape", delivery: "2-3 business days" },
-          { item: input, vendor: "Grainger", website: "https://www.grainger.com/product/Scotch-Packing-Tape", price: 51.25, reason: "3M Scotch brand", delivery: "Same day pickup" },
-        ];
+      const data = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else if (data.results) {
+        setResults(data.results);
       } else {
-        setError("We currently support nitrile gloves and packing tape.");
-        setLoading(false);
-        return;
+        setError("Failed to fetch results.");
       }
-
-      setResults(tempResults);
+    } catch (err) {
+      setError("Failed to fetch results. Please try again.");
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   const generateReport = () => {
@@ -62,20 +59,11 @@ export default function AssistantPage() {
 
   const makeDonation = async () => {
     try {
-      const res = await fetch("/api/create-donation-checkout", {
-        method: "POST",
-      });
-
+      const res = await fetch("/api/create-donation-checkout", { method: "POST" });
       const data = await res.json();
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        console.error("No checkout URL returned");
-        alert("Could not open donation page.");
-      }
+      if (data.url) window.location.href = data.url;
+      else alert("Could not open donation page.");
     } catch (err) {
-      console.error("Donation error:", err);
       alert("Could not open donation page. Please try again.");
     }
   };
@@ -87,7 +75,6 @@ export default function AssistantPage() {
         <p className="text-zinc-400 mt-3">Free supplier options + Official Data Sheet</p>
       </div>
 
-      {/* Input */}
       <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
         <textarea
           value={input}
@@ -170,7 +157,6 @@ export default function AssistantPage() {
         </div>
       )}
 
-      {/* Donation Button */}
       <button
         onClick={makeDonation}
         className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-2 z-50"
