@@ -20,7 +20,7 @@ export default function AssistantPage() {
 
   const handleSourcing = () => {
     if (!input.trim()) {
-      setError("Please enter what you need to source.");
+      setError("Please describe what you need.");
       return;
     }
 
@@ -52,7 +52,7 @@ export default function AssistantPage() {
 
       setResults(tempResults);
       setLoading(false);
-    }, 800);
+    }, 900);
   };
 
   const generateReport = () => {
@@ -60,13 +60,28 @@ export default function AssistantPage() {
     setShowReport(true);
   };
 
+  const makeDonation = async () => {
+    try {
+      const res = await fetch("/api/create-donation-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 100 }), // $1.00
+      });
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (err) {
+      alert("Donation setup error. Please try again.");
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-black tracking-tighter text-yellow-400">AI Sourcing</h1>
-        <p className="text-zinc-400 mt-2">Free results + Official Report</p>
+        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">Warehouse Sourcing Assistant</h1>
+        <p className="text-zinc-400 mt-3">Free AI Sourcing + Official Report</p>
       </div>
 
+      {/* Input */}
       <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
         <textarea
           value={input}
@@ -77,48 +92,46 @@ export default function AssistantPage() {
         <button
           onClick={handleSourcing}
           disabled={loading || !input.trim()}
-          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 text-black font-semibold py-5 rounded-2xl text-lg"
+          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
+          {loading ? "Searching..." : "Run AI Sourcing"}
         </button>
       </div>
 
       {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
-      {/* Results Section */}
       {results.length > 0 && (
-        <div className="space-y-12">
-          <h2 className="text-2xl font-semibold text-center">Supplier Options</h2>
+        <div className="mb-16">
+          <h2 className="text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
 
-          <div className="grid gap-6">
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
             {results.map((p, i) => (
-              <div key={i} className="bg-zinc-900 rounded-3xl p-8">
+              <div key={i} className="bg-zinc-900 rounded-3xl p-8 text-center">
                 <h3 className="font-medium">{p.vendor}</h3>
-                <p className="text-4xl font-black text-yellow-400 mt-2">${p.price}</p>
-                <a href={p.website} target="_blank" className="mt-6 block text-center bg-black text-yellow-400 py-4 rounded-2xl">
-                  Buy on {p.vendor} →
-                </a>
+                <p className="text-4xl font-black text-yellow-400 mt-3">${p.price}</p>
+                <a href={p.website} target="_blank" className="mt-8 block bg-black text-yellow-400 py-4 rounded-2xl text-sm">Buy on {p.vendor} →</a>
               </div>
             ))}
           </div>
 
-          {/* Big Visible Button */}
-          <button
-            onClick={generateReport}
-            className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
-          >
-            Generate Official Report
-          </button>
+          <div className="text-center">
+            <button
+              onClick={generateReport}
+              className="w-full max-w-md mx-auto bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-6 rounded-3xl text-2xl"
+            >
+              Generate Official Data Sheet
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Report Section - Inline */}
+      {/* Official Data Sheet */}
       {showReport && (
-        <div className="mt-16 bg-white text-black rounded-3xl p-8 shadow-2xl">
+        <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
           <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10">
             <div className="text-center">
               <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
-              <div className="text-sm">OFFICIAL WAREHOUSE REPORT</div>
+              <div className="text-sm">OFFICIAL DATA SHEET</div>
             </div>
           </div>
 
@@ -143,18 +156,28 @@ export default function AssistantPage() {
             </tbody>
           </table>
 
-          <div className="text-center bg-yellow-50 p-8 rounded-2xl">
-            <div className="text-yellow-700 text-sm">RECOMMENDED</div>
-            <div className="text-5xl font-black text-yellow-600 mt-2">{results[0].vendor}</div>
+          <div className="bg-yellow-50 p-8 rounded-2xl text-center">
+            <div className="text-yellow-700 text-sm">RECOMMENDED SUPPLIER</div>
+            <div className="text-5xl font-black text-yellow-600">{results[0].vendor}</div>
             <div className="text-6xl font-black mt-1">${results[0].price}</div>
           </div>
 
           <div className="flex gap-4 mt-12">
-            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / PDF</button>
+            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / Save PDF</button>
             <button onClick={() => setShowReport(false)} className="flex-1 py-4 border border-black rounded-2xl">Close</button>
           </div>
         </div>
       )}
+
+      {/* Donation Button */}
+      <div className="fixed bottom-6 right-6">
+        <button
+          onClick={makeDonation}
+          className="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-8 py-4 rounded-2xl shadow-xl flex items-center gap-3"
+        >
+          💛 Support ShukAI — $1 Suggested
+        </button>
+      </div>
     </div>
   );
 }
