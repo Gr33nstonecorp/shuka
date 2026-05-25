@@ -168,13 +168,4 @@ export default function AssistantPage() {
       </button>
     </div>
   );
-
-  function makeDonation() {
-    fetch("/api/create-donation-checkout", { method: "POST" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.url) window.location.href = data.url;
-      })
-      .catch(() => alert("Could not open donation page."));
-  }
 }
