@@ -65,11 +65,17 @@ export default function AssistantPage() {
       const res = await fetch("/api/create-donation-checkout", {
         method: "POST",
       });
+
       const data = await res.json();
-      if (data.url) {
+
+      if (data?.url) {
         window.location.href = data.url;
+      } else {
+        console.error("No checkout URL returned");
+        alert("Could not open donation page.");
       }
     } catch (err) {
+      console.error("Donation error:", err);
       alert("Could not open donation page. Please try again.");
     }
   };
@@ -173,14 +179,4 @@ export default function AssistantPage() {
       </button>
     </div>
   );
-
-  // Make Donation Function (defined once)
-  function makeDonation() {
-    fetch("/api/create-donation-checkout", { method: "POST" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.url) window.location.href = data.url;
-      })
-      .catch(() => alert("Could not open donation page."));
-  }
 }
