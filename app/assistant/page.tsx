@@ -40,13 +40,13 @@ export default function AssistantPage() {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.results && Array.isArray(data.results)) {
+      } else if (data.results) {
         setResults(data.results);
       } else {
-        setError("Failed to fetch results.");
+        setError("No results returned.");
       }
     } catch (err) {
-      setError("Failed to fetch results. Please try again.");
+      setError("Failed to fetch results.");
     } finally {
       setLoading(false);
     }
@@ -61,13 +61,9 @@ export default function AssistantPage() {
     try {
       const res = await fetch("/api/create-donation-checkout", { method: "POST" });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Could not open donation page.");
-      }
+      if (data.url) window.location.href = data.url;
     } catch (err) {
-      alert("Could not open donation page. Please try again.");
+      alert("Could not open donation page.");
     }
   };
 
@@ -90,7 +86,7 @@ export default function AssistantPage() {
           disabled={loading || !input.trim()}
           className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
+          {loading ? "Searching..." : "Run AI Sourcing"}
         </button>
       </div>
 
@@ -146,12 +142,6 @@ export default function AssistantPage() {
               ))}
             </tbody>
           </table>
-
-          <div className="bg-yellow-50 p-8 rounded-2xl text-center">
-            <div className="text-yellow-700 text-sm">RECOMMENDED SUPPLIER</div>
-            <div className="text-5xl font-black text-yellow-600">{results[0].vendor}</div>
-            <div className="text-6xl font-black mt-1">${results[0].price}</div>
-          </div>
 
           <div className="flex gap-4 mt-12">
             <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / Save PDF</button>
