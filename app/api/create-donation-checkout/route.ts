@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             product_data: {
               name: "Support ShukAI",
-              description: "Monthly donation for faster AI improvements",
+              description: "Thank you for supporting development and faster AI improvements",
             },
             unit_amount: 500, // $5.00
           },
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to create donation" }, { status: 500 });
+    console.error("Donation checkout error:", error);
+    return NextResponse.json({ error: "Failed to create donation session" }, { status: 500 });
   }
 }
