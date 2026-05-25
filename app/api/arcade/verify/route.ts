@@ -1,22 +1,46 @@
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  const { session_id } = await req.json();
+  try {
+    const body = await req.json();
 
-  if (!session_id) {
-    return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    const sessionId = body.sessionId;
+
+    if (!sessionId) {
+      return new Response(
+        JSON.stringify({ error: "Missing sessionId" }),
+        { status: 400 }
+      );
+    }
+
+    // Retrieve Stripe checkout session
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // Example verification logic
+    if (session.payment_status !== "paid") {
+      return new Response(
+        JSON.stringify({ verified: false, status: session.payment_status }),
+        { status: 200 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        verified: true,
+        customerEmail: session.customer_details?.email ?? null,
+        amountTotal: session.amount_total,
+      }),
+      { status: 200 }
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({
+        error: "Verification failed",
+        details: err?.message ?? "Unknown error",
+      }),
+      { status: 500 }
+    );
   }
-
-  const session = await stripe.checkout.sessions.retrieve(session_id);
-
-  if (session.payment_status === "paid") {
-    return NextResponse.json({ success: true });
-  }
-
-  return NextResponse.json({ success: false }, { status: 401 });
 }
