@@ -20,7 +20,7 @@ export default function AssistantPage() {
 
   const handleSourcing = () => {
     if (!input.trim()) {
-      setError("Please describe what you need to source.");
+      setError("Please describe what you need.");
       return;
     }
 
@@ -100,9 +100,8 @@ export default function AssistantPage() {
 
       {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
-      {/* Results + Generate Data Sheet Button */}
       {results.length > 0 && (
-        <div className="mb-20">
+        <div className="mb-16">
           <h2 className="text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -115,7 +114,6 @@ export default function AssistantPage() {
             ))}
           </div>
 
-          {/* Prominent Data Sheet Button */}
           <button
             onClick={generateReport}
             className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
@@ -125,7 +123,6 @@ export default function AssistantPage() {
         </div>
       )}
 
-      {/* Official Data Sheet */}
       {showReport && (
         <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
           <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10 text-center">
@@ -177,7 +174,6 @@ export default function AssistantPage() {
     </div>
   );
 
-  // Donation handler
   function makeDonation() {
     fetch("/api/create-donation-checkout", { method: "POST" })
       .then(res => res.json())
