@@ -8,31 +8,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export async function POST(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      return Response.json(
-        { error: "Missing NEXT_PUBLIC_SUPABASE_URL" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing NEXT_PUBLIC_SUPABASE_URL" }, { status: 500 });
     }
-
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return Response.json(
-        { error: "Missing SUPABASE_SERVICE_ROLE_KEY" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY" }, { status: 500 });
     }
-
     if (!process.env.STRIPE_SECRET_KEY) {
-      return Response.json(
-        { error: "Missing STRIPE_SECRET_KEY" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
     }
-
     if (!process.env.STRIPE_ARCADE_PRICE_ID) {
-      return Response.json(
-        { error: "Missing STRIPE_ARCADE_PRICE_ID" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing STRIPE_ARCADE_PRICE_ID" }, { status: 500 });
     }
 
     const body = await req.json().catch(() => null);
@@ -60,11 +45,7 @@ export async function POST(req: Request) {
     if (insertError || !sessionRow) {
       console.error("Arcade session insert error:", insertError);
       return Response.json(
-        {
-          error:
-            insertError?.message ||
-            "Could not create arcade session row in Supabase.",
-        },
+        { error: insertError?.message || "Could not create arcade session." },
         { status: 500 }
       );
     }
@@ -85,8 +66,8 @@ export async function POST(req: Request) {
       metadata: {
         type: "arcade",
         arcade_session_id: sessionRow.id,
-        email: email || "",
         player_name: playerName,
+        email: email || "",
       },
     });
 
@@ -100,11 +81,7 @@ export async function POST(req: Request) {
     if (updateError) {
       console.error("Arcade session update error:", updateError);
       return Response.json(
-        {
-          error:
-            updateError.message ||
-            "Could not save Stripe checkout session to Supabase.",
-        },
+        { error: updateError.message || "Could not save Stripe session." },
         { status: 500 }
       );
     }
@@ -113,9 +90,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Arcade checkout fatal error:", error);
     return Response.json(
-      {
-        error: error?.message || "Could not start arcade checkout.",
-      },
+      { error: error?.message || "Could not start arcade checkout." },
       { status: 500 }
     );
   }
