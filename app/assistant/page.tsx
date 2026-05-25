@@ -11,174 +11,155 @@ type Product = {
   delivery: string;
 };
 
-function parseQuantityMap(input: string) {
-  const map = new Map<string, number>();
-
-  input
-    .split("\n")
-    .map((line) => {
-      const [name, qty] = line.split("-");
-      return {
-        item: name?.trim() || "",
-        quantity: Number(qty?.trim()) || 1,
-      };
-    })
-    .filter((x) => x.item)
-    .forEach((x) => map.set(x.item, x.quantity));
-
-  return map;
-}
-
 export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const quantityMap = parseQuantityMap(input);
+  const [showReport, setShowReport] = useState(false);
 
   const handleSourcing = async () => {
     if (!input.trim()) {
-      setError("Please enter what you need to source.");
+      setError("Please describe what you need.");
       return;
     }
 
     setLoading(true);
-    setResults([]);
     setError("");
+    setResults([]);
+    setShowReport(false);
 
     try {
       const res = await fetch("/api/assistant", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ input }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_name: input }),
       });
 
       const data = await res.json();
 
-      if (!res.ok || !data.results) {
-        setError(data.error || "Failed to get live sourcing results.");
-        setLoading(false);
-        return;
+      if (data.error) {
+        setError(data.error);
+      } else if (data.results && Array.isArray(data.results)) {
+        setResults(data.results);
+      } else {
+        setError("No results returned.");
       }
-
-      setResults(data.results);
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError("Failed to fetch results. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const generateReport = () => {
+    if (results.length === 0) return;
+    setShowReport(true);
+  };
+
+  const makeDonation = async () => {
+    try {
+      const res = await fetch("/api/create-donation-checkout", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Could not open donation page.");
+      }
+    } catch (err) {
+      alert("Could not open donation page. Please try again.");
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="text-center mb-16">
-        <div className="inline-block bg-yellow-400/10 text-yellow-400 px-6 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/30">
-          AI POWERED SOURCING
-        </div>
-        <h1 className="text-5xl font-black tracking-tighter mb-6 text-yellow-400">
-          Find live supplier prices instantly
-        </h1>
-        <p className="text-xl text-zinc-400 max-w-xl mx-auto">
-          Describe what you need. ShukAI finds live shopping results and gives you direct links.
-        </p>
+    <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">AI Sourcing Assistant</h1>
+        <p className="text-zinc-400 mt-3">Free supplier options + Official Data Sheet</p>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
-        <p className="text-zinc-400 mb-6 text-lg">What do you need to source?</p>
-
+      <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={"nitrile gloves - 1\npacking tape - 50"}
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg placeholder-zinc-500 focus:outline-none focus:border-yellow-400 min-h-[160px] resize-y"
+          placeholder="50 boxes of nitrile gloves..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-base min-h-[140px]"
         />
-
         <button
           onClick={handleSourcing}
           disabled={loading || !input.trim()}
-          className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-semibold py-5 rounded-2xl text-xl transition-all duration-200"
+          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching live suppliers..." : "Run AI Sourcing"}
+          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
         </button>
       </div>
 
-      {error && (
-        <div className="text-center text-red-400 py-8 bg-zinc-900 rounded-3xl">
-          {error}
-        </div>
-      )}
+      {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
       {results.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-semibold text-yellow-400">Recommended Options</h2>
-            <p className="text-zinc-400">Live links only</p>
-          </div>
+        <div className="mb-16">
+          <h2 className="text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
 
-          <div className="space-y-8">
-            {results.map((product, index) => (
-              <div
-                key={index}
-                className="bg-zinc-900 rounded-3xl p-10 border border-zinc-800 hover:border-yellow-400/50 transition-all"
-              >
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-semibold mb-2">{product.item}</h3>
-                    <p className="text-zinc-400">
-                      Quantity: {quantityMap.get(product.item) || 1}
-                    </p>
-                  </div>
-
-                  <div className="text-right md:text-left">
-                    <p className="text-xs uppercase tracking-widest text-zinc-500 mb-1">
-                      Live Total
-                    </p>
-                    <p className="text-4xl font-black text-yellow-400">
-                      {product.price > 0 ? `$${product.price.toFixed(2)}` : "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-10 mb-8">
-                  <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                    Vendor
-                  </p>
-                  <p className="text-2xl font-medium">{product.vendor}</p>
-                </div>
-
-                <div className="bg-zinc-800/80 rounded-2xl p-8 mb-10">
-                  <p className="text-zinc-300">{product.reason}</p>
-                  <p className="text-zinc-400 mt-2">Delivery: {product.delivery}</p>
-                </div>
-
-                {product.website ? (
-                  <a
-                    href={product.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-xl transition-all"
-                  >
-                    Open supplier →
-                  </a>
-                ) : (
-                  <div className="block w-full text-center bg-zinc-700 text-zinc-400 font-semibold py-5 rounded-2xl text-xl">
-                    No live link found
-                  </div>
-                )}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {results.map((p, i) => (
+              <div key={i} className="bg-zinc-900 rounded-3xl p-8 text-center">
+                <h3 className="font-medium">{p.vendor}</h3>
+                <p className="text-4xl font-black text-yellow-400 mt-3">${p.price}</p>
+                <a href={p.website} target="_blank" className="mt-8 block bg-black text-yellow-400 py-4 rounded-2xl text-sm">Buy on {p.vendor} →</a>
               </div>
             ))}
           </div>
+
+          <button
+            onClick={generateReport}
+            className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
+          >
+            📋 Generate Official Data Sheet
+          </button>
         </div>
       )}
 
-      {results.length === 0 && !loading && !error && (
-        <div className="text-center text-zinc-500 py-20">
-          Enter one item per line and click “Run AI Sourcing” to get live supplier results.
+      {showReport && (
+        <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
+          <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10 text-center">
+            <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
+            <div className="text-sm">OFFICIAL DATA SHEET</div>
+          </div>
+
+          <p className="text-2xl font-semibold mb-8">{input}</p>
+
+          <table className="w-full mb-12">
+            <thead>
+              <tr className="border-b-2 border-black">
+                <th className="text-left py-4">Supplier</th>
+                <th className="text-left py-4">Price</th>
+                <th className="text-left py-4">Delivery</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((p, i) => (
+                <tr key={i} className="border-b">
+                  <td className="py-5 font-medium">{p.vendor}</td>
+                  <td className="py-5 font-semibold">${p.price}</td>
+                  <td className="py-5">{p.delivery}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex gap-4 mt-12">
+            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / Save PDF</button>
+            <button onClick={() => setShowReport(false)} className="flex-1 py-4 border border-black rounded-2xl">Close</button>
+          </div>
         </div>
       )}
+
+      <button
+        onClick={makeDonation}
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-2 z-50"
+      >
+        💛 Support ShukAI ($5 suggested)
+      </button>
     </div>
   );
 }
