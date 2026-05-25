@@ -30,17 +30,21 @@ export default function AssistantPage() {
     setShowReport(false);
 
     try {
+      // Connect to your existing backend
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_name: input, quantity: 1 }),
+        body: JSON.stringify({
+          product_name: input,
+          quantity: 1,
+        }),
       });
 
       const data = await res.json();
 
       if (data.error) {
         setError(data.error);
-      } else if (data.results) {
+      } else if (data.results && Array.isArray(data.results)) {
         setResults(data.results);
       } else {
         setError("Failed to fetch results.");
@@ -62,9 +66,8 @@ export default function AssistantPage() {
       const res = await fetch("/api/create-donation-checkout", { method: "POST" });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else alert("Could not open donation page.");
     } catch (err) {
-      alert("Could not open donation page. Please try again.");
+      alert("Could not open donation page.");
     }
   };
 
@@ -165,4 +168,12 @@ export default function AssistantPage() {
       </button>
     </div>
   );
-}
+
+  function makeDonation() {
+    fetch("/api/create-donation-checkout", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) window.location.href = data.url;
+      })
+      .catch(() => alert("Could not open donation page."));
+  }
