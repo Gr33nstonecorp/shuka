@@ -20,7 +20,7 @@ export default function AssistantPage() {
 
   const handleSourcing = () => {
     if (!input.trim()) {
-      setError("Please describe what you need.");
+      setError("Please describe what you need to source.");
       return;
     }
 
@@ -64,21 +64,21 @@ export default function AssistantPage() {
     try {
       const res = await fetch("/api/create-donation-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 100 }), // $1.00
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
     } catch (err) {
-      alert("Donation setup error. Please try again.");
+      alert("Could not open donation page. Please try again.");
     }
   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">Warehouse Sourcing Assistant</h1>
-        <p className="text-zinc-400 mt-3">Free AI Sourcing + Official Report</p>
+        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">AI Sourcing Assistant</h1>
+        <p className="text-zinc-400 mt-3">Free supplier options + Official Data Sheet</p>
       </div>
 
       {/* Input */}
@@ -94,14 +94,15 @@ export default function AssistantPage() {
           disabled={loading || !input.trim()}
           className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching..." : "Run AI Sourcing"}
+          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
         </button>
       </div>
 
       {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
+      {/* Results + Generate Data Sheet Button */}
       {results.length > 0 && (
-        <div className="mb-16">
+        <div className="mb-20">
           <h2 className="text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -114,25 +115,22 @@ export default function AssistantPage() {
             ))}
           </div>
 
-          <div className="text-center">
-            <button
-              onClick={generateReport}
-              className="w-full max-w-md mx-auto bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-6 rounded-3xl text-2xl"
-            >
-              Generate Official Data Sheet
-            </button>
-          </div>
+          {/* Prominent Data Sheet Button */}
+          <button
+            onClick={generateReport}
+            className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
+          >
+            📋 Generate Official Data Sheet
+          </button>
         </div>
       )}
 
       {/* Official Data Sheet */}
       {showReport && (
         <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
-          <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10">
-            <div className="text-center">
-              <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
-              <div className="text-sm">OFFICIAL DATA SHEET</div>
-            </div>
+          <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10 text-center">
+            <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
+            <div className="text-sm">OFFICIAL DATA SHEET</div>
           </div>
 
           <p className="text-2xl font-semibold mb-8">{input}</p>
@@ -170,14 +168,22 @@ export default function AssistantPage() {
       )}
 
       {/* Donation Button */}
-      <div className="fixed bottom-6 right-6">
-        <button
-          onClick={makeDonation}
-          className="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-8 py-4 rounded-2xl shadow-xl flex items-center gap-3"
-        >
-          💛 Support ShukAI — $1 Suggested
-        </button>
-      </div>
+      <button
+        onClick={makeDonation}
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-2 z-50"
+      >
+        💛 Support ShukAI ($5 suggested)
+      </button>
     </div>
   );
+
+  // Donation handler
+  function makeDonation() {
+    fetch("/api/create-donation-checkout", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) window.location.href = data.url;
+      })
+      .catch(() => alert("Could not open donation page."));
+  }
 }
