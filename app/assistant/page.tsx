@@ -2,48 +2,49 @@
 
 import { useState } from "react";
 
-type Product = {
-  item: string;
-  vendor: string;
-  website: string;
+type Mechanic = {
+  name: string;
   price: number;
   reason: string;
-  delivery: string;
+  distance: string;
+  phone: string;
+  website: string;
 };
 
 export default function AssistantPage() {
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
+  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
 
-  const handleSourcing = async () => {
+  const handleFindMechanic = async () => {
     if (!input.trim()) {
-      setError("Please describe what you need.");
+      setError("Please describe the problem with your car.");
       return;
     }
 
     setLoading(true);
     setError("");
-    setResults([]);
+    setMechanics([]);
     setShowReport(false);
 
     try {
+      // Call your backend
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_name: input }),
+        body: JSON.stringify({ problem: input }),
       });
 
       const data = await res.json();
 
       if (data.error) {
         setError(data.error);
-      } else if (data.results && Array.isArray(data.results)) {
-        setResults(data.results);
+      } else if (data.mechanics && Array.isArray(data.mechanics)) {
+        setMechanics(data.mechanics);
       } else {
-        setError("No results returned.");
+        setError("No mechanics found.");
       }
     } catch (err) {
       setError("Failed to fetch results. Please try again.");
@@ -53,59 +54,47 @@ export default function AssistantPage() {
   };
 
   const generateReport = () => {
-    if (results.length === 0) return;
+    if (mechanics.length === 0) return;
     setShowReport(true);
-  };
-
-  const makeDonation = async () => {
-    try {
-      const res = await fetch("/api/create-donation-checkout", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Could not open donation page.");
-      }
-    } catch (err) {
-      alert("Could not open donation page. Please try again.");
-    }
   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">AI Sourcing Assistant</h1>
-        <p className="text-zinc-400 mt-3">Free supplier options + Official Data Sheet</p>
+        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">Car Mechanic Finder</h1>
+        <p className="text-zinc-400 mt-3">Describe the problem → Get cheap local mechanics</p>
       </div>
 
       <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="50 boxes of nitrile gloves..."
+          placeholder="Brakes are squeaking, check engine light is on..."
           className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-base min-h-[140px]"
         />
         <button
-          onClick={handleSourcing}
+          onClick={handleFindMechanic}
           disabled={loading || !input.trim()}
           className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
         >
-          {loading ? "Searching suppliers..." : "Run AI Sourcing"}
+          {loading ? "Finding mechanics..." : "Find Mechanics"}
         </button>
       </div>
 
       {error && <div className="text-red-400 text-center py-8">{error}</div>}
 
-      {results.length > 0 && (
+      {mechanics.length > 0 && (
         <div className="mb-16">
-          <h2 className="text-3xl font-semibold mb-8 text-center">Supplier Options</h2>
+          <h2 className="text-3xl font-semibold mb-8 text-center">Recommended Mechanics</h2>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {results.map((p, i) => (
+            {mechanics.map((m, i) => (
               <div key={i} className="bg-zinc-900 rounded-3xl p-8 text-center">
-                <h3 className="font-medium">{p.vendor}</h3>
-                <p className="text-4xl font-black text-yellow-400 mt-3">${p.price}</p>
-                <a href={p.website} target="_blank" className="mt-8 block bg-black text-yellow-400 py-4 rounded-2xl text-sm">Buy on {p.vendor} →</a>
+                <h3 className="font-medium text-xl">{m.name}</h3>
+                <p className="text-4xl font-black text-yellow-400 mt-3">${m.price}</p>
+                <p className="text-zinc-400 mt-2">{m.distance}</p>
+                <p className="text-sm text-zinc-500 mt-4">{m.reason}</p>
+                <a href={m.website} target="_blank" className="mt-6 block bg-black text-yellow-400 py-4 rounded-2xl text-sm">Call / Book →</a>
               </div>
             ))}
           </div>
@@ -114,7 +103,7 @@ export default function AssistantPage() {
             onClick={generateReport}
             className="w-full py-7 bg-yellow-400 hover:bg-yellow-300 text-black font-semibold rounded-3xl text-2xl shadow-xl"
           >
-            📋 Generate Official Data Sheet
+            📋 Generate Official Repair Report
           </button>
         </div>
       )}
@@ -123,25 +112,25 @@ export default function AssistantPage() {
         <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
           <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10 text-center">
             <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
-            <div className="text-sm">OFFICIAL DATA SHEET</div>
+            <div className="text-sm">OFFICIAL REPAIR REPORT</div>
           </div>
 
-          <p className="text-2xl font-semibold mb-8">{input}</p>
+          <p className="text-2xl font-semibold mb-8">Problem: {input}</p>
 
           <table className="w-full mb-12">
             <thead>
               <tr className="border-b-2 border-black">
-                <th className="text-left py-4">Supplier</th>
-                <th className="text-left py-4">Price</th>
-                <th className="text-left py-4">Delivery</th>
+                <th className="text-left py-4">Mechanic</th>
+                <th className="text-left py-4">Estimate</th>
+                <th className="text-left py-4">Distance</th>
               </tr>
             </thead>
             <tbody>
-              {results.map((p, i) => (
+              {mechanics.map((m, i) => (
                 <tr key={i} className="border-b">
-                  <td className="py-5 font-medium">{p.vendor}</td>
-                  <td className="py-5 font-semibold">${p.price}</td>
-                  <td className="py-5">{p.delivery}</td>
+                  <td className="py-5 font-medium">{m.name}</td>
+                  <td className="py-5 font-semibold">${m.price}</td>
+                  <td className="py-5">{m.distance}</td>
                 </tr>
               ))}
             </tbody>
@@ -153,13 +142,6 @@ export default function AssistantPage() {
           </div>
         </div>
       )}
-
-      <button
-        onClick={makeDonation}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-2 z-50"
-      >
-        💛 Support ShukAI ($5 suggested)
-      </button>
     </div>
   );
 }
