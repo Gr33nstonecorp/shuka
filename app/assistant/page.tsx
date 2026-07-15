@@ -13,6 +13,7 @@ type Mechanic = {
 export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
+  const [possibleCause, setPossibleCause] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
@@ -26,6 +27,7 @@ export default function AssistantPage() {
     setLoading(true);
     setError("");
     setMechanics([]);
+    setPossibleCause("");
     setShowReport(false);
 
     try {
@@ -41,6 +43,7 @@ export default function AssistantPage() {
         setError(data.error);
       } else if (data.mechanics) {
         setMechanics(data.mechanics);
+        setPossibleCause(data.possibleCause || "General diagnostic needed.");
       } else {
         setError("No mechanics found.");
       }
@@ -59,16 +62,14 @@ export default function AssistantPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <div className="inline-block border border-yellow-400/40 text-yellow-400 px-6 py-2 rounded-full text-sm mb-6">
+        <div className="inline-block border border-yellow-400/40 text-yellow-400 px-8 py-3 rounded-full text-sm mb-6">
           AI POWERED DIAGNOSTICS
         </div>
-
         <h1 className="text-6xl font-black tracking-tighter text-yellow-400 mb-6">
           Find a Mechanic Based On Your Car's Needs
         </h1>
-
         <p className="text-zinc-400 text-xl max-w-2xl mx-auto">
-          Describe the problem. ShukAI finds local mechanics with pricing estimates.
+          Describe the problem. Get local mechanics with pricing estimates.
         </p>
       </div>
 
@@ -78,7 +79,7 @@ export default function AssistantPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Brakes squeaking when stopping, check engine light is on..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg min-h-[160px] focus:border-yellow-400"
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg text-white placeholder-zinc-500 min-h-[160px] focus:border-yellow-400"
         />
         <button
           onClick={handleFindMechanic}
@@ -90,6 +91,13 @@ export default function AssistantPage() {
       </div>
 
       {error && <div className="text-red-400 text-center py-8 text-lg">{error}</div>}
+
+      {possibleCause && (
+        <div className="mb-12 bg-zinc-900 rounded-3xl p-10">
+          <h3 className="text-xl font-semibold mb-4 text-yellow-400">Possible Cause</h3>
+          <p className="text-zinc-300 text-lg">{possibleCause}</p>
+        </div>
+      )}
 
       {mechanics.length > 0 && (
         <div>
@@ -131,6 +139,8 @@ export default function AssistantPage() {
           </div>
 
           <p className="text-3xl font-semibold mb-10">Problem: {input}</p>
+
+          {possibleCause && <p className="text-xl mb-8 text-zinc-600">Possible Cause: {possibleCause}</p>}
 
           <table className="w-full mb-12 text-lg">
             <thead>
