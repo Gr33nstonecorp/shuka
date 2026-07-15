@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // Sort by rating (best on top)
+    // Sort by rating (best first)
     mechanics.sort((a, b) => b.rating - a.rating);
 
     return NextResponse.json({ mechanics, possibleCause });
