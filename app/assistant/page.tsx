@@ -39,7 +39,7 @@ export default function AssistantPage() {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.mechanics) {
+      } else if (data.mechanics && Array.isArray(data.mechanics)) {
         setMechanics(data.mechanics);
       } else {
         setError("No mechanics found.");
@@ -59,9 +59,16 @@ export default function AssistantPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <h1 className="text-6xl font-black tracking-tighter text-yellow-400">Car Mechanic Finder</h1>
-        <p className="text-zinc-400 mt-4 text-xl max-w-2xl mx-auto">
-          Describe the problem with your car. Get local mechanics with pricing.
+        <div className="inline-block border border-yellow-400/40 text-yellow-400 px-6 py-2 rounded-full text-sm mb-6">
+          AI POWERED DIAGNOSTICS
+        </div>
+
+        <h1 className="text-6xl font-black tracking-tighter text-yellow-400 mb-6">
+          Find a Mechanic Based On Your Car's Needs
+        </h1>
+
+        <p className="text-zinc-400 text-xl max-w-2xl mx-auto">
+          Describe the problem. ShukAI finds local mechanics with pricing estimates.
         </p>
       </div>
 
@@ -71,7 +78,7 @@ export default function AssistantPage() {
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Brakes squeaking when I stop, check engine light came on..."
+          placeholder="Brakes squeaking when stopping, check engine light is on..."
           className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg min-h-[160px] focus:border-yellow-400"
         />
         <button
@@ -79,7 +86,7 @@ export default function AssistantPage() {
           disabled={loading || !input.trim()}
           className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-semibold py-5 rounded-2xl text-xl transition"
         >
-          {loading ? "Finding mechanics near you..." : "Find Mechanics"}
+          {loading ? "Finding mechanics..." : "AI Vehicle Diagnostic"}
         </button>
       </div>
 
@@ -120,7 +127,7 @@ export default function AssistantPage() {
       {showReport && (
         <div className="bg-white text-black rounded-3xl p-10 shadow-2xl mt-16">
           <div className="bg-black text-white p-10 rounded-t-3xl -mx-10 -mt-10 mb-12 text-center">
-            <div className="text-5xl font-black text-yellow-400">SHUKAI</div>
+            <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
             <div className="text-lg tracking-widest">OFFICIAL REPAIR REPORT</div>
           </div>
 
