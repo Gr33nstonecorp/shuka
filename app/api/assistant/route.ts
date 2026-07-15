@@ -15,31 +15,31 @@ export async function POST(req: NextRequest) {
     const lower = (problem || "").toLowerCase();
 
     let mechanics: Mechanic[] = [];
-    let possibleCause = "General diagnostic recommended.";
+    let possibleCause = "General diagnostic recommended. Recommend professional inspection.";
 
     if (lower.includes("brake") || lower.includes("squeak")) {
-      possibleCause = "Worn brake pads or rotors likely.";
+      possibleCause = "Worn brake pads or warped rotors. Common on high-mileage cars.";
       mechanics = [
-        { name: "Queens Auto Repair", price: 280, reason: "Brake pad replacement", distance: "2.3 miles", website: "https://www.yelp.com/biz/queens-auto-repair", rating: 4.8 },
-        { name: "Bayside Mechanics", price: 320, reason: "Full brake service", distance: "1.8 miles", website: "https://www.autozone.com/", rating: 4.5 },
+        { name: "Queens Brake & Auto", price: 280, reason: "Brake pad + rotor replacement", distance: "2.3 miles", website: "https://www.midas.com/", rating: 4.8 },
+        { name: "Bayside Auto Service", price: 320, reason: "Full brake inspection & service", distance: "1.8 miles", website: "https://www.firestonecompleteautocare.com/", rating: 4.6 },
       ];
     } else if (lower.includes("engine") || lower.includes("light")) {
-      possibleCause = "Sensor issue or low oil pressure.";
+      possibleCause = "O2 sensor, spark plugs, or catalytic converter issue. Scan code needed.";
       mechanics = [
-        { name: "NYC Auto Care", price: 450, reason: "Diagnostic + fix", distance: "3.1 miles", website: "https://www.yelp.com/biz/nyc-auto-care", rating: 4.9 },
+        { name: "NYC Auto Diagnostics", price: 450, reason: "Full engine diagnostic + fix", distance: "3.1 miles", website: "https://www.pepboys.com/", rating: 4.7 },
       ];
-    } else if (lower.includes("shake") || lower.includes("shaking")) {
-      possibleCause = "Tire balance or suspension issue.";
+    } else if (lower.includes("shake") || lower.includes("shaking") || lower.includes("vibration")) {
+      possibleCause = "Unbalanced tires, bad wheel bearing, or suspension problem.";
       mechanics = [
-        { name: "Local Garage", price: 350, reason: "Wheel alignment & balance", distance: "2.5 miles", website: "https://www.repairpal.com/", rating: 4.7 },
+        { name: "Local Tire & Alignment", price: 350, reason: "Tire balance + alignment", distance: "2.5 miles", website: "https://www.discounttire.com/", rating: 4.9 },
       ];
     } else {
+      possibleCause = "Could be multiple issues. Recommend full diagnostic scan.";
       mechanics = [
-        { name: "Local Auto Shop", price: 320, reason: "General diagnostic", distance: "2.8 miles", website: "https://www.yelp.com/", rating: 4.6 },
+        { name: "NY Auto Repair Center", price: 320, reason: "General diagnostic & repair", distance: "2.8 miles", website: "https://www.jiffylube.com/", rating: 4.5 },
       ];
     }
 
-    // Sort by rating (best first)
     mechanics.sort((a, b) => b.rating - a.rating);
 
     return NextResponse.json({ mechanics, possibleCause });
