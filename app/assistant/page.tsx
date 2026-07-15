@@ -39,7 +39,7 @@ export default function AssistantPage() {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.mechanics && Array.isArray(data.mechanics)) {
+      } else if (data.mechanics) {
         setMechanics(data.mechanics);
       } else {
         setError("No mechanics found.");
@@ -72,7 +72,6 @@ export default function AssistantPage() {
         </p>
       </div>
 
-      {/* Input */}
       <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
         <p className="text-zinc-400 mb-4 text-lg">What's wrong with your car?</p>
         <textarea
