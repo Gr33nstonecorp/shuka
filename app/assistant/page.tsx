@@ -8,10 +8,12 @@ type Mechanic = {
   reason: string;
   distance: string;
   website: string;
+  rating: number;
 };
 
 export default function AssistantPage() {
   const [input, setInput] = useState("");
+  const [zip, setZip] = useState("");
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [possibleCause, setPossibleCause] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,7 @@ export default function AssistantPage() {
 
   const handleFindMechanic = async () => {
     if (!input.trim()) {
-      setError("Please describe the problem with your car.");
+      setError("Please describe the problem.");
       return;
     }
 
@@ -34,7 +36,7 @@ export default function AssistantPage() {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problem: input }),
+        body: JSON.stringify({ problem: input, zip }),
       });
 
       const data = await res.json();
@@ -43,12 +45,12 @@ export default function AssistantPage() {
         setError(data.error);
       } else if (data.mechanics) {
         setMechanics(data.mechanics);
-        setPossibleCause(data.possibleCause || "General diagnostic needed.");
+        setPossibleCause(data.possibleCause || "General diagnostic recommended.");
       } else {
         setError("No mechanics found.");
       }
     } catch (err) {
-      setError("Failed to fetch results. Please try again.");
+      setError("Failed to fetch results.");
     } finally {
       setLoading(false);
     }
@@ -62,29 +64,39 @@ export default function AssistantPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <div className="inline-block border border-yellow-400/40 text-yellow-400 px-8 py-3 rounded-full text-sm mb-6">
-          AI POWERED DIAGNOSTICS
-        </div>
         <h1 className="text-6xl font-black tracking-tighter text-yellow-400 mb-6">
           Find a Mechanic Based On Your Car's Needs
         </h1>
-        <p className="text-zinc-400 text-xl max-w-2xl mx-auto">
-          Describe the problem. Get local mechanics with pricing estimates.
-        </p>
+        <p className="text-zinc-400 text-xl">Enter zip code for local results (best reviews on top).</p>
       </div>
 
       <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
-        <p className="text-zinc-400 mb-4 text-lg">What's wrong with your car?</p>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Brakes squeaking when stopping, check engine light is on..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg text-white placeholder-zinc-500 min-h-[160px] focus:border-yellow-400"
-        />
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <p className="text-zinc-400 mb-4">What's wrong with your car?</p>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Brakes squeaking when stopping..."
+              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg min-h-[160px]"
+            />
+          </div>
+          <div>
+            <p className="text-zinc-400 mb-4">Your Zip Code</p>
+            <input
+              type="text"
+              value={zip}
+              onChange={(e) => setZip(e.target.value)}
+              placeholder="11364"
+              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg"
+            />
+          </div>
+        </div>
+
         <button
           onClick={handleFindMechanic}
           disabled={loading || !input.trim()}
-          className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-semibold py-5 rounded-2xl text-xl transition"
+          className="mt-10 w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-semibold py-5 rounded-2xl text-xl"
         >
           {loading ? "Finding mechanics..." : "AI Vehicle Diagnostic"}
         </button>
@@ -101,16 +113,25 @@ export default function AssistantPage() {
 
       {mechanics.length > 0 && (
         <div>
-          <h2 className="text-4xl font-semibold mb-10 text-center">Recommended Mechanics</h2>
+          <h2 className="text-4xl font-semibold mb-10 text-center">Recommended Mechanics (Best Reviews First)</h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
             {mechanics.map((m, i) => (
               <div key={i} className="bg-zinc-900 rounded-3xl p-10 border border-zinc-800 hover:border-yellow-400/50 transition">
-                <div className="text-5xl mb-6">🔧</div>
-                <h3 className="text-2xl font-semibold mb-2">{m.name}</h3>
-                <div className="text-5xl font-black text-yellow-400 mb-1">${m.price}</div>
-                <p className="text-sm text-zinc-400 mb-6">{m.distance}</p>
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-2xl font-semibold">{m.name}</h3>
+                    <div className="text-yellow-400 text-5xl font-black mt-2">${m.price}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-zinc-400">Distance</div>
+                    <div className="text-xl font-medium">{m.distance}</div>
+                    <div className="text-yellow-400">★ {m.rating}</div>
+                  </div>
+                </div>
+
                 <p className="text-zinc-300 mb-8">{m.reason}</p>
+
                 <a
                   href={m.website}
                   target="_blank"
@@ -139,7 +160,6 @@ export default function AssistantPage() {
           </div>
 
           <p className="text-3xl font-semibold mb-10">Problem: {input}</p>
-
           {possibleCause && <p className="text-xl mb-8 text-zinc-600">Possible Cause: {possibleCause}</p>}
 
           <table className="w-full mb-12 text-lg">
