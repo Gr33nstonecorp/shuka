@@ -14,23 +14,27 @@ export async function POST(req: NextRequest) {
     const lower = (problem || "").toLowerCase();
 
     let mechanics: Mechanic[] = [];
+    let possibleCause = "General diagnostic recommended.";
 
     if (lower.includes("brake") || lower.includes("squeak")) {
+      possibleCause = "Worn brake pads or rotors likely.";
       mechanics = [
-        { name: "Queens Auto Repair", price: 280, reason: "Brake pad replacement - highly rated", distance: "2.3 miles", website: "https://www.yelp.com/biz/queens-auto-repair" },
-        { name: "Bayside Mechanics", price: 320, reason: "Full brake service with warranty", distance: "1.8 miles", website: "https://www.autozone.com/" },
+        { name: "Queens Auto Repair", price: 280, reason: "Brake pad replacement", distance: "2.3 miles", website: "https://www.yelp.com/biz/queens-auto-repair" },
+        { name: "Bayside Mechanics", price: 320, reason: "Full brake service", distance: "1.8 miles", website: "https://www.autozone.com/" },
       ];
     } else if (lower.includes("engine") || lower.includes("light")) {
+      possibleCause = "Sensor issue or low oil pressure.";
       mechanics = [
-        { name: "NYC Auto Care", price: 450, reason: "Diagnostic + check engine light fix", distance: "3.1 miles", website: "https://www.yelp.com/biz/nyc-auto-care" },
+        { name: "NYC Auto Care", price: 450, reason: "Diagnostic + fix check engine light", distance: "3.1 miles", website: "https://www.yelp.com/biz/nyc-auto-care" },
       ];
-    } else {
+    } else if (lower.includes("shake") || lower.includes("shaking")) {
+      possibleCause = "Tire balance or suspension issue.";
       mechanics = [
-        { name: "Local Garage", price: 350, reason: "General diagnosis & repair", distance: "2.5 miles", website: "https://www.repairpal.com/" },
+        { name: "Local Garage", price: 350, reason: "Wheel alignment & balance", distance: "2.5 miles", website: "https://www.repairpal.com/" },
       ];
     }
 
-    return NextResponse.json({ mechanics });
+    return NextResponse.json({ mechanics, possibleCause });
   } catch (error) {
     return NextResponse.json({ error: "Failed to find mechanics" }, { status: 500 });
   }
