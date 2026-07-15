@@ -7,7 +7,6 @@ type Mechanic = {
   price: number;
   reason: string;
   distance: string;
-  phone: string;
   website: string;
 };
 
@@ -30,7 +29,6 @@ export default function AssistantPage() {
     setShowReport(false);
 
     try {
-      // Call your backend
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -41,7 +39,7 @@ export default function AssistantPage() {
 
       if (data.error) {
         setError(data.error);
-      } else if (data.mechanics && Array.isArray(data.mechanics)) {
+      } else if (data.mechanics) {
         setMechanics(data.mechanics);
       } else {
         setError("No mechanics found.");
@@ -59,42 +57,53 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-black tracking-tighter text-yellow-400">Car Mechanic Finder</h1>
-        <p className="text-zinc-400 mt-3">Describe the problem → Get cheap local mechanics</p>
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="text-center mb-16">
+        <h1 className="text-6xl font-black tracking-tighter text-yellow-400">Car Mechanic Finder</h1>
+        <p className="text-zinc-400 mt-4 text-xl max-w-2xl mx-auto">
+          Describe the problem with your car. Get local mechanics with pricing.
+        </p>
       </div>
 
-      <div className="bg-zinc-900 rounded-3xl p-8 mb-12">
+      {/* Input */}
+      <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
+        <p className="text-zinc-400 mb-4 text-lg">What's wrong with your car?</p>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Brakes are squeaking, check engine light is on..."
-          className="w-full bg-black border border-zinc-700 rounded-2xl p-6 text-base min-h-[140px]"
+          placeholder="Brakes squeaking when I stop, check engine light came on..."
+          className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg min-h-[160px] focus:border-yellow-400"
         />
         <button
           onClick={handleFindMechanic}
           disabled={loading || !input.trim()}
-          className="mt-6 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-2xl text-lg"
+          className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-black font-semibold py-5 rounded-2xl text-xl transition"
         >
-          {loading ? "Finding mechanics..." : "Find Mechanics"}
+          {loading ? "Finding mechanics near you..." : "Find Mechanics"}
         </button>
       </div>
 
-      {error && <div className="text-red-400 text-center py-8">{error}</div>}
+      {error && <div className="text-red-400 text-center py-8 text-lg">{error}</div>}
 
       {mechanics.length > 0 && (
-        <div className="mb-16">
-          <h2 className="text-3xl font-semibold mb-8 text-center">Recommended Mechanics</h2>
+        <div>
+          <h2 className="text-4xl font-semibold mb-10 text-center">Recommended Mechanics</h2>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
             {mechanics.map((m, i) => (
-              <div key={i} className="bg-zinc-900 rounded-3xl p-8 text-center">
-                <h3 className="font-medium text-xl">{m.name}</h3>
-                <p className="text-4xl font-black text-yellow-400 mt-3">${m.price}</p>
-                <p className="text-zinc-400 mt-2">{m.distance}</p>
-                <p className="text-sm text-zinc-500 mt-4">{m.reason}</p>
-                <a href={m.website} target="_blank" className="mt-6 block bg-black text-yellow-400 py-4 rounded-2xl text-sm">Call / Book →</a>
+              <div key={i} className="bg-zinc-900 rounded-3xl p-10 border border-zinc-800 hover:border-yellow-400/50 transition">
+                <div className="text-5xl mb-6">🔧</div>
+                <h3 className="text-2xl font-semibold mb-2">{m.name}</h3>
+                <div className="text-5xl font-black text-yellow-400 mb-1">${m.price}</div>
+                <p className="text-sm text-zinc-400 mb-6">{m.distance}</p>
+                <p className="text-zinc-300 mb-8">{m.reason}</p>
+                <a
+                  href={m.website}
+                  target="_blank"
+                  className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-4 rounded-2xl"
+                >
+                  Contact / Book Appointment
+                </a>
               </div>
             ))}
           </div>
@@ -109,36 +118,36 @@ export default function AssistantPage() {
       )}
 
       {showReport && (
-        <div className="bg-white text-black rounded-3xl p-8 shadow-2xl">
-          <div className="bg-black text-white p-8 rounded-t-3xl -mx-8 -mt-8 mb-10 text-center">
-            <div className="text-4xl font-black text-yellow-400">SHUKAI</div>
-            <div className="text-sm">OFFICIAL REPAIR REPORT</div>
+        <div className="bg-white text-black rounded-3xl p-10 shadow-2xl mt-16">
+          <div className="bg-black text-white p-10 rounded-t-3xl -mx-10 -mt-10 mb-12 text-center">
+            <div className="text-5xl font-black text-yellow-400">SHUKAI</div>
+            <div className="text-lg tracking-widest">OFFICIAL REPAIR REPORT</div>
           </div>
 
-          <p className="text-2xl font-semibold mb-8">Problem: {input}</p>
+          <p className="text-3xl font-semibold mb-10">Problem: {input}</p>
 
-          <table className="w-full mb-12">
+          <table className="w-full mb-12 text-lg">
             <thead>
               <tr className="border-b-2 border-black">
-                <th className="text-left py-4">Mechanic</th>
-                <th className="text-left py-4">Estimate</th>
-                <th className="text-left py-4">Distance</th>
+                <th className="text-left py-5">Mechanic</th>
+                <th className="text-left py-5">Estimate</th>
+                <th className="text-left py-5">Distance</th>
               </tr>
             </thead>
             <tbody>
               {mechanics.map((m, i) => (
                 <tr key={i} className="border-b">
-                  <td className="py-5 font-medium">{m.name}</td>
-                  <td className="py-5 font-semibold">${m.price}</td>
-                  <td className="py-5">{m.distance}</td>
+                  <td className="py-6 font-medium">{m.name}</td>
+                  <td className="py-6 font-semibold">${m.price}</td>
+                  <td className="py-6">{m.distance}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="flex gap-4 mt-12">
-            <button onClick={() => window.print()} className="flex-1 py-4 bg-black text-white rounded-2xl">Print / Save PDF</button>
-            <button onClick={() => setShowReport(false)} className="flex-1 py-4 border border-black rounded-2xl">Close</button>
+          <div className="flex gap-4">
+            <button onClick={() => window.print()} className="flex-1 py-5 bg-black text-white rounded-2xl text-lg">Print / Save as PDF</button>
+            <button onClick={() => setShowReport(false)} className="flex-1 py-5 border border-black rounded-2xl text-lg">Close Report</button>
           </div>
         </div>
       )}
