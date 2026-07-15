@@ -36,18 +36,16 @@ export default function AssistantPage() {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problem: input, zip }),
+        body: JSON.stringify({ problem: input, zip: zip || "11364" }),
       });
 
       const data = await res.json();
 
       if (data.error) {
         setError(data.error);
-      } else if (data.mechanics) {
-        setMechanics(data.mechanics);
-        setPossibleCause(data.possibleCause || "General diagnostic recommended.");
       } else {
-        setError("No mechanics found.");
+        setMechanics(data.mechanics || []);
+        setPossibleCause(data.possibleCause || "General diagnostic recommended.");
       }
     } catch (err) {
       setError("Failed to fetch results.");
@@ -67,7 +65,7 @@ export default function AssistantPage() {
         <h1 className="text-6xl font-black tracking-tighter text-yellow-400 mb-6">
           Find a Mechanic Based On Your Car's Needs
         </h1>
-        <p className="text-zinc-400 text-xl">Enter zip code for local results (best reviews on top).</p>
+        <p className="text-zinc-400 text-xl">Enter zip code for local results.</p>
       </div>
 
       <div className="bg-zinc-900 rounded-3xl p-10 mb-16">
@@ -78,7 +76,7 @@ export default function AssistantPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Brakes squeaking when stopping..."
-              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg min-h-[160px]"
+              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg text-white placeholder-zinc-400 min-h-[160px] focus:border-yellow-400"
             />
           </div>
           <div>
@@ -88,7 +86,7 @@ export default function AssistantPage() {
               value={zip}
               onChange={(e) => setZip(e.target.value)}
               placeholder="11364"
-              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg"
+              className="w-full bg-black border border-zinc-700 rounded-2xl p-8 text-lg text-white"
             />
           </div>
         </div>
@@ -137,7 +135,7 @@ export default function AssistantPage() {
                   target="_blank"
                   className="block w-full text-center bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-4 rounded-2xl"
                 >
-                  Contact / Book Appointment
+                  Visit Shop / Book Appointment
                 </a>
               </div>
             ))}
