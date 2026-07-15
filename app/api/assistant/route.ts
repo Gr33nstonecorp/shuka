@@ -10,17 +10,17 @@ type Mechanic = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { product_name } = await req.json();
-    const problem = (product_name || "").toLowerCase();
+    const { problem } = await req.json();
+    const lower = (problem || "").toLowerCase();
 
     let mechanics: Mechanic[] = [];
 
-    if (problem.includes("brake") || problem.includes("squeak")) {
+    if (lower.includes("brake") || lower.includes("squeak")) {
       mechanics = [
         { name: "Queens Auto Repair", price: 280, reason: "Brake pad replacement - good reviews", distance: "2.3 miles", website: "https://example.com/queens-auto" },
         { name: "Bayside Mechanics", price: 320, reason: "Full brake service", distance: "1.8 miles", website: "https://example.com/bayside" },
       ];
-    } else if (problem.includes("engine") || problem.includes("light")) {
+    } else if (lower.includes("engine") || lower.includes("light")) {
       mechanics = [
         { name: "NYC Auto Care", price: 450, reason: "Diagnostic + fix check engine light", distance: "3.1 miles", website: "https://example.com/nyc-auto" },
       ];
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    return NextResponse.json({ results: mechanics });
+    return NextResponse.json({ mechanics });
   } catch (error) {
     return NextResponse.json({ error: "Failed to find mechanics" }, { status: 500 });
   }
