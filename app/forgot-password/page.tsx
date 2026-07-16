@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase"; // 👈 Imports our safe client helper
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -21,6 +16,16 @@ export default function ForgotPasswordPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
+    // Guard check to catch missing environment variables early
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")
+    ) {
+      setErrorMsg("Configuration Error: Database credentials are missing on the live server. Please set up your environment variables in your hosting settings.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -29,7 +34,7 @@ export default function ForgotPasswordPage() {
       if (error) throw error;
       setSuccessMsg("Check your inbox! We've sent you a password reset link.");
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to send reset link.");
+      setErrorMsg(err.message || "Failed to send reset link. Please check your internet connection.");
     } finally {
       setLoading(false);
     }
@@ -38,7 +43,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-[calc(100vh-73px)] bg-black flex flex-col justify-center py-12 px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500">
+        <h2 className="text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 tracking-tight">
           Reset Your Password
         </h2>
         <p className="mt-2 text-center text-sm text-zinc-400">
@@ -50,7 +55,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-zinc-950 py-8 px-4 border border-zinc-900 rounded-2xl sm:px-10 shadow-xl shadow-yellow-500/5">
           <form className="space-y-6" onSubmit={handleResetRequest}>
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm leading-relaxed">
                 ⚠️ {errorMsg}
               </div>
             )}
@@ -78,7 +83,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150 active:scale-95"
               >
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
@@ -88,7 +93,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 text-center">
             <Link
               href="/login"
-              className="text-sm text-zinc-400 hover:text-yellow-400 transition"
+              className="text-sm text-zinc-400 hover:text-yellow-400 transition-colors"
             >
               Back to Sign In
             </Link>
