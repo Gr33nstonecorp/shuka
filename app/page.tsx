@@ -10,7 +10,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-yellow-400 mb-12 leading-none">
-            Find a Mechanic<br />Based On Your Car's Needs
+            Find a Mechanic Based On Your Car's Needs
           </h1>
 
           <p className="text-2xl text-zinc-400 max-w-2xl mx-auto mb-16">
