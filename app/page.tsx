@@ -3,27 +3,25 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-6xl mx-auto px-6 py-32">
-        <div className="text-center">
-          <div className="inline-block border border-yellow-400/30 text-yellow-400 px-8 py-3 rounded-full text-sm mb-8 tracking-widest">
-            AI POWERED VEHICLE DIAGNOSTICS
-          </div>
-
-          <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-yellow-400 mb-12 leading-none">
-            Find a Mechanic Based On Your Car's Needs
-          </h1>
-
-          <p className="text-2xl text-zinc-400 max-w-3xl mx-auto mb-16">
-            Describe the problem with your car. Get local mechanics with fair pricing and quick quotes.
-          </p>
-
-          <Link
-            href="/assistant"
-            className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-3xl px-20 py-8 rounded-3xl transition active:scale-95"
-          >
-            AI Vehicle Diagnostic →
-          </Link>
+      <div className="max-w-5xl mx-auto px-6 py-32 text-center">
+        <div className="inline-block border border-yellow-400/30 text-yellow-400 px-8 py-3 rounded-full text-sm mb-8 tracking-widest">
+          AI POWERED VEHICLE DIAGNOSTICS
         </div>
+
+        <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-yellow-400 mb-12 leading-none">
+          Find a Mechanic Based On Your Car's Needs
+        </h1>
+
+        <p className="text-2xl text-zinc-400 max-w-3xl mx-auto mb-16">
+          Describe the problem with your car. Get local mechanics with fair pricing and quick quotes.
+        </p>
+
+        <Link
+          href="/assistant"
+          className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-3xl px-20 py-8 rounded-3xl transition active:scale-95"
+        >
+          AI Vehicle Diagnostic →
+        </Link>
 
         <div className="mt-32 grid md:grid-cols-3 gap-12 text-center">
           <div>
