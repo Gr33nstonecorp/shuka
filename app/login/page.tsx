@@ -121,29 +121,29 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password Field + Forgot Password Link */}
+            {/* Password Field */}
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium text-zinc-300">Password</label>
-                {!isSignUp && (
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="appearance-none block w-full px-3 py-3 rounded-xl bg-zinc-900 border border-zinc-800 placeholder-zinc-500 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                placeholder="••••••••"
+              />
+              
+              {/* HIGH VISIBILITY Forgot Password Link (Only shows on Log In mode) */}
+              {!isSignUp && (
+                <div className="mt-2 text-right">
                   <Link
                     href="/forgot-password"
-                    className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors"
+                    className="text-xs font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
                   >
-                    Forgot password?
+                    Forgot your password?
                   </Link>
-                )}
-              </div>
-              <div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-3 rounded-xl bg-zinc-900 border border-zinc-800 placeholder-zinc-500 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -159,7 +159,7 @@ export default function LoginPage() {
           </form>
 
           {/* Flow Toggle Switch */}
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center border-t border-zinc-900 pt-6">
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
