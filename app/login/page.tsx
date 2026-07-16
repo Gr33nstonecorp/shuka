@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -27,7 +29,7 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Sign Up with full name passed to Supabase user metadata
+        // Sign Up Flow (Sends a verification link to email)
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -39,10 +41,10 @@ export default function LoginPage() {
           },
         });
         if (error) throw error;
-        setSuccessMsg("We sent a confirmation link! Check your email to verify your account.");
+        setSuccessMsg("We sent a confirmation link! Check your email inbox to verify your account.");
       } else {
-        // Log In
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Log In Flow
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -61,7 +63,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-73px)] bg-black flex flex-col justify-center py-12 px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500">
+        <h2 className="text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 tracking-tight">
           {isSignUp ? "Create your ShukAI account" : "Welcome back to ShukAI"}
         </h2>
         <p className="mt-2 text-center text-sm text-zinc-400">
@@ -72,17 +74,22 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-zinc-950 py-8 px-4 border border-zinc-900 rounded-2xl sm:px-10 shadow-xl shadow-yellow-500/5">
           <form className="space-y-6" onSubmit={handleAuth}>
+            
+            {/* Error Message Alert */}
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-sm">
                 ⚠️ {errorMsg}
               </div>
             )}
+            
+            {/* Success Message Alert */}
             {successMsg && (
-              <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg text-sm">
+              <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-xl text-sm">
                 ✉️ {successMsg}
               </div>
             )}
 
+            {/* Optional Full Name input for Signup */}
             {isSignUp && (
               <div>
                 <label className="block text-sm font-medium text-zinc-300">Full Name</label>
@@ -99,6 +106,7 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-zinc-300">Email address</label>
               <div className="mt-1">
@@ -113,9 +121,20 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Password Field + Forgot Password Link */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300">Password</label>
-              <div className="mt-1">
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-zinc-300">Password</label>
+                {!isSignUp && (
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
+              <div>
                 <input
                   type="password"
                   required
@@ -127,17 +146,19 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150 transform active:scale-95"
               >
                 {loading ? "Please wait..." : isSignUp ? "Send Confirmation Link" : "Sign In"}
               </button>
             </div>
           </form>
 
+          {/* Flow Toggle Switch */}
           <div className="mt-6 text-center">
             <button
               onClick={() => {
@@ -145,7 +166,7 @@ export default function LoginPage() {
                 setErrorMsg("");
                 setSuccessMsg("");
               }}
-              className="text-sm text-zinc-400 hover:text-yellow-400 transition"
+              className="text-sm text-zinc-400 hover:text-yellow-400 transition-colors"
             >
               {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Create one"}
             </button>
