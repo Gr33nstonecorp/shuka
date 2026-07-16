@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import Link from "next/link";
 
-// Initialize Supabase client on the client side
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -15,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -28,23 +27,27 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // Profile Creation / Sign Up
-        const { data, error } = await supabase.auth.signUp({
+        // Sign Up with full name passed to Supabase user metadata
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/profile`,
+            data: {
+              full_name: fullName,
+            }
           },
         });
         if (error) throw error;
-        setSuccessMsg("Check your email for the confirmation link!");
+        setSuccessMsg("We sent a confirmation link! Check your email to verify your account.");
       } else {
         // Log In
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
         router.push("/profile");
         router.refresh();
       }
@@ -77,6 +80,22 @@ export default function LoginPage() {
             {successMsg && (
               <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg text-sm">
                 ✉️ {successMsg}
+              </div>
+            )}
+
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-300">Full Name</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="appearance-none block w-full px-3 py-3 rounded-xl bg-zinc-900 border border-zinc-800 placeholder-zinc-500 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                    placeholder="John Doe"
+                  />
+                </div>
               </div>
             )}
 
@@ -114,7 +133,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150"
               >
-                {loading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
+                {loading ? "Please wait..." : isSignUp ? "Send Confirmation Link" : "Sign In"}
               </button>
             </div>
           </form>
