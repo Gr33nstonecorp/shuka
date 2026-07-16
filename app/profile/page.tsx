@@ -2,144 +2,171 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type Vehicle = {
-  id?: string;
-  make: string;
-  model: string;
-  year: number;
-  vin?: string;
-};
-
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [newVehicle, setNewVehicle] = useState<Vehicle>({ make: "", model: "", year: new Date().getFullYear() });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  // Profile & Garage States
+  const [fullName, setFullName] = useState("");
+  const [carYear, setCarYear] = useState("");
+  const [carMake, setCarMake] = useState("");
+  const [carModel, setCarModel] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+    const fetchProfile = async () => {
+      // 1. Get authenticated session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      
+      setUser(session.user);
 
-      if (user) {
-        const { data } = await supabase
-          .from("vehicles")
-          .select("*")
-          .eq("user_id", user.id);
-        setVehicles(data || []);
+      // 2. Query user profile record containing vehicle garage
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, car_year, car_make, car_model")
+        .eq("id", session.user.id)
+        .single();
+
+      if (data) {
+        setFullName(data.full_name || "");
+        setCarYear(data.car_year || "");
+        setCarMake(data.car_make || "");
+        setCarModel(data.car_model || "");
       }
       setLoading(false);
     };
-    loadProfile();
-  }, []);
 
-  const addVehicle = async () => {
-    if (!user || !newVehicle.make || !newVehicle.model) return;
+    fetchProfile();
+  }, [router]);
 
-    const { data, error } = await supabase
-      .from("vehicles")
-      .insert([{ ...newVehicle, user_id: user.id }])
-      .select();
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage("");
 
-    if (!error && data) {
-      setVehicles([...vehicles, data[0]]);
-      setNewVehicle({ make: "", model: "", year: new Date().getFullYear() });
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        full_name: fullName,
+        car_year: carYear,
+        car_make: carMake,
+        car_model: carModel,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      setMessage(`❌ Error saving changes: ${error.message}`);
+    } else {
+      setMessage("✅ Your garage details were successfully saved!");
     }
+    setSaving(false);
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
+    return (
+      <div className="min-h-[calc(100vh-73px)] bg-black text-white flex items-center justify-center">
+        <div className="animate-pulse text-yellow-400 font-semibold tracking-wider">
+          Retrieving garage profile...
+        </div>
+      </div>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 py-12">
-      <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <div className="text-7xl mb-8">👤</div>
-          <h1 className="text-5xl font-black tracking-tighter mb-6">Profile & Settings</h1>
-          <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto">
-            Manage your account, vehicles, subscription, and preferences.
-          </p>
-        </div>
+    <div className="min-h-[calc(100vh-73px)] bg-black text-white py-12 px-6">
+      <div className="max-w-2xl mx-auto bg-zinc-950 border border-zinc-900 rounded-3xl p-8 shadow-xl shadow-yellow-500/5">
+        <h1 className="text-3xl font-extrabold mb-2 tracking-tight">Your Garage Profile</h1>
+        <p className="text-zinc-400 text-sm mb-8">Keep your profile and vehicle specs up-to-date for exact AI diagnostics.</p>
 
-        {/* Account Info */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Account Information</h2>
-          <p className="text-lg">
-            <span className="text-zinc-500 dark:text-zinc-400">Email:</span> {user?.email}
-          </p>
-        </div>
-
-        {/* Vehicles Section */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-10 mb-12">
-          <h2 className="text-2xl font-semibold mb-8">My Vehicles</h2>
-
-          {vehicles.length === 0 && (
-            <p className="text-zinc-500 dark:text-zinc-400 mb-8">No vehicles added yet.</p>
+        <form onSubmit={handleUpdateProfile} className="space-y-6">
+          {message && (
+            <div className={`p-4 rounded-xl text-sm border ${message.startsWith("✅") ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+              {message}
+            </div>
           )}
 
-          <div className="space-y-6 mb-12">
-            {vehicles.map((v, i) => (
-              <div key={i} className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl p-6">
-                <p className="text-xl font-medium">
-                  {v.year} {v.make} {v.model}
-                </p>
-                {v.vin && <p className="text-sm text-zinc-500">VIN: {v.vin}</p>}
-              </div>
-            ))}
+          <div>
+            <label className="block text-sm font-medium text-zinc-400">Registered Email</label>
+            <input
+              type="text"
+              disabled
+              value={user?.email || ""}
+              className="mt-2 block w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 text-sm cursor-not-allowed"
+            />
           </div>
 
-          <h3 className="text-xl font-semibold mb-6">Add New Vehicle</h3>
+          <div>
+            <label className="block text-sm font-medium text-zinc-300">Owner Name</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="John Doe"
+              className="mt-2 block w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+            />
+          </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <input
-              type="text"
-              placeholder="Make (e.g. Toyota)"
-              value={newVehicle.make}
-              onChange={(e) => setNewVehicle({ ...newVehicle, make: e.target.value })}
-              className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5"
-            />
-            <input
-              type="text"
-              placeholder="Model (e.g. Camry)"
-              value={newVehicle.model}
-              onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })}
-              className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5"
-            />
-            <input
-              type="number"
-              placeholder="Year"
-              value={newVehicle.year}
-              onChange={(e) => setNewVehicle({ ...newVehicle, year: parseInt(e.target.value) })}
-              className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5"
-            />
-            <input
-              type="text"
-              placeholder="VIN (optional)"
-              value={newVehicle.vin || ""}
-              onChange={(e) => setNewVehicle({ ...newVehicle, vin: e.target.value })}
-              className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-5"
-            />
+          {/* Vehicle Fields Grid */}
+          <div className="border-t border-zinc-900 pt-6">
+            <h3 className="text-lg font-bold text-yellow-400 mb-4">Garage Vehicle Information</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Year</label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="2018"
+                  value={carYear}
+                  onChange={(e) => setCarYear(e.target.value)}
+                  className="block w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Make</label>
+                <input
+                  type="text"
+                  placeholder="Honda"
+                  value={carMake}
+                  onChange={(e) => setCarMake(e.target.value)}
+                  className="block w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Model</label>
+                <input
+                  type="text"
+                  placeholder="Civic"
+                  value={carModel}
+                  onChange={(e) => setCarModel(e.target.value)}
+                  className="block w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
           </div>
 
           <button
-            onClick={addVehicle}
-            className="mt-8 w-full bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-5 rounded-3xl text-lg"
+            type="submit"
+            disabled={saving}
+            className="w-full py-3 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black font-bold rounded-xl transition duration-150 active:scale-95 disabled:opacity-50"
           >
-            Add Vehicle
+            {saving ? "Saving Garage..." : "Save Vehicle"}
           </button>
-        </div>
-
-        <div className="text-center">
-          <a href="/" className="text-blue-600 hover:text-blue-700 font-medium">← Back to Homepage</a>
-        </div>
+        </form>
       </div>
-    </main>
+    </div>
   );
 }
