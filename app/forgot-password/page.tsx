@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase"; // 👈 Imports our safe client helper
+import { createClient } from "@supabase/supabase-js";
+
+// Safely initialize Supabase with fallbacks so Vercel doesn't crash during the build
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-url.supabase.co";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -16,12 +21,9 @@ export default function ForgotPasswordPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    // Guard check to catch missing environment variables early
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder")
-    ) {
-      setErrorMsg("Configuration Error: Database credentials are missing on the live server. Please set up your environment variables in your hosting settings.");
+    // Guard check to catch missing environment variables on the live site
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || supabaseUrl.includes("placeholder")) {
+      setErrorMsg("Configuration Error: Database credentials are missing. Please set up your NEXT_PUBLIC_SUPABASE environment variables in Vercel.");
       setLoading(false);
       return;
     }
