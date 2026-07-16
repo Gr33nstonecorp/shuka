@@ -9,7 +9,7 @@ export default function HomePage() {
             AI POWERED VEHICLE DIAGNOSTICS
           </div>
 
-          <h1 className="text-7xl font-black tracking-tighter text-yellow-400 mb-8">
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-yellow-400 mb-8">
             Find a Mechanic Based On Your Car's Needs
           </h1>
 
@@ -21,7 +21,7 @@ export default function HomePage() {
         <div className="text-center">
           <Link
             href="/assistant"
-            className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-2xl px-16 py-8 rounded-3xl transition"
+            className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-2xl px-16 py-8 rounded-3xl transition active:scale-95"
           >
             AI Vehicle Diagnostic →
           </Link>
@@ -29,7 +29,7 @@ export default function HomePage() {
 
         <div className="mt-32 grid md:grid-cols-3 gap-10 text-center">
           <div className="bg-zinc-900 rounded-3xl p-10">
-            <div className="text-6xl mb-6">🔧</div>
+            <div className="text-6xl mb-6">⚡</div>
             <h3 className="text-2xl font-semibold mb-4">Instant Quotes</h3>
             <p className="text-zinc-400">Get pricing estimates from local mechanics in seconds.</p>
           </div>
