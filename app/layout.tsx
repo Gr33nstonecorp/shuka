@@ -16,10 +16,9 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="bg-zinc-950 text-white">
-        {/* Top Navigation */}
         <nav className="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-            <Link href="/" className="text-2xl font-black text-yellow-400">ShukAI</Link>
+            <Link href="/" className="text-3xl font-black text-yellow-400">ShukAI</Link>
 
             <div className="flex items-center gap-8 text-sm font-medium">
               <Link href="/assistant" className="hover:text-yellow-400 transition">AI Diagnostic</Link>
