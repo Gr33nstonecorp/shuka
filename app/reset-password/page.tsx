@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,162 +10,109 @@ const supabase = createClient(
 );
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("Checking reset link...");
-  const [ready, setReady] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
-      if (event === "PASSWORD_RECOVERY") {
-        setReady(true);
-        setMessage("");
-        return;
-      }
-
-      if (session) {
-        setReady(true);
-        setMessage("");
-      }
-    });
-
-    async function checkExistingSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!mounted) return;
-
-      if (session) {
-        setReady(true);
-        setMessage("");
-        return;
-      }
-
-      setReady(false);
-      setMessage(
-        "Open the newest reset link directly from your email, then set your new password here."
-      );
-    }
-
-    checkExistingSession();
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  async function handleUpdatePassword(e: React.FormEvent) {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setErrorMsg("");
+    setSuccessMsg("");
 
-    const { error } = await supabase.auth.updateUser({
-      password,
-    });
-
-    if (error) {
-      setMessage("Password reset failed: " + error.message);
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
       setLoading(false);
       return;
     }
 
-    setMessage("✅ Password updated. You can now log in.");
-    setLoading(false);
-  }
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) throw error;
+
+      setSuccessMsg("Password updated successfully! Redirecting you to your profile...");
+      setTimeout(() => {
+        router.push("/profile");
+        router.refresh();
+      }, 2000);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f3f4f6",
-        padding: "24px",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "460px",
-          background: "white",
-          borderRadius: "16px",
-          padding: "28px",
-          border: "1px solid #ddd",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h1 style={{ marginTop: 0, marginBottom: "8px" }}>Reset Password</h1>
-        <p style={{ color: "#555", marginTop: 0 }}>
+    <div className="min-h-[calc(100vh-73px)] bg-black flex flex-col justify-center py-12 px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="text-center text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500">
+          Create New Password
+        </h2>
+        <p className="mt-2 text-center text-sm text-zinc-400">
           Enter your new password below.
         </p>
+      </div>
 
-        <form
-          onSubmit={handleUpdatePassword}
-          style={{ display: "grid", gap: "12px", marginTop: "18px" }}
-        >
-          <input
-            type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            disabled={!ready || loading}
-            style={{
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-              fontSize: "14px",
-            }}
-          />
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-zinc-950 py-8 px-4 border border-zinc-900 rounded-2xl sm:px-10 shadow-xl shadow-yellow-500/5">
+          <form className="space-y-6" onSubmit={handleUpdatePassword}>
+            {errorMsg && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+            {successMsg && (
+              <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg text-sm">
+                ✅ {successMsg}
+              </div>
+            )}
 
-          <button
-            type="submit"
-            disabled={!ready || loading}
-            style={{
-              padding: "12px",
-              background: "#111827",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: ready && !loading ? "pointer" : "not-allowed",
-              fontWeight: "bold",
-              opacity: ready && !loading ? 1 : 0.6,
-            }}
-          >
-            {loading ? "Updating..." : "Update Password"}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium text-zinc-300">New Password</label>
+              <div className="mt-1">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-3 rounded-xl bg-zinc-900 border border-zinc-800 placeholder-zinc-500 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
 
-        {message && (
-          <p style={{ marginTop: "16px", color: "#333", whiteSpace: "pre-wrap" }}>
-            {message}
-          </p>
-        )}
+            <div>
+              <label className="block text-sm font-medium text-zinc-300">Confirm New Password</label>
+              <div className="mt-1">
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-3 rounded-xl bg-zinc-900 border border-zinc-800 placeholder-zinc-500 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-sm"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
 
-        <div style={{ marginTop: "16px" }}>
-          <Link
-            href="/login"
-            style={{
-              fontSize: "13px",
-              color: "#2563eb",
-              textDecoration: "none",
-              fontWeight: 600,
-            }}
-          >
-            Back to login
-          </Link>
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-black bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 disabled:opacity-50 transition duration-150"
+              >
+                {loading ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
