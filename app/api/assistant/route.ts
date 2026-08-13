@@ -5,35 +5,109 @@ export async function POST(req: NextRequest) {
     const { problem, zip } = await req.json();
     const lower = (problem || "").toLowerCase();
 
-    let mechanics = [];
-    let possibleCause = "General diagnostic recommended.";
+    let landscapers = [];
+    let possibleScope = "General landscaping work recommended.";
 
-    if (lower.includes("brake") || lower.includes("screech")) {
-      possibleCause = "Worn brake pads or rotors likely.";
-      mechanics = [
-        { name: "Queens Brake Masters", price: 280, reason: "Brake pad replacement", distance: "2.3 miles", website: "https://www.midas.com/", rating: 4.8 },
-        { name: "Bayside Auto Service", price: 320, reason: "Full brake service", distance: "1.8 miles", website: "https://www.firestonecompleteautocare.com/", rating: 4.6 },
+    if (lower.includes("mow") || lower.includes("lawn") || lower.includes("grass")) {
+      possibleScope = "Regular lawn mowing + edging recommended.";
+      landscapers = [
+        {
+          name: "GreenLeaf Lawn Care",
+          price: 85,
+          reason: "Weekly mowing + edging for standard lots",
+          distance: "1.9 miles",
+          website: "https://www.angi.com/",
+          rating: 4.9,
+        },
+        {
+          name: "Yard Masters NYC",
+          price: 110,
+          reason: "Premium lawn care with fertilizer option",
+          distance: "2.4 miles",
+          website: "https://www.homeadvisor.com/",
+          rating: 4.7,
+        },
       ];
-    } else if (lower.includes("engine") || lower.includes("light")) {
-      possibleCause = "O2 sensor or catalytic converter issue.";
-      mechanics = [
-        { name: "NYC Auto Diagnostics", price: 450, reason: "Engine diagnostic + fix", distance: "3.1 miles", website: "https://www.pepboys.com/", rating: 4.9 },
+    } else if (lower.includes("tree") || lower.includes("branch") || lower.includes("trim")) {
+      possibleScope = "Tree trimming or removal needed.";
+      landscapers = [
+        {
+          name: "ArborPro Tree Service",
+          price: 450,
+          reason: "Tree trimming and stump grinding",
+          distance: "3.1 miles",
+          website: "https://www.angi.com/",
+          rating: 4.8,
+        },
       ];
-    } else if (lower.includes("shake") || lower.includes("shaking")) {
-      possibleCause = "Tire balance or suspension problem.";
-      mechanics = [
-        { name: "Local Tire Pros", price: 350, reason: "Wheel alignment & balance", distance: "2.5 miles", website: "https://www.discounttire.com/", rating: 4.8 },
+    } else if (lower.includes("cleanup") || lower.includes("overgrown") || lower.includes("brush")) {
+      possibleScope = "Full yard cleanup and brush removal recommended.";
+      landscapers = [
+        {
+          name: "CleanScape Landscaping",
+          price: 320,
+          reason: "Full property cleanup + debris removal",
+          distance: "2.2 miles",
+          website: "https://www.homeadvisor.com/",
+          rating: 4.6,
+        },
+        {
+          name: "GreenLeaf Lawn Care",
+          price: 280,
+          reason: "Cleanup + first mowing included",
+          distance: "1.9 miles",
+          website: "https://www.angi.com/",
+          rating: 4.9,
+        },
+      ];
+    } else if (lower.includes("hardscap") || lower.includes("patio") || lower.includes("stone") || lower.includes("walkway")) {
+      possibleScope = "Hardscaping project (patio, walkway, or retaining wall).";
+      landscapers = [
+        {
+          name: "StoneWorks Design",
+          price: 2800,
+          reason: "Patio / walkway installation estimate",
+          distance: "4.0 miles",
+          website: "https://www.homeadvisor.com/",
+          rating: 4.8,
+        },
       ];
     } else {
-      mechanics = [
-        { name: "Neighborhood Auto Care", price: 320, reason: "General diagnostic", distance: "2.8 miles", website: "https://www.jiffylube.com/", rating: 4.6 },
+      // Default fallback
+      landscapers = [
+        {
+          name: "GreenLeaf Lawn Care",
+          price: 150,
+          reason: "General landscaping consultation + quote",
+          distance: "2.1 miles",
+          website: "https://www.angi.com/",
+          rating: 4.8,
+        },
+        {
+          name: "Yard Masters NYC",
+          price: 175,
+          reason: "On-site assessment and full quote",
+          distance: "2.8 miles",
+          website: "https://www.homeadvisor.com/",
+          rating: 4.7,
+        },
       ];
     }
 
-    mechanics.sort((a, b) => b.rating - a.rating);
+    // Sort by rating (best first)
+    landscapers.sort((a, b) => b.rating - a.rating);
 
-    return NextResponse.json({ mechanics, possibleCause });
+    return NextResponse.json({
+      landscapers,
+      mechanics: landscapers, // temporary compatibility
+      possibleScope,
+      possibleCause: possibleScope,
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to find landscapers" },
+      { status: 500 }
+    );
   }
 }
