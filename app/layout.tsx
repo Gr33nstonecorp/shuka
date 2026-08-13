@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import "./globals.css";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,110 +18,94 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#050505] text-white antialiased">
-        {/* Navigation */}
-        <nav className="sticky top-0 z-50 border-b border-white/5 bg-black/70 backdrop-blur-xl">
-          <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-
+      <body className="bg-[#050807] text-white antialiased">
+        <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#050807]/90 backdrop-blur-xl">
+          <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
+            
             {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 group"
-            >
-              <div className="h-9 w-9 rounded-xl bg-yellow-400 flex items-center justify-center text-black text-lg shadow-[0_0_20px_rgba(250,204,21,0.12)]">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-400 to-green-600 text-xl shadow-lg shadow-green-500/20">
                 🌿
               </div>
 
-              <span className="text-xl font-black tracking-tight">
+              <span className="text-2xl font-black tracking-tight">
                 Shuk<span className="text-yellow-400">AI</span>
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-7 text-sm font-medium text-zinc-400">
+            {/* Desktop Nav */}
+            <div className="hidden items-center gap-8 md:flex">
               <Link
                 href="/assistant"
-                className="hover:text-white transition"
+                className="text-sm font-semibold text-zinc-300 transition hover:text-white"
               >
                 Get Quotes
               </Link>
 
               <Link
                 href="/profile"
-                className="hover:text-white transition"
+                className="text-sm font-semibold text-zinc-300 transition hover:text-white"
               >
                 My Jobs
               </Link>
 
               <Link
                 href="/provider"
-                className="hover:text-white transition"
+                className="text-sm font-semibold text-zinc-300 transition hover:text-white"
               >
                 For Landscapers
               </Link>
             </div>
 
-            {/* Account */}
+            {/* Right */}
             <div className="flex items-center gap-3">
-              {session ? (
-                <>
-                  <Link
-                    href="/profile"
-                    className="hidden sm:flex items-center gap-2 border border-white/10 hover:border-yellow-400/30 bg-white/[0.03] hover:bg-white/[0.06] px-4 py-2.5 rounded-xl transition"
-                  >
-                    <span className="h-2 w-2 rounded-full bg-green-400" />
-                    <span className="text-sm font-semibold">
-                      My Account
-                    </span>
-                  </Link>
-
-                  <Link
-                    href="/logout"
-                    className="text-sm text-zinc-500 hover:text-red-400 transition"
-                  >
-                    Log Out
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="hidden sm:block text-sm font-semibold text-zinc-400 hover:text-white transition"
-                  >
-                    Log In
-                  </Link>
-
-                  <Link
-                    href="/assistant"
-                    className="bg-yellow-400 hover:bg-yellow-300 text-black px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-[0_0_25px_rgba(250,204,21,0.1)]"
-                  >
-                    Get a Quote
-                  </Link>
-                </>
+              {session && (
+                <Link
+                  href="/profile"
+                  className="hidden rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-green-400/30 hover:text-white sm:block"
+                >
+                  My Account
+                </Link>
               )}
+
+              {!session && (
+                <Link
+                  href="/login"
+                  className="hidden text-sm font-semibold text-zinc-300 transition hover:text-white sm:block"
+                >
+                  Log In
+                </Link>
+              )}
+
+              <Link
+                href="/assistant"
+                className="rounded-xl bg-yellow-400 px-5 py-3 text-sm font-black text-black transition hover:bg-yellow-300 hover:shadow-lg hover:shadow-yellow-400/20"
+              >
+                Get a Quote
+              </Link>
             </div>
           </div>
 
-          {/* Mobile Navigation */}
-          <div className="md:hidden border-t border-white/5">
-            <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between text-xs font-semibold text-zinc-500">
+          {/* Mobile nav */}
+          <div className="border-t border-white/5 md:hidden">
+            <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
               <Link
                 href="/assistant"
-                className="hover:text-yellow-400 transition"
+                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
               >
                 Get Quotes
               </Link>
 
               <Link
                 href="/profile"
-                className="hover:text-yellow-400 transition"
+                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
               >
                 My Jobs
               </Link>
 
               <Link
                 href="/provider"
-                className="hover:text-yellow-400 transition"
+                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
               >
                 Landscapers
               </Link>
@@ -128,10 +113,7 @@ export default async function RootLayout({
           </div>
         </nav>
 
-        {/* Page Content */}
-        <main>
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );
