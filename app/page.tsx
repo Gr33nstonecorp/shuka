@@ -2,324 +2,337 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-hidden">
-      {/* Background Glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-[-300px] left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-yellow-400/10 blur-[140px]" />
-        <div className="absolute bottom-[-300px] right-[-200px] h-[500px] w-[500px] rounded-full bg-yellow-500/5 blur-[120px]" />
+    <main className="min-h-screen overflow-hidden bg-[#050807] text-white">
+
+      {/* Background glow */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-250px] h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-yellow-400/10 blur-[140px]" />
+        <div className="absolute right-[-200px] top-[500px] h-[500px] w-[500px] rounded-full bg-green-500/10 blur-[140px]" />
       </div>
 
-      {/* Navbar */}
-      <nav className="border-b border-white/5 bg-black/40 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl bg-yellow-400 flex items-center justify-center text-black font-black">
-              🌿
-            </div>
-            <span className="text-xl font-black tracking-tight">
-              Yard<span className="text-yellow-400">ly</span>
-            </span>
-          </Link>
+      {/* HERO */}
+      <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-8 lg:pb-28 lg:pt-24">
 
-          <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-            <Link href="#how-it-works" className="hover:text-white transition">
-              How it works
-            </Link>
-            <Link href="#why-us" className="hover:text-white transition">
-              Why Yardly
-            </Link>
-            <Link href="/provider" className="hover:text-white transition">
-              For landscapers
-            </Link>
-          </div>
+        <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_.95fr]">
 
-          <Link
-            href="/assistant"
-            className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-2.5 rounded-xl transition"
-          >
-            Get a quote
-          </Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-20 md:pt-28 pb-24">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
-            <div className="inline-flex items-center gap-2 border border-yellow-400/20 bg-yellow-400/5 text-yellow-300 px-4 py-2 rounded-full text-sm font-semibold mb-7">
-              <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+
+            {/* Badge */}
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-yellow-400/40 bg-yellow-400/5 px-4 py-2 text-xs font-bold tracking-wide text-yellow-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
               LOCAL LANDSCAPERS • ON DEMAND
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[0.95]">
+            {/* Heading */}
+            <h1 className="max-w-3xl text-5xl font-black leading-[.95] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
               Your yard.
               <br />
               <span className="text-yellow-400">Done right.</span>
             </h1>
 
-            <p className="mt-7 text-lg md:text-xl text-zinc-400 leading-relaxed max-w-xl">
+            <p className="mt-7 max-w-xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
               Tell us what your outdoor space needs. Get competitive quotes
               from local landscaping pros and choose the one that works best
               for you.
             </p>
 
-            <div className="mt-9 flex flex-col sm:flex-row gap-4">
+            {/* Buttons */}
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+
               <Link
                 href="/assistant"
-                className="group bg-yellow-400 hover:bg-yellow-300 text-black font-black text-lg px-8 py-4 rounded-2xl transition shadow-[0_0_40px_rgba(250,204,21,0.15)] flex items-center justify-center gap-2"
+                className="group flex items-center justify-center gap-3 rounded-2xl bg-yellow-400 px-7 py-4 text-lg font-black text-black shadow-[0_15px_50px_rgba(250,204,21,.12)] transition hover:-translate-y-0.5 hover:bg-yellow-300"
               >
                 Get Free Quotes
-                <span className="group-hover:translate-x-1 transition">
+                <span className="transition group-hover:translate-x-1">
                   →
                 </span>
               </Link>
 
               <Link
                 href="/provider"
-                className="border border-white/10 hover:border-yellow-400/40 hover:bg-white/5 text-white font-bold text-lg px-8 py-4 rounded-2xl transition flex items-center justify-center"
+                className="flex items-center justify-center rounded-2xl border border-white/20 bg-white/[0.02] px-7 py-4 text-lg font-bold text-white transition hover:border-white/40 hover:bg-white/5"
               >
                 I'm a Landscaper
               </Link>
+
             </div>
 
             {/* Trust */}
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-500">
-              <span className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span>
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-zinc-400">
+
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-xs text-green-400">
+                  ✓
+                </span>
                 No obligation
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-xs text-green-400">
+                  ✓
+                </span>
                 Local professionals
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="text-yellow-400">✓</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20 text-xs text-green-400">
+                  ✓
+                </span>
                 Compare quotes
-              </span>
+              </div>
+
             </div>
           </div>
 
-          {/* Right — Quote Preview */}
+          {/* Right graphic */}
           <div className="relative">
-            <div className="absolute -inset-6 rounded-[40px] bg-yellow-400/5 blur-3xl" />
 
-            <div className="relative rounded-[32px] border border-white/10 bg-zinc-950/80 backdrop-blur-xl p-5 shadow-2xl">
-              {/* Fake App Header */}
-              <div className="flex items-center justify-between px-3 py-3 mb-3">
-                <div>
-                  <p className="text-xs text-zinc-500">YOUR PROJECT</p>
-                  <p className="font-bold">Front Yard Cleanup</p>
-                </div>
-                <div className="text-xs bg-green-400/10 text-green-400 px-3 py-1.5 rounded-full">
-                  4 pros nearby
-                </div>
-              </div>
+            {/* Glow */}
+            <div className="absolute inset-0 rounded-[40px] bg-green-400/10 blur-3xl" />
 
-              {/* Job Card */}
-              <div className="rounded-2xl bg-zinc-900 border border-white/5 p-5">
-                <div className="flex gap-4">
-                  <div className="h-14 w-14 rounded-xl bg-yellow-400/10 flex items-center justify-center text-2xl">
-                    🌳
-                  </div>
+            {/* Landscape image */}
+            <div className="relative overflow-hidden rounded-[38px] border border-white/10 bg-zinc-900 shadow-2xl">
+
+              <img
+                src="https://images.unsplash.com/photo-1558904541-efa843a96f01?auto=format&fit=crop&w=1200&q=85"
+                alt="Beautiful landscaped yard"
+                className="h-[520px] w-full object-cover"
+              />
+
+              {/* Dark gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
+
+              {/* Floating card */}
+              <div className="absolute bottom-6 left-5 right-5 rounded-2xl border border-white/10 bg-black/70 p-5 shadow-2xl backdrop-blur-xl sm:left-7 sm:right-7">
+
+                <div className="flex items-center justify-between">
 
                   <div>
-                    <h3 className="font-bold">Spring Yard Cleanup</h3>
-                    <p className="text-sm text-zinc-500 mt-1">
+                    <p className="text-xs font-bold uppercase tracking-widest text-green-400">
+                      Your Project
+                    </p>
+
+                    <h3 className="mt-1 text-lg font-bold">
+                      Front Yard Cleanup
+                    </h3>
+
+                    <p className="mt-1 text-sm text-zinc-400">
                       Lawn • Leaves • Trimming
                     </p>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-5">
-                  <div className="bg-black/40 rounded-xl p-3">
-                    <p className="text-xs text-zinc-600">SIZE</p>
-                    <p className="font-semibold text-sm mt-1">~2,000 sq ft</p>
-                  </div>
-                  <div className="bg-black/40 rounded-xl p-3">
-                    <p className="text-xs text-zinc-600">WHEN</p>
-                    <p className="font-semibold text-sm mt-1">This weekend</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote */}
-              <div className="mt-3 rounded-2xl bg-zinc-900 border border-yellow-400/20 p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-9 w-9 rounded-full bg-zinc-800 flex items-center justify-center">
-                        👨‍🌾
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm">GreenLine Landscaping</p>
-                        <p className="text-xs text-zinc-500">
-                          ★ 4.9 • 127 jobs
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="text-right">
-                    <p className="text-xs text-zinc-500">QUOTE</p>
-                    <p className="text-2xl font-black text-yellow-400">
-                      $185
+                    <p className="text-xs text-zinc-500">
+                      PROS NEARBY
+                    </p>
+
+                    <p className="mt-1 text-2xl font-black text-yellow-400">
+                      4
                     </p>
                   </div>
+
                 </div>
 
-                <button className="w-full mt-4 bg-yellow-400 text-black font-bold py-3 rounded-xl">
-                  View Offer
-                </button>
-              </div>
+                <div className="mt-4 flex items-center gap-2 text-sm text-zinc-400">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-400/10">
+                    🌳
+                  </span>
 
-              <div className="flex justify-center gap-2 mt-5">
-                <span className="h-1.5 w-6 rounded-full bg-yellow-400" />
-                <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
-                <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
+                  <span>
+                    Getting competitive quotes...
+                  </span>
+
+                  <span className="ml-auto flex gap-1">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-green-400" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-green-400 [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-green-400 [animation-delay:300ms]" />
+                  </span>
+                </div>
+
               </div>
             </div>
+
+            {/* Floating quote */}
+            <div className="absolute -bottom-5 -left-4 hidden rounded-2xl border border-green-400/20 bg-[#101513]/95 p-4 shadow-2xl backdrop-blur-xl sm:block lg:-left-10">
+
+              <div className="flex items-center gap-3">
+
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-400/15 text-xl">
+                  👨‍🌾
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold">
+                    Local pro found
+                  </p>
+
+                  <p className="text-xs text-zinc-500">
+                    ★ 4.9 • 127 completed jobs
+                  </p>
+                </div>
+
+                <div className="ml-4 text-right">
+                  <p className="text-xs text-zinc-500">
+                    FROM
+                  </p>
+
+                  <p className="text-lg font-black text-yellow-400">
+                    $185
+                  </p>
+                </div>
+
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-white/5 bg-white/[0.02]">
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-8">
-          <Stat value="Fast" label="Request to quotes" />
-          <Stat value="Local" label="Professionals nearby" />
-          <Stat value="Free" label="For homeowners" />
-          <Stat value="3+" label="Quotes to compare" />
+      {/* PROJECT PREVIEW */}
+      <section className="border-y border-white/5 bg-white/[0.015]">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
+
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-400">
+                See how it works
+              </p>
+
+              <h2 className="mt-2 text-3xl font-black sm:text-4xl">
+                Your project, simplified.
+              </h2>
+            </div>
+
+            <Link
+              href="/assistant"
+              className="hidden font-bold text-yellow-400 hover:text-yellow-300 sm:block"
+            >
+              Start a project →
+            </Link>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-3">
+
+            <ProjectCard
+              icon="🌳"
+              number="01"
+              title="Describe your job"
+              text="Tell ShukAI what you want done."
+            />
+
+            <ProjectCard
+              icon="⚡"
+              number="02"
+              title="Pros send offers"
+              text="Local landscapers compete for your project."
+            />
+
+            <ProjectCard
+              icon="✓"
+              number="03"
+              title="Choose your pro"
+              text="Compare offers and book the right one."
+            />
+
+          </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section
-        id="how-it-works"
-        className="max-w-6xl mx-auto px-6 py-28"
-      >
-        <div className="max-w-2xl mb-14">
-          <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest">
-            Simple by design
-          </p>
+      {/* BIG CTA */}
+      <section className="px-5 py-20 sm:px-8 lg:py-28">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[35px] bg-yellow-400 px-7 py-14 text-black sm:px-12 lg:px-16">
 
-          <h2 className="text-4xl md:text-5xl font-black mt-3 tracking-tight">
-            From messy yard to
-            <span className="text-yellow-400"> done.</span>
-          </h2>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          <Step
-            number="01"
-            icon="📝"
-            title="Tell us what you need"
-            text="Describe your project in plain English. Add photos, size, timing, and anything else that matters."
-          />
-
-          <Step
-            number="02"
-            icon="⚡"
-            title="Pros compete for your job"
-            text="Local landscapers receive your request and send you their best offer."
-          />
-
-          <Step
-            number="03"
-            icon="🤝"
-            title="Pick your pro"
-            text="Compare pricing, reviews, availability, and offers. Then book the landscaper you trust."
-          />
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section id="why-us" className="px-6 pb-24">
-        <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[36px] border border-yellow-400/20 bg-yellow-400 p-10 md:p-16 text-black">
-          <div className="absolute right-[-100px] top-[-150px] h-[400px] w-[400px] rounded-full bg-white/20 blur-3xl" />
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/20 blur-3xl" />
 
           <div className="relative max-w-2xl">
-            <p className="font-bold uppercase tracking-widest text-black/60 text-sm">
-              Your next project starts here
+
+            <p className="text-sm font-black uppercase tracking-widest text-black/50">
+              Landscaping without the hassle
             </p>
 
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mt-3 leading-tight">
+            <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Stop searching.
               <br />
               Start getting quotes.
             </h2>
 
-            <p className="text-black/70 text-lg mt-5 max-w-xl">
-              Whether it's a simple mow or a complete backyard transformation,
-              Yardly helps you find the right local pro.
+            <p className="mt-5 max-w-xl text-lg text-black/70">
+              From a simple lawn mow to a complete backyard transformation,
+              ShukAI connects you with local landscaping professionals.
             </p>
 
             <Link
               href="/assistant"
-              className="inline-flex mt-8 bg-black text-white hover:bg-zinc-900 font-black px-8 py-4 rounded-2xl transition"
+              className="mt-8 inline-flex rounded-2xl bg-black px-7 py-4 font-black text-white transition hover:bg-zinc-900"
             >
               Describe My Project →
             </Link>
+
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8">
+
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-yellow-400 flex items-center justify-center text-black text-sm">
-              🌿
-            </div>
-            <span className="font-bold">
-              Yard<span className="text-yellow-400">ly</span>
+            <span className="text-xl">🌿</span>
+            <span className="font-black">
+              Shuk<span className="text-yellow-400">AI</span>
             </span>
           </div>
 
           <p className="text-sm text-zinc-600">
-            Landscaping, simplified.
+            Local landscaping. Simplified.
           </p>
+
         </div>
       </footer>
+
     </main>
   );
 }
 
-/* Components */
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-2xl md:text-3xl font-black text-white">{value}</p>
-      <p className="text-xs md:text-sm text-zinc-500 mt-1">{label}</p>
-    </div>
-  );
-}
+/* Project Card */
 
-function Step({
-  number,
+function ProjectCard({
   icon,
+  number,
   title,
   text,
 }: {
-  number: string;
   icon: string;
+  number: string;
   title: string;
   text: string;
 }) {
   return (
-    <div className="group relative rounded-3xl border border-white/10 bg-zinc-950 p-7 hover:border-yellow-400/30 transition">
+    <div className="group rounded-3xl border border-white/10 bg-[#0b0f0d] p-6 transition hover:-translate-y-1 hover:border-green-400/30">
+
       <div className="flex items-center justify-between">
-        <div className="h-12 w-12 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-2xl">
+
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-400/10 text-2xl">
           {icon}
         </div>
 
-        <span className="text-sm font-mono text-zinc-700">{number}</span>
+        <span className="font-mono text-xs text-zinc-600">
+          {number}
+        </span>
+
       </div>
 
-      <h3 className="text-xl font-bold mt-7">{title}</h3>
+      <h3 className="mt-7 text-xl font-black">
+        {title}
+      </h3>
 
-      <p className="text-zinc-500 leading-relaxed text-sm mt-3">{text}</p>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+        {text}
+      </p>
+
     </div>
   );
 }
