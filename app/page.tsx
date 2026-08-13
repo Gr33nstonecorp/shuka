@@ -70,4 +70,22 @@ export default function HomePage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="border-
+      <section className="border-t border-zinc-800 bg-zinc-950">
+        <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ready to transform your outdoor space?
+          </h2>
+          <p className="text-zinc-400 text-lg mb-10">
+            Start with a free AI-powered quote request. No commitment.
+          </p>
+          <Link
+            href="/assistant"
+            className="inline-flex items-center justify-center bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-xl px-12 py-5 rounded-2xl transition"
+          >
+            Start Now →
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}
