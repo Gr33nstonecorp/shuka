@@ -1,149 +1,108 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 
-type Vendor = {
-  id: number;
-  name: string;
-  category: string;
-  rating: number;
-  leadTime: string;
-  description: string;
-  specialties: string[];
-};
+const landscapers = [
+  {
+    name: "GreenLeaf Lawn Care",
+    specialty: "Lawn Mowing & Maintenance",
+    rating: 4.9,
+    distance: "1.9 miles",
+    priceFrom: 85,
+  },
+  {
+    name: "Yard Masters NYC",
+    specialty: "Full Service Landscaping",
+    rating: 4.7,
+    distance: "2.4 miles",
+    priceFrom: 110,
+  },
+  {
+    name: "ArborPro Tree Service",
+    specialty: "Tree Trimming & Removal",
+    rating: 4.8,
+    distance: "3.1 miles",
+    priceFrom: 350,
+  },
+  {
+    name: "CleanScape Landscaping",
+    specialty: "Yard Cleanup & Brush Removal",
+    rating: 4.6,
+    distance: "2.2 miles",
+    priceFrom: 280,
+  },
+  {
+    name: "StoneWorks Design",
+    specialty: "Hardscaping & Patios",
+    rating: 4.8,
+    distance: "4.0 miles",
+    priceFrom: 1800,
+  },
+  {
+    name: "Bloom & Grow Gardens",
+    specialty: "Garden Design & Planting",
+    rating: 4.9,
+    distance: "2.7 miles",
+    priceFrom: 220,
+  },
+];
 
 export default function VendorsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-
-  const vendors: Vendor[] = [
-    {
-      id: 1,
-      name: "Global Supplies",
-      category: "Safety & PPE",
-      rating: 4.8,
-      leadTime: "1-3 days",
-      description: "Bulk industrial safety equipment and PPE",
-      specialties: ["Gloves", "Masks", "Safety Gear"],
-    },
-    {
-      id: 2,
-      name: "PackPro Inc.",
-      category: "Packaging",
-      rating: 4.6,
-      leadTime: "Same day",
-      description: "High-quality packaging materials and shipping supplies",
-      specialties: ["Tape", "Boxes", "Labels"],
-    },
-    {
-      id: 3,
-      name: "Uline Logistics",
-      category: "Shipping",
-      rating: 4.9,
-      leadTime: "2-4 days",
-      description: "Wholesale shipping boxes and warehouse supplies",
-      specialties: ["Boxes", "Bubble Wrap", "Pallets"],
-    },
-    {
-      id: 4,
-      name: "Grainger Industrial",
-      category: "Tools & Hardware",
-      rating: 4.7,
-      leadTime: "3-5 days",
-      description: "Industrial tools, maintenance supplies, and equipment",
-      specialties: ["Tools", "Fasteners", "Cleaning"],
-    },
-  ];
-
-  const categories = ["All", "Safety & PPE", "Packaging", "Shipping", "Tools & Hardware"];
-
-  const filteredVendors = vendors.filter((vendor) => {
-    const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vendor.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || vendor.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-10">
-          <h1 className="text-5xl font-black tracking-tighter">Vendors</h1>
-          <Link href="/assistant" className="text-blue-600 hover:text-blue-700 font-medium">
-            ← Back to AI Assistant
-          </Link>
+    <main className="min-h-screen bg-black text-white">
+      <div className="max-w-5xl mx-auto px-6 py-16">
+        {/* Header */}
+        <div className="text-center mb-14">
+          <h1 className="text-4xl md:text-5xl font-black text-yellow-400 mb-4">
+            Local Landscapers
+          </h1>
+          <p className="text-zinc-400 text-lg">
+            Browse verified landscaping pros near you
+          </p>
         </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-10">
-          <input
-            type="text"
-            placeholder="Search vendors or specialties..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:border-blue-500"
-          />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="p-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        {filteredVendors.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-xl text-zinc-500">No vendors found matching your search.</p>
-          </div>
-        ) : (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {filteredVendors.map((vendor) => (
-              <div key={vendor.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 hover:border-blue-500 transition-all">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <div className="font-semibold text-2xl">{vendor.name}</div>
-                    <div className="text-zinc-500 mt-1">{vendor.category}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-yellow-500">★ {vendor.rating}</div>
-                    <div className="text-xs text-zinc-500 mt-1">{vendor.leadTime}</div>
-                  </div>
+        {/* Grid */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {landscapers.map((item, i) => (
+            <div
+              key={i}
+              className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 hover:border-yellow-400/40 transition"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-bold">{item.name}</h3>
+                  <p className="text-zinc-400 text-sm mt-1">{item.specialty}</p>
                 </div>
-
-                <p className="text-zinc-600 dark:text-zinc-400 mb-6 line-clamp-3">
-                  {vendor.description}
-                </p>
-
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {vendor.specialties.map((spec, i) => (
-                    <span key={i} className="text-xs bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full">
-                      {spec}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex gap-3">
-                  <button className="flex-1 py-3 bg-zinc-900 text-white rounded-2xl hover:bg-black font-medium">
-                    View Catalog
-                  </button>
-                  <button 
-                    onClick={() => alert(`Added ${vendor.name} to Saved Items`)}
-                    className="flex-1 py-3 border border-zinc-300 dark:border-zinc-700 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium"
-                  >
-                    Save Vendor
-                  </button>
+                <div className="text-right">
+                  <div className="text-yellow-400 font-medium">★ {item.rating}</div>
+                  <div className="text-zinc-500 text-sm">{item.distance}</div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        <div className="mt-16 text-center text-sm text-zinc-500">
-          Real vendor integration and AI-powered recommendations coming soon.
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-zinc-400 text-sm">
+                  From <span className="text-white font-semibold">${item.priceFrom}</span>
+                </div>
+                <Link
+                  href="/assistant"
+                  className="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-5 py-2.5 rounded-xl text-sm transition"
+                >
+                  Request Quote
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="text-center mt-16">
+          <p className="text-zinc-400 mb-6">
+            Don’t see what you need? Describe your job and get matched.
+          </p>
+          <Link
+            href="/assistant"
+            className="inline-block bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-10 py-4 rounded-2xl transition"
+          >
+            Get Free Quotes →
+          </Link>
         </div>
       </div>
     </main>
