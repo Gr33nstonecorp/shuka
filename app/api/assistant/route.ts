@@ -55,4 +55,64 @@ export async function POST(req: NextRequest) {
           name: "GreenLeaf Lawn Care",
           price: 280,
           reason: "Cleanup + first mowing included",
-          distance
+          distance: "1.9 miles",
+          website: "https://www.angi.com/companylist/us/ny/lawn-care.htm",
+          rating: 4.9,
+        },
+      ];
+    } else if (
+      lower.includes("hardscap") ||
+      lower.includes("patio") ||
+      lower.includes("stone") ||
+      lower.includes("walkway")
+    ) {
+      possibleScope = "Hardscaping project (patio, walkway, or retaining wall).";
+      landscapers = [
+        {
+          name: "StoneWorks Design",
+          price: 2800,
+          reason: "Patio / walkway installation estimate",
+          distance: "4.0 miles",
+          website: "https://www.homeadvisor.com/c.Patio.html",
+          rating: 4.8,
+        },
+      ];
+    } else {
+      // Default
+      landscapers = [
+        {
+          name: "GreenLeaf Lawn Care",
+          price: 150,
+          reason: "General landscaping consultation + quote",
+          distance: "2.1 miles",
+          website: "https://www.angi.com/companylist/us/ny/lawn-care.htm",
+          rating: 4.8,
+        },
+        {
+          name: "Yard Masters NYC",
+          price: 175,
+          reason: "On-site assessment and full quote",
+          distance: "2.8 miles",
+          website: "https://www.homeadvisor.com/c.Landscaping.html",
+          rating: 4.7,
+        },
+      ];
+    }
+
+    // Best reviews first
+    landscapers.sort((a: any, b: any) => b.rating - a.rating);
+
+    return NextResponse.json({
+      landscapers,
+      mechanics: landscapers, // temporary compatibility
+      possibleScope,
+      possibleCause: possibleScope,
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to find landscapers" },
+      { status: 500 }
+    );
+  }
+}
