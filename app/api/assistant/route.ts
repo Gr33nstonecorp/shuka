@@ -1,64 +1,166 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
+
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { problem, zip } = await req.json();
-    const lower = (problem || "").toLowerCase();
+    const body = await req.json();
+
+    const problem =
+      typeof body.problem === "string"
+        ? body.problem.trim()
+        : "";
+
+    const zip =
+      typeof body.zip === "string"
+        ? body.zip.trim()
+        : "";
+
+    if (!problem) {
+      return NextResponse.json(
+        { error: "Please describe the landscaping job." },
+        { status: 400 }
+      );
+    }
+
     const location = zip || "11364";
 
-    let landscapers = [];
-    let possibleScope = "General landscaping work recommended.";
+    if (!/^\d{5}$/.test(location)) {
+      return NextResponse.json(
+        { error: "Please enter a valid 5-digit ZIP code." },
+        { status: 400 }
+      );
+    }
 
-    if (lower.includes("mow") || lower.includes("lawn") || lower.includes("grass")) {
-      possibleScope = "Regular lawn mowing + edging recommended.";
+    const supabase = getSupabaseAdmin();
+
+    // --------------------------------------------------
+    // CREATE REAL LANDSCAPING JOB
+    // --------------------------------------------------
+
+    const { data: job, error: jobError } = await supabase
+      .from("landscaping_jobs")
+      .insert({
+        problem,
+        zip_code: location,
+        status: "open",
+
+        // We will connect authenticated homeowner IDs
+        // in the next stage.
+        homeowner_id: null,
+      })
+      .select("id, problem, zip_code, status, created_at")
+      .single();
+
+    if (jobError) {
+      console.error(
+        "Failed to create landscaping job:",
+        jobError
+      );
+
+      return NextResponse.json(
+        {
+          error: "Could not create landscaping request.",
+        },
+        { status: 500 }
+      );
+    }
+
+    // --------------------------------------------------
+    // TEMPORARY SCOPE CLASSIFICATION
+    //
+    // These results keep your current UI working.
+    // Next we replace these placeholders with real
+    // landscapers / marketplace quotes.
+    // --------------------------------------------------
+
+    const lower = problem.toLowerCase();
+
+    let landscapers = [];
+    let possibleScope =
+      "General landscaping work recommended.";
+
+    if (
+      lower.includes("mow") ||
+      lower.includes("lawn") ||
+      lower.includes("grass")
+    ) {
+      possibleScope =
+        "Regular lawn mowing and edging recommended.";
+
       landscapers = [
         {
-          name: "GreenLeaf Lawn Care",
+          name: "Local Lawn Care Pro",
           price: 85,
-          reason: "Weekly mowing + edging for standard lots",
-          distance: "1.9 miles",
-          website: `https://www.google.com/search?q=GreenLeaf+Lawn+Care+${location}`,
+          reason:
+            "Typical starting estimate for mowing and edging.",
+          distance: "Local",
+          website: "#",
           rating: 4.9,
         },
         {
-          name: "Yard Masters NYC",
+          name: "Local Landscaping Pro",
           price: 110,
-          reason: "Premium lawn care with fertilizer option",
-          distance: "2.4 miles",
-          website: `https://www.google.com/search?q=Yard+Masters+NYC+lawn+care+${location}`,
+          reason:
+            "Typical estimate including additional lawn-care options.",
+          distance: "Local",
+          website: "#",
           rating: 4.7,
         },
       ];
-    } else if (lower.includes("tree") || lower.includes("branch") || lower.includes("trim")) {
-      possibleScope = "Tree trimming or removal needed.";
+    } else if (
+      lower.includes("tree") ||
+      lower.includes("branch") ||
+      lower.includes("trim")
+    ) {
+      possibleScope =
+        "Tree trimming or removal assessment recommended.";
+
       landscapers = [
         {
-          name: "ArborPro Tree Service",
+          name: "Local Tree Service Pro",
           price: 450,
-          reason: "Tree trimming and stump grinding",
-          distance: "3.1 miles",
-          website: `https://www.google.com/search?q=ArborPro+Tree+Service+${location}`,
+          reason:
+            "Typical starting estimate for tree trimming work.",
+          distance: "Local",
+          website: "#",
           rating: 4.8,
         },
       ];
-    } else if (lower.includes("cleanup") || lower.includes("overgrown") || lower.includes("brush")) {
-      possibleScope = "Full yard cleanup and brush removal recommended.";
+    } else if (
+      lower.includes("cleanup") ||
+      lower.includes("overgrown") ||
+      lower.includes("brush")
+    ) {
+      possibleScope =
+        "Full yard cleanup and debris removal recommended.";
+
       landscapers = [
         {
-          name: "CleanScape Landscaping",
+          name: "Local Cleanup Pro",
           price: 320,
-          reason: "Full property cleanup + debris removal",
-          distance: "2.2 miles",
-          website: `https://www.google.com/search?q=CleanScape+Landscaping+${location}`,
-          rating: 4.6,
+          reason:
+            "Typical estimate for property cleanup and debris removal.",
+          distance: "Local",
+          website: "#",
+          rating: 4.8,
         },
         {
-          name: "GreenLeaf Lawn Care",
+          name: "Local Lawn & Cleanup Pro",
           price: 280,
-          reason: "Cleanup + first mowing included",
-          distance: "1.9 miles",
-          website: `https://www.google.com/search?q=GreenLeaf+Lawn+Care+${location}`,
-          rating: 4.9,
+          reason:
+            "Typical estimate including cleanup and first mowing.",
+          distance: "Local",
+          website: "#",
+          rating: 4.7,
         },
       ];
     } else if (
@@ -67,50 +169,53 @@ export async function POST(req: NextRequest) {
       lower.includes("stone") ||
       lower.includes("walkway")
     ) {
-      possibleScope = "Hardscaping project (patio, walkway, or retaining wall).";
+      possibleScope =
+        "Hardscaping consultation recommended for the project.";
+
       landscapers = [
         {
-          name: "StoneWorks Design",
+          name: "Local Hardscape Pro",
           price: 2800,
-          reason: "Patio / walkway installation estimate",
-          distance: "4.0 miles",
-          website: `https://www.google.com/search?q=StoneWorks+Design+hardscape+${location}`,
+          reason:
+            "Typical preliminary estimate for patio or walkway work.",
+          distance: "Local",
+          website: "#",
           rating: 4.8,
         },
       ];
     } else {
       landscapers = [
         {
-          name: "GreenLeaf Lawn Care",
+          name: "Local Landscaping Pro",
           price: 150,
-          reason: "General landscaping consultation + quote",
-          distance: "2.1 miles",
-          website: `https://www.google.com/search?q=GreenLeaf+Lawn+Care+${location}`,
+          reason:
+            "Typical starting estimate for a landscaping consultation.",
+          distance: "Local",
+          website: "#",
           rating: 4.8,
-        },
-        {
-          name: "Yard Masters NYC",
-          price: 175,
-          reason: "On-site assessment and full quote",
-          distance: "2.8 miles",
-          website: `https://www.google.com/search?q=Yard+Masters+NYC+${location}`,
-          rating: 4.7,
         },
       ];
     }
 
-    landscapers.sort((a: any, b: any) => b.rating - a.rating);
-
     return NextResponse.json({
-      landscapers,
-      mechanics: landscapers,
+      success: true,
+
+      jobId: job.id,
+
+      job,
+
       possibleScope,
-      possibleCause: possibleScope,
+
+      landscapers,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Assistant route error:", error);
+
     return NextResponse.json(
-      { error: "Failed to find landscapers" },
+      {
+        error:
+          "Failed to create landscaping request. Please try again.",
+      },
       { status: 500 }
     );
   }
