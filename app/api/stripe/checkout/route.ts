@@ -1,33 +1,20 @@
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-08-27.basil",
+});
+
+export async function POST(req: NextRequest) {
   try {
-    const { plan, userId, email } = await req.json();
-
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
     }
 
-    const selectedPlan = plan === "premium" ? "premium" : "starter";
-
-    const priceId =
-      selectedPlan === "premium"
-        ? process.env.STRIPE_PREMIUM_PRICE_ID
-        : process.env.STRIPE_STARTER_PRICE_ID;
-
-    if (!priceId) {
-      return new Response(
-        JSON.stringify({ error: `Missing price ID for ${selectedPlan}` }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    if (!process.env.STRIPE_PRO_PRICE_ID) {
+      return NextResponse.json({ error: "Missing STRIPE_PRO_PRICE_ID" }, { status: 500 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.shukai.co";
@@ -37,41 +24,22 @@ export async function POST(req: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: priceId,
+          price: process.env.STRIPE_PRO_PRICE_ID, // $9/month Price ID
           quantity: 1,
         },
       ],
-      customer_email: email || undefined,
-      success_url: `${siteUrl}/?checkout=success`,
-      cancel_url: `${siteUrl}/pricing?checkout=cancel`,
-      metadata: {
-        userId,
-        email: email || "",
-        plan: selectedPlan,
-      },
-      subscription_data: {
-        trial_period_days: 7,
-        metadata: {
-          userId,
-          email: email || "",
-          plan: selectedPlan,
-        },
-      },
+      success_url: `${siteUrl}/provider?upgraded=true`,
+      cancel_url: `${siteUrl}/pricing`,
+      allow_promotion_codes: true,
+      billing_address_collection: "auto",
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    return new Response(
-      JSON.stringify({
-        error: error.message || "Could not start checkout.",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+    console.error("Stripe Pro checkout error:", error);
+    return NextResponse.json(
+      { error: error?.message || "Could not start checkout" },
+      { status: 500 }
     );
   }
 }
