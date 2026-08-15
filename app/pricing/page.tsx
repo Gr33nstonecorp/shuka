@@ -1,69 +1,76 @@
-"use client";
-
 import Link from "next/link";
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header - No extra nav here */}
+    <main className="min-h-screen bg-black text-white">
+      <div className="max-w-5xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-black tracking-tighter mb-4">Support ShukAI</h1>
-          <p className="text-2xl text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-            ShukAI is completely free to use.<br />
-            Optional donation helps us improve faster.
+          <h1 className="text-4xl md:text-5xl font-black mb-4">
+            Simple pricing for landscapers
+          </h1>
+          <p className="text-xl text-zinc-400">
+            Start free. Upgrade when you want more jobs.
           </p>
         </div>
 
-        {/* Single Clean Donation Card */}
-        <div className="max-w-md mx-auto bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-900 rounded-3xl p-12 text-center shadow-sm">
-          <div className="inline-block bg-blue-600 text-white text-xs font-semibold px-6 py-1.5 rounded-full mb-8">
-            OPTIONAL DONATION
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Free */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10">
+            <h2 className="text-2xl font-bold mb-2">Free</h2>
+            <div className="text-4xl font-black mb-6">
+              $0<span className="text-lg text-zinc-400 font-normal">/mo</span>
+            </div>
+
+            <ul className="space-y-4 mb-10 text-zinc-300">
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Create provider profile</li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Receive limited job leads</li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Send quotes</li>
+              <li className="flex gap-3 text-zinc-500"><span>○</span> Limited visibility</li>
+            </ul>
+
+            <Link
+              href="/signup"
+              className="block w-full text-center border border-zinc-700 hover:border-yellow-400 py-4 rounded-2xl font-semibold transition"
+            >
+              Get Started Free
+            </Link>
           </div>
 
-          <div className="mb-10">
-            <div className="text-7xl font-black tracking-tighter mb-1">$5</div>
-            <div className="text-xl text-zinc-500">per month</div>
+          {/* Pro */}
+          <div className="bg-zinc-900 border-2 border-yellow-400 rounded-3xl p-10 relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-sm font-bold px-4 py-1 rounded-full">
+              MOST POPULAR
+            </div>
+
+            <h2 className="text-2xl font-bold mb-2">Pro</h2>
+            <div className="text-4xl font-black text-yellow-400 mb-1">
+              $29<span className="text-lg text-zinc-400 font-normal">/mo</span>
+            </div>
+            <p className="text-zinc-400 text-sm mb-6">Cancel anytime</p>
+
+            <ul className="space-y-4 mb-10 text-zinc-300">
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Everything in Free</li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> <strong>Unlimited job leads</strong></li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Higher ranking in results</li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Priority notifications</li>
+              <li className="flex gap-3"><span className="text-yellow-400">✓</span> Featured profile badge</li>
+            </ul>
+
+            <form action="/api/stripe/create-checkout-session" method="POST">
+              <button
+                type="submit"
+                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition"
+              >
+                Upgrade to Pro →
+              </button>
+            </form>
           </div>
-
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-10">
-            Suggested monthly donation for faster AI improvements
-          </p>
-
-          <ul className="space-y-4 text-left mb-12 max-w-xs mx-auto">
-            <li className="flex items-start gap-3">
-              <span className="text-green-600 text-xl leading-none mt-0.5">✓</span>
-              <span>Unlimited AI Sourcing</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-green-600 text-xl leading-none mt-0.5">✓</span>
-              <span>Priority AI responses</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-green-600 text-xl leading-none mt-0.5">✓</span>
-              <span>Export features</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-green-600 text-xl leading-none mt-0.5">✓</span>
-              <span>Help support development</span>
-            </li>
-          </ul>
-
-          <button 
-            className="w-full bg-blue-600 hover:bg-blue-700 transition text-white font-semibold py-4 rounded-2xl text-lg"
-          >
-            Make a $5 Monthly Donation
-          </button>
-
-          <p className="text-xs text-zinc-500 mt-8">
-            Completely optional • Cancel anytime
-          </p>
         </div>
 
-        <div className="text-center mt-16 text-sm text-zinc-500">
-          Thank you for using ShukAI for free.<br />
-          Your support helps us build better features faster.
-        </div>
+        <p className="text-center text-zinc-500 text-sm mt-12">
+          No long-term contracts. Cancel anytime.<br />
+          Less than the cost of one lead on Angi or Thumbtack.
+        </p>
       </div>
     </main>
   );
