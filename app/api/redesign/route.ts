@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     if (!image.type.startsWith("image/")) {
       return NextResponse.json(
         {
-          error: "The uploaded file must be an image.",
+          error: "Uploaded file must be an image.",
         },
         { status: 400 }
       );
@@ -68,159 +68,203 @@ export async function POST(req: NextRequest) {
     if (image.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         {
-          error: "Please use an image smaller than 10 MB.",
+          error: "Please choose an image smaller than 10 MB.",
         },
         { status: 400 }
       );
     }
 
-    // Convert uploaded image to base64 data URL
+    /*
+      Convert uploaded photo to base64 data URL
+    */
+
     const bytes = await image.arrayBuffer();
+
     const buffer = Buffer.from(bytes);
 
     const mimeType =
       image.type || "image/jpeg";
 
-    const base64Image =
+    const base64 =
       buffer.toString("base64");
 
     const imageDataUrl =
-      `data:${mimeType};base64,${base64Image}`;
+      `data:${mimeType};base64,${base64}`;
+
+    /*
+      Landscaping style
+    */
 
     const selectedStyle =
       stylePrompts[style] ||
       stylePrompts.modern;
 
+    /*
+      Strong prompt to preserve the actual property
+    */
+
     const prompt = `
-Edit the uploaded photograph to create a realistic landscaping redesign.
+You are a professional residential landscape designer.
 
-This MUST remain the same property shown in the uploaded image.
+Redesign the landscaping shown in the uploaded photograph.
 
-PRESERVE:
-- the house
-- building shape
+IMPORTANT:
+
+This MUST remain the exact same property.
+
+Preserve:
+- house
+- roof
 - windows
 - doors
-- roof
 - driveway
 - fences
-- retaining walls
 - patios
+- retaining walls
 - major structures
 - terrain
+- camera position
 - camera angle
 - perspective
 - property proportions
 
-Do NOT invent a different house or property.
+Do NOT replace the house.
 
-Only redesign landscaping and reasonable outdoor landscape elements.
+Do NOT invent a different property.
+
+Only redesign the landscaping and reasonable outdoor landscape elements.
 
 DESIGN STYLE:
+
 ${selectedStyle}
 
 HOMEOWNER REQUEST:
+
 ${
   instructions ||
-  "Create a beautiful, practical and realistic landscaping redesign."
+  "Create a beautiful, realistic and practical landscaping redesign."
 }
 
-The output should look like a professional photorealistic landscape visualization showing what this exact yard could realistically look like after professional landscaping work.
+Create a photorealistic professional landscape visualization showing what this exact property could realistically look like after professional landscaping work.
 
 Use realistic:
+
+- grass
 - plants
 - shrubs
 - trees
-- grass
+- garden beds
 - mulch
 - stone
-- pathways
-- garden beds
-- landscape lighting when appropriate
+- walkways
+- landscape lighting where appropriate
 
-Keep everything structurally believable.
+Keep everything believable and buildable.
 
 Do not add:
-- people
-- words
+- text
 - labels
 - arrows
 - logos
 - watermarks
+- diagrams
 
-Return a redesigned version of the uploaded property photo.
+Return an image showing the redesigned version of this same yard.
 `;
 
-    console.log("Starting ShukAI redesign request", {
+    console.log("Starting ShukAI redesign", {
+      style,
       imageType: mimeType,
       imageSize: image.size,
-      style,
     });
 
-    const response = await openai.responses.create({
-      model: "gpt-5.6",
+    /*
+      Responses API
 
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: prompt,
-            },
-            {
-              type: "input_image",
-              image_url: imageDataUrl,
-              detail: "auto",
-            },
-          ],
-        },
-      ],
+      The uploaded yard photo is included as input_image.
 
-      tools: [
-        {
-          type: "image_generation",
-          action: "edit",
-        },
-      ],
-    });
+      The image_generation tool then produces the
+      redesigned image.
+    */
 
-    const imageCalls = response.output.filter(
-      (output: any) =>
-        output.type === "image_generation_call"
-    );
+    const response =
+      await openai.responses.create({
+        model: "gpt-5.6",
 
-    if (!imageCalls.length) {
+        input: [
+          {
+            role: "user",
+
+            content: [
+              {
+                type: "input_text",
+                text: prompt,
+              },
+
+              {
+                type: "input_image",
+                image_url: imageDataUrl,
+                detail: "auto",
+              },
+            ],
+          },
+        ],
+
+        tools: [
+          {
+            type: "image_generation",
+          },
+        ],
+      });
+
+    /*
+      Find the generated image result
+    */
+
+    const imageCall =
+      response.output.find(
+        (item: any) =>
+          item.type ===
+          "image_generation_call"
+      ) as any;
+
+    if (!imageCall) {
       console.error(
-        "No image generation call returned",
+        "No image generation result:",
         response.output
       );
 
       return NextResponse.json(
         {
           error:
-            "OpenAI did not return a redesigned image.",
+            "OpenAI did not generate a redesign image.",
         },
         { status: 500 }
       );
     }
 
-    const generatedImage =
-      imageCalls[0]?.result;
+    const generated =
+      imageCall.result;
 
-    if (!generatedImage) {
+    if (!generated) {
       return NextResponse.json(
         {
           error:
-            "The redesign completed but no image data was returned.",
+            "Image generation completed but returned no image data.",
         },
         { status: 500 }
       );
     }
 
+    /*
+      Return image to frontend
+    */
+
     return NextResponse.json({
       success: true,
-      image: `data:image/png;base64,${generatedImage}`,
+
+      image:
+        `data:image/png;base64,${generated}`,
     });
   } catch (error: any) {
     console.error(
@@ -242,32 +286,40 @@ Return a redesigned version of the uploaded property photo.
       error?.message ||
       "Could not generate redesign.";
 
+    /*
+      Friendly error messages
+    */
+
     if (status === 401) {
       message =
-        "OpenAI rejected the API key. Check OPENAI_API_KEY in Vercel and redeploy.";
-    }
-
-    if (status === 429) {
-      message =
-        "OpenAI API credits or rate limit reached. Check your OpenAI API billing.";
+        "OpenAI rejected the API key. Check OPENAI_API_KEY in Vercel.";
     }
 
     if (
+      status === 429 ||
       code === "insufficient_quota"
     ) {
       message =
-        "Your OpenAI API account does not currently have enough API credits.";
+        "OpenAI API credits or rate limit reached. Check your OpenAI API billing.";
     }
 
     return NextResponse.json(
       {
         error: message,
+
         debug: {
           status,
           code,
         },
       },
-      { status }
+
+      {
+        status:
+          status >= 400 &&
+          status <= 599
+            ? status
+            : 500,
+      }
     );
   }
 }
