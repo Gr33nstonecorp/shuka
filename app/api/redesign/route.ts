@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI, { toFile } from "openai";
+import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
@@ -24,170 +24,250 @@ const stylePrompts: Record<string, string> = {
     "minimalist residential landscaping with restrained planting, clean lines, uncluttered beds, simple greenery and refined modern landscape design",
 };
 
-export async function POST(
-  req: NextRequest
-) {
+export async function POST(req: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         {
-          error:
-            "OPENAI_API_KEY is not configured.",
+          error: "OPENAI_API_KEY is missing in Vercel.",
         },
         { status: 500 }
       );
     }
 
-    const formData =
-      await req.formData();
+    const formData = await req.formData();
 
-    const image =
-      formData.get("image");
+    const image = formData.get("image");
 
-    const style =
-      String(
-        formData.get("style") ||
-          "modern"
-      );
+    const style = String(
+      formData.get("style") || "modern"
+    );
 
-    const instructions =
-      String(
-        formData.get(
-          "instructions"
-        ) || ""
-      ).trim();
+    const instructions = String(
+      formData.get("instructions") || ""
+    ).trim();
 
     if (!(image instanceof File)) {
       return NextResponse.json(
         {
-          error:
-            "Please upload a yard photo.",
+          error: "Please upload a yard photo.",
         },
         { status: 400 }
       );
     }
 
-    if (
-      !image.type.startsWith(
-        "image/"
-      )
-    ) {
+    if (!image.type.startsWith("image/")) {
       return NextResponse.json(
         {
-          error:
-            "Uploaded file must be an image.",
+          error: "The uploaded file must be an image.",
         },
         { status: 400 }
       );
     }
 
-    if (
-      image.size >
-      10 * 1024 * 1024
-    ) {
+    if (image.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         {
-          error:
-            "Image must be smaller than 10 MB.",
+          error: "Please use an image smaller than 10 MB.",
         },
         { status: 400 }
       );
     }
 
-    const arrayBuffer =
-      await image.arrayBuffer();
+    // Convert uploaded image to base64 data URL
+    const bytes = await image.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    const buffer =
-      Buffer.from(arrayBuffer);
+    const mimeType =
+      image.type || "image/jpeg";
 
-    const uploadedImage =
-      await toFile(
-        buffer,
-        image.name ||
-          "yard.jpg",
-        {
-          type:
-            image.type ||
-            "image/jpeg",
-        }
-      );
+    const base64Image =
+      buffer.toString("base64");
+
+    const imageDataUrl =
+      `data:${mimeType};base64,${base64Image}`;
 
     const selectedStyle =
       stylePrompts[style] ||
       stylePrompts.modern;
 
     const prompt = `
-Redesign the landscaping in this exact residential property photo.
+Edit the uploaded photograph to create a realistic landscaping redesign.
 
-IMPORTANT:
-Preserve the original property, house, driveway, fences, patios, structures, camera angle, perspective, terrain, and overall geometry.
+This MUST remain the same property shown in the uploaded image.
 
-Do not replace the house or invent a different property.
+PRESERVE:
+- the house
+- building shape
+- windows
+- doors
+- roof
+- driveway
+- fences
+- retaining walls
+- patios
+- major structures
+- terrain
+- camera angle
+- perspective
+- property proportions
 
-Only redesign the landscaping and reasonable outdoor landscape features.
+Do NOT invent a different house or property.
 
-Design style:
+Only redesign landscaping and reasonable outdoor landscape elements.
+
+DESIGN STYLE:
 ${selectedStyle}
 
-Homeowner requests:
+HOMEOWNER REQUEST:
 ${
   instructions ||
-  "Create an attractive, practical and realistic landscape redesign."
+  "Create a beautiful, practical and realistic landscaping redesign."
 }
 
-The finished result should look like a photorealistic professional landscaping visualization of what this same property could realistically look like after the work is completed.
+The output should look like a professional photorealistic landscape visualization showing what this exact yard could realistically look like after professional landscaping work.
 
-Keep existing major structures unless the homeowner specifically requested otherwise.
+Use realistic:
+- plants
+- shrubs
+- trees
+- grass
+- mulch
+- stone
+- pathways
+- garden beds
+- landscape lighting when appropriate
 
-Use realistic plants, materials, proportions, shadows and lighting.
+Keep everything structurally believable.
 
-Do not add text, labels, diagrams, arrows, people, logos or watermarks.
+Do not add:
+- people
+- words
+- labels
+- arrows
+- logos
+- watermarks
+
+Return a redesigned version of the uploaded property photo.
 `;
 
-    const result =
-      await openai.images.edit({
-        model: "gpt-image-2",
+    console.log("Starting ShukAI redesign request", {
+      imageType: mimeType,
+      imageSize: image.size,
+      style,
+    });
 
-        image: uploadedImage,
+    const response = await openai.responses.create({
+      model: "gpt-5.6",
 
-        prompt,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: prompt,
+            },
+            {
+              type: "input_image",
+              image_url: imageDataUrl,
+              detail: "auto",
+            },
+          ],
+        },
+      ],
 
-        size: "1536x1024",
+      tools: [
+        {
+          type: "image_generation",
+          action: "edit",
+        },
+      ],
+    });
 
-        quality: "medium",
-      });
+    const imageCalls = response.output.filter(
+      (output: any) =>
+        output.type === "image_generation_call"
+    );
 
-    const generated =
-      result.data?.[0]
-        ?.b64_json;
+    if (!imageCalls.length) {
+      console.error(
+        "No image generation call returned",
+        response.output
+      );
 
-    if (!generated) {
       return NextResponse.json(
         {
           error:
-            "The image model did not return a redesign.",
+            "OpenAI did not return a redesigned image.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const generatedImage =
+      imageCalls[0]?.result;
+
+    if (!generatedImage) {
+      return NextResponse.json(
+        {
+          error:
+            "The redesign completed but no image data was returned.",
         },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      image: `data:image/png;base64,${generated}`,
+      success: true,
+      image: `data:image/png;base64,${generatedImage}`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(
-      "ShukAI redesign error:",
+      "SHUKAI REDESIGN ERROR:",
       error
     );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Could not generate redesign.";
+    const status =
+      typeof error?.status === "number"
+        ? error.status
+        : 500;
+
+    const code =
+      error?.code ||
+      error?.error?.code ||
+      null;
+
+    let message =
+      error?.message ||
+      "Could not generate redesign.";
+
+    if (status === 401) {
+      message =
+        "OpenAI rejected the API key. Check OPENAI_API_KEY in Vercel and redeploy.";
+    }
+
+    if (status === 429) {
+      message =
+        "OpenAI API credits or rate limit reached. Check your OpenAI API billing.";
+    }
+
+    if (
+      code === "insufficient_quota"
+    ) {
+      message =
+        "Your OpenAI API account does not currently have enough API credits.";
+    }
 
     return NextResponse.json(
-      { error: message },
-      { status: 500 }
+      {
+        error: message,
+        debug: {
+          status,
+          code,
+        },
+      },
+      { status }
     );
   }
 }
