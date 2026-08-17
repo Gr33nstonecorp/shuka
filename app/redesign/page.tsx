@@ -70,10 +70,20 @@ export default function RedesignPage() {
 
     if (!selectedFile) return;
 
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
     if (
-      !selectedFile.type.startsWith("image/")
+      !allowedTypes.includes(
+        selectedFile.type
+      )
     ) {
-      setError("Please upload an image.");
+      setError(
+        "Please upload a JPG, PNG, or WEBP image."
+      );
       return;
     }
 
@@ -91,16 +101,15 @@ export default function RedesignPage() {
       URL.revokeObjectURL(preview);
     }
 
-    setError("");
-    setFile(selectedFile);
-
     const objectUrl =
       URL.createObjectURL(
         selectedFile
       );
 
+    setFile(selectedFile);
     setPreview(objectUrl);
     setResult("");
+    setError("");
   }
 
   async function generateRedesign() {
@@ -113,7 +122,6 @@ export default function RedesignPage() {
 
     setLoading(true);
     setError("");
-    setResult("");
 
     try {
       const formData =
@@ -161,6 +169,11 @@ export default function RedesignPage() {
 
       setResult(data.image);
     } catch (err) {
+      console.error(
+        "Redesign client error:",
+        err
+      );
+
       setError(
         err instanceof Error
           ? err.message
@@ -197,6 +210,37 @@ export default function RedesignPage() {
     setError("");
 
     try {
+      /*
+        Convert the AI data URL into a real Blob.
+
+        This is much safer than sending the
+        giant base64 string through FormData
+        as plain text.
+      */
+
+      const generatedResponse =
+        await fetch(result);
+
+      if (!generatedResponse.ok) {
+        throw new Error(
+          "Could not prepare the AI redesign."
+        );
+      }
+
+      const generatedBlob =
+        await generatedResponse.blob();
+
+      const generatedFile =
+        new File(
+          [generatedBlob],
+          "shukai-redesign.png",
+          {
+            type:
+              generatedBlob.type ||
+              "image/png",
+          }
+        );
+
       const formData =
         new FormData();
 
@@ -206,8 +250,8 @@ export default function RedesignPage() {
       );
 
       formData.append(
-        "generatedImage",
-        result
+        "redesignImage",
+        generatedFile
       );
 
       formData.append(
@@ -244,9 +288,23 @@ export default function RedesignPage() {
         );
       }
 
-      window.location.href =
-        `/profile?job=${data.jobId}&created=redesign`;
+      if (!data.jobId) {
+        throw new Error(
+          "Job was created without an ID."
+        );
+      }
+
+      window.location.assign(
+        `/profile?job=${encodeURIComponent(
+          data.jobId
+        )}&created=redesign`
+      );
     } catch (err) {
+      console.error(
+        "Get This Built error:",
+        err
+      );
+
       setError(
         err instanceof Error
           ? err.message
@@ -299,11 +357,12 @@ export default function RedesignPage() {
 
         <div className="grid gap-8 lg:grid-cols-[1fr_420px]">
 
-          {/* LEFT SIDE */}
+          {/* PHOTO AREA */}
 
           <section>
             {!preview ? (
               <label className="flex min-h-[460px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-700 bg-zinc-950 p-8 text-center transition hover:border-yellow-400">
+
                 <div className="mb-5 text-6xl">
                   📸
                 </div>
@@ -329,7 +388,7 @@ export default function RedesignPage() {
 
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={
                     handleFileChange
@@ -342,7 +401,9 @@ export default function RedesignPage() {
                 {/* ORIGINAL */}
 
                 <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950">
+
                   <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+
                     <div>
                       <div className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                         Original
@@ -354,6 +415,7 @@ export default function RedesignPage() {
                     </div>
 
                     <button
+                      type="button"
                       onClick={reset}
                       className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition hover:border-yellow-400 hover:text-white"
                     >
@@ -372,11 +434,11 @@ export default function RedesignPage() {
 
                 {loading && (
                   <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-yellow-400/20 bg-yellow-400/5">
+
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-800 border-t-yellow-400" />
 
                     <div className="mt-6 text-xl font-black">
-                      Redesigning your
-                      yard...
+                      Redesigning your yard...
                     </div>
 
                     <p className="mt-2 text-zinc-500">
@@ -387,11 +449,13 @@ export default function RedesignPage() {
                   </div>
                 )}
 
-                {/* RESULT */}
+                {/* GENERATED RESULT */}
 
                 {result && !loading && (
                   <div className="overflow-hidden rounded-3xl border border-yellow-400/30 bg-zinc-950">
+
                     <div className="border-b border-zinc-800 px-5 py-4">
+
                       <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                         AI Redesign
                       </div>
@@ -407,13 +471,12 @@ export default function RedesignPage() {
                       className="max-h-[750px] w-full object-contain"
                     />
 
-                    {/* GET THIS BUILT */}
-
                     <div className="p-5">
+
                       <div className="mb-5">
+
                         <label className="mb-2 block text-sm font-bold text-zinc-300">
-                          Where is this
-                          project?
+                          Where is this project?
                         </label>
 
                         <input
@@ -434,16 +497,16 @@ export default function RedesignPage() {
                         />
 
                         <p className="mt-2 text-xs text-zinc-600">
-                          We'll use this
-                          to match the
-                          project with
-                          local
+                          We'll match this
+                          design with local
                           landscapers.
                         </p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
+
                         <button
+                          type="button"
                           onClick={
                             generateRedesign
                           }
@@ -457,13 +520,14 @@ export default function RedesignPage() {
                         </button>
 
                         <button
+                          type="button"
                           onClick={
                             getThisBuilt
                           }
                           disabled={
                             creatingJob ||
                             !result ||
-                            !zip
+                            zip.length !== 5
                           }
                           className="rounded-xl bg-yellow-400 px-4 py-4 font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -479,13 +543,12 @@ export default function RedesignPage() {
             )}
           </section>
 
-          {/* RIGHT CONTROLS */}
+          {/* CONTROLS */}
 
           <aside className="h-fit rounded-3xl border border-zinc-800 bg-zinc-950 p-6 lg:sticky lg:top-28">
 
-            {/* STEP 1 */}
-
             <div className="mb-7">
+
               <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                 Step 1
               </div>
@@ -497,6 +560,7 @@ export default function RedesignPage() {
 
             <div className="space-y-3">
               {styles.map((style) => {
+
                 const active =
                   selectedStyle ===
                   style.id;
@@ -517,13 +581,13 @@ export default function RedesignPage() {
                     }`}
                   >
                     <div className="flex items-start gap-4">
+
                       <div className="text-2xl">
-                        {
-                          style.emoji
-                        }
+                        {style.emoji}
                       </div>
 
                       <div>
+
                         <div
                           className={`font-black ${
                             active
@@ -531,9 +595,7 @@ export default function RedesignPage() {
                               : "text-white"
                           }`}
                         >
-                          {
-                            style.name
-                          }
+                          {style.name}
                         </div>
 
                         <div className="mt-1 text-sm leading-5 text-zinc-500">
@@ -548,9 +610,10 @@ export default function RedesignPage() {
               })}
             </div>
 
-            {/* STEP 2 */}
+            {/* CUSTOM REQUEST */}
 
             <div className="mt-8">
+
               <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                 Step 2
               </div>
@@ -560,9 +623,7 @@ export default function RedesignPage() {
               </label>
 
               <textarea
-                value={
-                  instructions
-                }
+                value={instructions}
                 onChange={(e) =>
                   setInstructions(
                     e.target.value
@@ -581,9 +642,10 @@ export default function RedesignPage() {
               </div>
             )}
 
-            {/* GENERATE */}
+            {/* AI BUTTON */}
 
             <button
+              type="button"
               onClick={
                 generateRedesign
               }
