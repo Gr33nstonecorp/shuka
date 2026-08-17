@@ -7,31 +7,36 @@ const styles = [
     id: "modern",
     name: "Modern",
     emoji: "🏡",
-    description: "Clean lines, structured beds, contemporary landscaping",
+    description:
+      "Clean lines, structured beds, contemporary landscaping",
   },
   {
     id: "low-maintenance",
     name: "Low Maintenance",
     emoji: "🌿",
-    description: "Easy-care plants, mulch, stone and simple layouts",
+    description:
+      "Easy-care plants, mulch, stone and simple layouts",
   },
   {
     id: "luxury",
     name: "Luxury",
     emoji: "✨",
-    description: "Premium landscaping with dramatic visual impact",
+    description:
+      "Premium landscaping with dramatic visual impact",
   },
   {
     id: "natural",
     name: "Natural",
     emoji: "🌾",
-    description: "Organic planting, native greenery and softer lines",
+    description:
+      "Organic planting, native greenery and softer lines",
   },
   {
     id: "minimal",
     name: "Minimal",
     emoji: "◻️",
-    description: "Simple, uncluttered and highly structured",
+    description:
+      "Simple, uncluttered and highly structured",
   },
 ];
 
@@ -46,7 +51,12 @@ export default function RedesignPage() {
   const [instructions, setInstructions] =
     useState("");
 
+  const [zip, setZip] = useState("");
+
   const [loading, setLoading] =
+    useState(false);
+
+  const [creatingJob, setCreatingJob] =
     useState(false);
 
   const [error, setError] =
@@ -60,23 +70,34 @@ export default function RedesignPage() {
 
     if (!selectedFile) return;
 
-    if (!selectedFile.type.startsWith("image/")) {
+    if (
+      !selectedFile.type.startsWith("image/")
+    ) {
       setError("Please upload an image.");
       return;
     }
 
-    if (selectedFile.size > 10 * 1024 * 1024) {
+    if (
+      selectedFile.size >
+      10 * 1024 * 1024
+    ) {
       setError(
         "Please choose an image smaller than 10 MB."
       );
       return;
     }
 
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
     setError("");
     setFile(selectedFile);
 
     const objectUrl =
-      URL.createObjectURL(selectedFile);
+      URL.createObjectURL(
+        selectedFile
+      );
 
     setPreview(objectUrl);
     setResult("");
@@ -98,7 +119,10 @@ export default function RedesignPage() {
       const formData =
         new FormData();
 
-      formData.append("image", file);
+      formData.append(
+        "image",
+        file
+      );
 
       formData.append(
         "style",
@@ -110,13 +134,14 @@ export default function RedesignPage() {
         instructions
       );
 
-      const response = await fetch(
-        "/api/redesign",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response =
+        await fetch(
+          "/api/redesign",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
       const data =
         await response.json();
@@ -125,6 +150,12 @@ export default function RedesignPage() {
         throw new Error(
           data.error ||
             "Could not redesign image."
+        );
+      }
+
+      if (!data.image) {
+        throw new Error(
+          "No redesign image was returned."
         );
       }
 
@@ -140,23 +171,112 @@ export default function RedesignPage() {
     }
   }
 
+  async function getThisBuilt() {
+    if (!file) {
+      setError(
+        "Original yard photo is missing."
+      );
+      return;
+    }
+
+    if (!result) {
+      setError(
+        "Generate a redesign first."
+      );
+      return;
+    }
+
+    if (!/^\d{5}$/.test(zip)) {
+      setError(
+        "Enter a valid 5-digit ZIP code."
+      );
+      return;
+    }
+
+    setCreatingJob(true);
+    setError("");
+
+    try {
+      const formData =
+        new FormData();
+
+      formData.append(
+        "originalImage",
+        file
+      );
+
+      formData.append(
+        "generatedImage",
+        result
+      );
+
+      formData.append(
+        "style",
+        selectedStyle
+      );
+
+      formData.append(
+        "instructions",
+        instructions
+      );
+
+      formData.append(
+        "zip",
+        zip
+      );
+
+      const response =
+        await fetch(
+          "/api/redesign/create-job",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Could not create landscaping job."
+        );
+      }
+
+      window.location.href =
+        `/profile?job=${data.jobId}&created=redesign`;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not create landscaping job."
+      );
+    } finally {
+      setCreatingJob(false);
+    }
+  }
+
   function reset() {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
     setFile(null);
     setPreview("");
     setResult("");
     setInstructions("");
+    setZip("");
     setError("");
   }
 
   return (
     <main className="min-h-screen bg-black text-white pb-24">
-
       <div className="mx-auto max-w-6xl px-5 py-12">
 
         {/* HEADER */}
 
         <section className="mb-12 text-center">
-
           <div className="mb-4 inline-flex rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-sm font-bold text-yellow-400">
             ✨ ShukAI Visualizer
           </div>
@@ -164,28 +284,26 @@ export default function RedesignPage() {
           <h1 className="text-4xl font-black tracking-tight md:text-6xl">
             Redesign Your Yard
             <span className="text-yellow-400">
-              {" "}with AI
+              {" "}
+              with AI
             </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-400">
-            Upload a photo of your property and
-            preview a completely redesigned
-            landscape before hiring a pro.
+            Upload a photo of your
+            property and preview a
+            redesigned landscape before
+            hiring a pro.
           </p>
-
         </section>
-
 
         <div className="grid gap-8 lg:grid-cols-[1fr_420px]">
 
-          {/* LEFT */}
+          {/* LEFT SIDE */}
 
           <section>
-
             {!preview ? (
               <label className="flex min-h-[460px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-700 bg-zinc-950 p-8 text-center transition hover:border-yellow-400">
-
                 <div className="mb-5 text-6xl">
                   📸
                 </div>
@@ -195,8 +313,9 @@ export default function RedesignPage() {
                 </h2>
 
                 <p className="mt-3 max-w-sm text-zinc-500">
-                  Take a clear photo showing as
-                  much of the yard as possible.
+                  Take a clear photo
+                  showing as much of the
+                  yard as possible.
                 </p>
 
                 <div className="mt-7 rounded-xl bg-yellow-400 px-6 py-3 font-black text-black">
@@ -204,7 +323,8 @@ export default function RedesignPage() {
                 </div>
 
                 <p className="mt-4 text-xs text-zinc-600">
-                  JPG, PNG or WEBP • Max 10 MB
+                  JPG, PNG or WEBP • Max
+                  10 MB
                 </p>
 
                 <input
@@ -215,18 +335,14 @@ export default function RedesignPage() {
                     handleFileChange
                   }
                 />
-
               </label>
             ) : (
-
               <div className="space-y-6">
 
-                {/* BEFORE */}
+                {/* ORIGINAL */}
 
                 <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950">
-
                   <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
-
                     <div>
                       <div className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                         Original
@@ -239,11 +355,10 @@ export default function RedesignPage() {
 
                     <button
                       onClick={reset}
-                      className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:text-white"
+                      className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition hover:border-yellow-400 hover:text-white"
                     >
                       Change Photo
                     </button>
-
                   </div>
 
                   <img
@@ -251,89 +366,126 @@ export default function RedesignPage() {
                     alt="Original yard"
                     className="max-h-[650px] w-full object-contain"
                   />
-
                 </div>
 
-
-                {/* RESULT */}
+                {/* LOADING */}
 
                 {loading && (
-
                   <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-yellow-400/20 bg-yellow-400/5">
-
                     <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-800 border-t-yellow-400" />
 
                     <div className="mt-6 text-xl font-black">
-                      Redesigning your yard...
+                      Redesigning your
+                      yard...
                     </div>
 
                     <p className="mt-2 text-zinc-500">
-                      ShukAI is creating your
-                      landscape concept.
+                      ShukAI is creating
+                      your landscape
+                      concept.
                     </p>
-
                   </div>
-
                 )}
 
+                {/* RESULT */}
 
                 {result && !loading && (
-
                   <div className="overflow-hidden rounded-3xl border border-yellow-400/30 bg-zinc-950">
-
                     <div className="border-b border-zinc-800 px-5 py-4">
-
                       <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                         AI Redesign
                       </div>
 
-                      <div className="font-bold">
+                      <div className="text-2xl font-black">
                         Your New Yard
                       </div>
-
                     </div>
 
                     <img
                       src={result}
                       alt="AI redesigned yard"
-                      className="max-h-[650px] w-full object-contain"
+                      className="max-h-[750px] w-full object-contain"
                     />
 
-                    <div className="grid grid-cols-2 gap-3 p-5">
+                    {/* GET THIS BUILT */}
 
-                      <button
-                        onClick={
-                          generateRedesign
-                        }
-                        className="rounded-xl border border-zinc-700 px-4 py-4 font-bold hover:border-yellow-400"
-                      >
-                        ↻ Try Again
-                      </button>
+                    <div className="p-5">
+                      <div className="mb-5">
+                        <label className="mb-2 block text-sm font-bold text-zinc-300">
+                          Where is this
+                          project?
+                        </label>
 
-                      <button
-                        className="rounded-xl bg-yellow-400 px-4 py-4 font-black text-black hover:bg-yellow-300"
-                      >
-                        Get This Built
-                      </button>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={5}
+                          value={zip}
+                          onChange={(e) =>
+                            setZip(
+                              e.target.value.replace(
+                                /\D/g,
+                                ""
+                              )
+                            )
+                          }
+                          placeholder="ZIP code"
+                          className="w-full rounded-xl border border-zinc-700 bg-black px-4 py-4 text-white placeholder-zinc-600 outline-none transition focus:border-yellow-400"
+                        />
 
+                        <p className="mt-2 text-xs text-zinc-600">
+                          We'll use this
+                          to match the
+                          project with
+                          local
+                          landscapers.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          onClick={
+                            generateRedesign
+                          }
+                          disabled={
+                            loading ||
+                            creatingJob
+                          }
+                          className="rounded-xl border border-zinc-700 px-4 py-4 font-bold transition hover:border-yellow-400 disabled:opacity-50"
+                        >
+                          ↻ Try Again
+                        </button>
+
+                        <button
+                          onClick={
+                            getThisBuilt
+                          }
+                          disabled={
+                            creatingJob ||
+                            !result ||
+                            !zip
+                          }
+                          className="rounded-xl bg-yellow-400 px-4 py-4 font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {creatingJob
+                            ? "Creating Job..."
+                            : "Get This Built"}
+                        </button>
+                      </div>
                     </div>
-
                   </div>
-
                 )}
-
               </div>
             )}
-
           </section>
 
-
-          {/* CONTROLS */}
+          {/* RIGHT CONTROLS */}
 
           <aside className="h-fit rounded-3xl border border-zinc-800 bg-zinc-950 p-6 lg:sticky lg:top-28">
 
-            <div className="mb-7">
+            {/* STEP 1 */}
 
+            <div className="mb-7">
               <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                 Step 1
               </div>
@@ -341,20 +493,15 @@ export default function RedesignPage() {
               <h2 className="mt-2 text-2xl font-black">
                 Choose a Style
               </h2>
-
             </div>
 
-
             <div className="space-y-3">
-
               {styles.map((style) => {
-
                 const active =
                   selectedStyle ===
                   style.id;
 
                 return (
-
                   <button
                     key={style.id}
                     type="button"
@@ -369,15 +516,14 @@ export default function RedesignPage() {
                         : "border-zinc-800 bg-black hover:border-zinc-600"
                     }`}
                   >
-
                     <div className="flex items-start gap-4">
-
                       <div className="text-2xl">
-                        {style.emoji}
+                        {
+                          style.emoji
+                        }
                       </div>
 
                       <div>
-
                         <div
                           className={`font-black ${
                             active
@@ -385,27 +531,26 @@ export default function RedesignPage() {
                               : "text-white"
                           }`}
                         >
-                          {style.name}
+                          {
+                            style.name
+                          }
                         </div>
 
                         <div className="mt-1 text-sm leading-5 text-zinc-500">
-                          {style.description}
+                          {
+                            style.description
+                          }
                         </div>
-
                       </div>
-
                     </div>
-
                   </button>
-
                 );
               })}
-
             </div>
 
+            {/* STEP 2 */}
 
             <div className="mt-8">
-
               <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
                 Step 2
               </div>
@@ -415,52 +560,58 @@ export default function RedesignPage() {
               </label>
 
               <textarea
-                value={instructions}
+                value={
+                  instructions
+                }
                 onChange={(e) =>
                   setInstructions(
                     e.target.value
                   )
                 }
                 placeholder="Add a stone walkway, remove the bushes, add privacy trees, keep the existing patio..."
-                className="mt-3 min-h-[130px] w-full rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-white placeholder-zinc-600 outline-none focus:border-yellow-400"
+                className="mt-3 min-h-[130px] w-full rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-yellow-400"
               />
-
             </div>
 
+            {/* ERROR */}
 
             {error && (
-              <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+              <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm leading-6 text-red-400">
                 {error}
               </div>
             )}
 
+            {/* GENERATE */}
 
             <button
-              onClick={generateRedesign}
+              onClick={
+                generateRedesign
+              }
               disabled={
-                !file || loading
+                !file ||
+                loading ||
+                creatingJob
               }
               className="mt-7 w-full rounded-2xl bg-yellow-400 py-5 text-lg font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading
                 ? "Creating Redesign..."
+                : result
+                ? "✨ Create Another Version"
                 : "✨ Redesign My Yard"}
             </button>
 
-
             <p className="mt-4 text-center text-xs leading-5 text-zinc-600">
-              AI concepts are visual estimates.
-              Final designs, measurements and
-              construction requirements should
-              be confirmed with your landscaper.
+              AI concepts are visual
+              estimates. Final designs,
+              measurements and
+              construction requirements
+              should be confirmed with
+              your landscaper.
             </p>
-
           </aside>
-
         </div>
-
       </div>
-
     </main>
   );
 }
