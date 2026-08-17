@@ -19,10 +19,14 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#050807] text-white antialiased">
+
+        {/* MAIN NAVIGATION */}
         <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#050807]/90 backdrop-blur-xl">
+
+          {/* TOP NAV */}
           <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
-            
-            {/* Logo */}
+
+            {/* LOGO */}
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-400 to-green-600 text-xl shadow-lg shadow-green-500/20">
                 🌿
@@ -33,13 +37,22 @@ export default async function RootLayout({
               </span>
             </Link>
 
-            {/* Desktop Nav */}
+            {/* DESKTOP NAV */}
             <div className="hidden items-center gap-8 md:flex">
+
               <Link
                 href="/assistant"
                 className="text-sm font-semibold text-zinc-300 transition hover:text-white"
               >
                 Get Quotes
+              </Link>
+
+              {/* NEW AI REDESIGN LINK */}
+              <Link
+                href="/redesign"
+                className="text-sm font-bold text-yellow-400 transition hover:text-yellow-300"
+              >
+                ✨ AI Redesign
               </Link>
 
               <Link
@@ -55,10 +68,12 @@ export default async function RootLayout({
               >
                 For Landscapers
               </Link>
+
             </div>
 
-            {/* Right */}
+            {/* RIGHT SIDE */}
             <div className="flex items-center gap-3">
+
               {session && (
                 <Link
                   href="/profile"
@@ -83,37 +98,50 @@ export default async function RootLayout({
               >
                 Get a Quote
               </Link>
+
             </div>
           </div>
 
-          {/* Mobile nav */}
+          {/* MOBILE NAV */}
           <div className="border-t border-white/5 md:hidden">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
+
+            <div className="mx-auto grid max-w-7xl grid-cols-4 items-center px-3 py-3">
+
               <Link
                 href="/assistant"
-                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
+                className="text-center text-[11px] font-bold text-zinc-400 transition hover:text-yellow-400"
               >
-                Get Quotes
+                Quotes
+              </Link>
+
+              <Link
+                href="/redesign"
+                className="text-center text-[11px] font-bold text-yellow-400 transition hover:text-yellow-300"
+              >
+                ✨ Redesign
               </Link>
 
               <Link
                 href="/profile"
-                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
+                className="text-center text-[11px] font-bold text-zinc-400 transition hover:text-yellow-400"
               >
                 My Jobs
               </Link>
 
               <Link
                 href="/provider"
-                className="text-xs font-bold text-zinc-400 hover:text-yellow-400"
+                className="text-center text-[11px] font-bold text-zinc-400 transition hover:text-yellow-400"
               >
                 Landscapers
               </Link>
+
             </div>
+
           </div>
         </nav>
 
         {children}
+
       </body>
     </html>
   );
